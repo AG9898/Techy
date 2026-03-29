@@ -108,7 +108,7 @@ Migrations are output to `drizzle/`. Commit them.
 npm run dev
 ```
 
-Visit http://localhost:5173. You'll be redirected to `/signin`. Click "Sign in with GitHub".
+Visit http://localhost:5173. You'll be redirected to the standalone `/signin` page. After sign-in, you'll enter the protected app shell.
 
 ---
 

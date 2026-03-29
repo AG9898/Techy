@@ -60,7 +60,7 @@ src/
 ├── app.css                     # Tailwind entrypoint + global theme tokens/base styles
 ├── app.d.ts                    # Global TypeScript types (Locals, PageData)
 ├── app.html                    # HTML shell
-├── hooks.server.ts             # Auth.js handle + auth guard
+├── hooks.server.ts             # Auth.js handle + optional debug-session override
 ├── lib/
 │   ├── ai/
 │   │   ├── claude.ts           # Claude API stub
@@ -82,10 +82,35 @@ src/
 │       ├── wikilinks.ts        # [[wikilink]] extractor + resolver
 │       └── frontmatter.ts      # YAML frontmatter parser for note import
 └── routes/
-    ├── +layout.server.ts       # Session loader (runs on every request)
-    ├── +layout.svelte          # Root layout, Nav, imports app.css
-    ├── +page.server.ts         # Load graph data (nodes + links)
-    ├── +page.svelte            # Home: D3 graph or empty state
+    ├── +layout.svelte          # Root public shell, imports app.css + head metadata
+    ├── (app)/
+    │   ├── +layout.server.ts   # Protected app gate + session loader
+    │   ├── +layout.svelte      # App shell with Nav + page container
+    │   ├── +page.server.ts     # Load graph data (nodes + links)
+    │   ├── +page.svelte        # Home: D3 graph or empty state
+    │   ├── notes/
+    │   │   ├── +page.server.ts     # List all notes + delete + import actions
+    │   │   ├── +page.svelte        # Notes grid with category filter + import + export
+    │   │   ├── export/
+    │   │   │   └── +server.ts      # GET: zip all notes as Markdown files for download
+    │   │   ├── new/
+    │   │   │   ├── +page.server.ts # Create note action
+    │   │   │   └── +page.svelte    # Create form
+    │   │   └── [slug]/
+    │   │       ├── +page.server.ts # Load note + links + rendered HTML
+    │   │       ├── +page.svelte    # Note detail view
+    │   │       ├── edit/
+    │   │       │   ├── +page.server.ts  # Snapshot to revisions + update / delete actions
+    │   │       │   └── +page.svelte     # Edit form
+    │   │       └── history/
+    │   │           ├── +page.server.ts  # Load note + revision list (desc)
+    │   │           ├── +page.svelte     # Revision history list
+    │   │           └── [revisionId]/
+    │   │               ├── +page.server.ts  # Load revision + render HTML
+    │   │               └── +page.svelte     # Revision detail view
+    │   └── search/
+    │       ├── +page.server.ts     # Search query (ilike + arrayOverlaps)
+    │       └── +page.svelte        # Search form + results grid
     ├── auth/[...auth]/
     │   └── +server.ts          # Auth.js catch-all (GET + POST)
     ├── debug/auth/
@@ -94,29 +119,6 @@ src/
     ├── signin/
     │   ├── +page.server.ts     # Loads callbackUrl + auth error query params
     │   └── +page.svelte        # Styled GitHub sign-in page
-    ├── notes/
-    │   ├── +page.server.ts     # List all notes + delete + import actions
-    │   ├── +page.svelte        # Notes grid with category filter + import + export
-    │   ├── export/
-    │   │   └── +server.ts      # GET: zip all notes as Markdown files for download
-    │   ├── new/
-    │   │   ├── +page.server.ts # Create note action
-    │   │   └── +page.svelte    # Create form
-    │   └── [slug]/
-    │       ├── +page.server.ts # Load note + links + rendered HTML
-    │       ├── +page.svelte    # Note detail view
-    │       ├── edit/
-    │       │   ├── +page.server.ts  # Snapshot to revisions + update / delete actions
-    │       │   └── +page.svelte     # Edit form
-    │       └── history/
-    │           ├── +page.server.ts  # Load note + revision list (desc)
-    │           ├── +page.svelte     # Revision history list
-    │           └── [revisionId]/
-    │               ├── +page.server.ts  # Load revision + render HTML
-    │               └── +page.svelte     # Revision detail view
-    ├── search/
-    │   ├── +page.server.ts     # Search query (ilike + arrayOverlaps)
-    │   └── +page.svelte        # Search form + results grid
     ├── chat/
     │   ├── +page.server.ts     # Planned: chat page shell / data loading
     │   └── +page.svelte        # Planned: assistant chat UI
@@ -184,20 +186,19 @@ See [`docs/NOTES.md`](NOTES.md) for the note field definitions, status values, t
 ## Auth Flow
 
 ```
-1. User visits any protected route
-2. hooks.server.ts: sequence(authHandle, authGuard)
-3. authHandle (Auth.js): populates event.locals.auth
-4. authGuard: calls event.locals.auth()
+1. Every request runs `hooks.server.ts: sequence(debugAuthHandle, authHandle)`
+2. `authHandle` (Auth.js) populates `event.locals.auth`
+3. Requests under `src/routes/(app)` run `(app)/+layout.server.ts`
    - No session → redirect(303, '/signin')
-   - Session present → resolve(event)
-5. /signin renders the custom sign-in page
-6. POST /auth/signin/github starts the GitHub OAuth flow
-7. GitHub callback → Auth.js signIn() callback
+   - Session present → render the protected app shell and page
+4. `/signin` renders the standalone sign-in page outside the app shell
+5. POST `/auth/signin/github` starts the GitHub OAuth flow
+6. GitHub callback → Auth.js signIn() callback
    - Checks profile.login === ALLOWED_GITHUB_USERNAME
    - Returns false → redirect to /signin?error=AccessDenied
    - Returns true → session created via DrizzleAdapter (sessions table)
-8. Session stored in DB, session token in HTTP-only cookie
-9. Optional: `/debug/auth/login` can mint a signed debug cookie when `DEBUG_AUTH_BYPASS_ENABLED=true` and the request includes the correct bypass secret
+7. Session stored in DB, session token in HTTP-only cookie
+8. Optional: `/debug/auth/login` can mint a signed debug cookie when `DEBUG_AUTH_BYPASS_ENABLED=true` and the request includes the correct bypass secret
 ```
 
 ---
@@ -215,7 +216,7 @@ Utilities: `src/lib/utils/wikilinks.ts`
 
 ## Orphan Note Detection
 
-The `/notes` page detects orphan notes — notes with no incoming or outgoing links — via a server-side query in `src/routes/notes/+page.server.ts`. On each load, both notes and all `note_links` rows are fetched in parallel. A `Set` of all linked note IDs (union of `source_note_id` and `target_note_id`) is built in-memory; any note whose ID is absent from this set is an orphan. The load function returns `orphanIds: string[]` alongside the notes array.
+The `/notes` page detects orphan notes — notes with no incoming or outgoing links — via a server-side query in `src/routes/(app)/notes/+page.server.ts`. On each load, both notes and all `note_links` rows are fetched in parallel. A `Set` of all linked note IDs (union of `source_note_id` and `target_note_id`) is built in-memory; any note whose ID is absent from this set is an orphan. The load function returns `orphanIds: string[]` alongside the notes array.
 
 The UI surfaces orphans as an "Orphans (N)" filter chip in the category filter row on `/notes`. Selecting it filters the grid to orphan notes only; each orphan card links to its detail page as normal. The chip is hidden when `orphanIds` is empty.
 

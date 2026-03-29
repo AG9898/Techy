@@ -2,7 +2,7 @@
 
 All routes are SvelteKit. Page routes return SSR HTML. Form actions use `application/x-www-form-urlencoded`. JSON API routes use `application/json`.
 
-Authentication is enforced globally via `hooks.server.ts` — all routes except `/auth/*`, `/signin`, and `/debug/auth/*` require a valid session cookie.
+Protected app routes are grouped under `src/routes/(app)` and enforced by `src/routes/(app)/+layout.server.ts`. Public auth routes remain outside that group at `/signin`, `/auth/*`, and `/debug/auth/*`.
 
 ---
 

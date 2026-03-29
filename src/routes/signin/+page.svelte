@@ -45,7 +45,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-height: calc(100vh - 60px - 4rem);
+		min-height: 100vh;
+		padding: 2rem 1rem;
 	}
 
 	.signin-card {

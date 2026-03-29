@@ -4,8 +4,6 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit';
 
-const PUBLIC_PATHS = ['/auth', '/signin', '/debug/auth'];
-
 const debugAuthHandle: Handle = async ({ event, resolve }) => {
 	const debugSession = getDebugSession(event.cookies);
 
@@ -21,15 +19,4 @@ const debugAuthHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const authGuard: Handle = async ({ event, resolve }) => {
-	const session = await event.locals.auth();
-	const isPublicPath = PUBLIC_PATHS.some((p) => event.url.pathname.startsWith(p));
-
-	if (!session && !isPublicPath) {
-		redirect(303, '/signin');
-	}
-
-	return resolve(event);
-};
-
-export const handle = sequence(debugAuthHandle, authHandle, authGuard);
+export const handle = sequence(debugAuthHandle, authHandle);
