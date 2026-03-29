@@ -72,7 +72,8 @@ src/
 │   │       └── schema.ts       # All table definitions + inferred types
 │   └── utils/
 │       ├── slugify.ts          # title → URL-safe slug
-│       └── wikilinks.ts        # [[wikilink]] extractor + resolver
+│       ├── wikilinks.ts        # [[wikilink]] extractor + resolver
+│       └── frontmatter.ts      # YAML frontmatter parser for note import
 └── routes/
     ├── +layout.server.ts       # Session loader (runs on every request)
     ├── +layout.svelte          # Root layout, Nav, imports app.css
@@ -81,8 +82,8 @@ src/
     ├── auth/[...auth]/
     │   └── +server.ts          # Auth.js catch-all (GET + POST)
     ├── notes/
-    │   ├── +page.server.ts     # List all notes + delete action
-    │   ├── +page.svelte        # Notes grid with category filter
+    │   ├── +page.server.ts     # List all notes + delete + import actions
+    │   ├── +page.svelte        # Notes grid with category filter + import panel
     │   ├── new/
     │   │   ├── +page.server.ts # Create note action
     │   │   └── +page.svelte    # Create form

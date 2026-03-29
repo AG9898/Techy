@@ -76,7 +76,7 @@ Single user — the owner/developer of this repository. No onboarding, no regist
 | ID | Feature | Priority |
 |----|---------|----------|
 | F-20 | Markdown preview pane in the note editor | Medium |
-| F-21 | Import notes from `.md` files (batch) | Low |
+| F-21 | Import notes from `.md` files (batch) | Done |
 | F-22 | Export all notes as a zip of Markdown files | Low |
 | F-23 | Note history / versioning (soft delete or revision table) | Low |
 | F-24 | Tag autocomplete in the create/edit form | Medium |

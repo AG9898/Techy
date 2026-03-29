@@ -813,7 +813,7 @@
       "id": "NOTES-004",
       "group_id": "NOTES",
       "title": "Import notes from Markdown files",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Support batch import of note files with frontmatter into the database.",

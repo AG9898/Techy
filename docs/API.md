@@ -123,6 +123,30 @@ Create a new note.
 
 ---
 
+### `POST /notes?/import`
+Batch-import notes from uploaded Markdown files. Files must have a YAML frontmatter block at the top.
+
+**Form encoding:** `multipart/form-data`
+
+**Form fields:**
+| Field | Required | Description |
+|-------|----------|-------------|
+| `files` | yes | One or more `.md` files (multipart, `multiple`) |
+
+**Behaviour:**
+- Parses `title`, `tags`, `aliases`, `category`, `status` from YAML frontmatter; falls back to first `# Heading` for title.
+- If a note with the same title already exists it is **updated** (body, tags, aliases, category, status). Otherwise a new note is **inserted**.
+- `[[wikilinks]]` in each imported note are synced to `note_links` after all upserts complete, so cross-file links resolve correctly.
+- Files that fail validation are collected as errors; they do not block the import of valid files.
+
+**Success:** Returns `{ importResult: { imported: number, errors: { file: string, message: string }[] } }`
+
+**Errors:**
+- `400` — no files provided
+- Per-file validation errors: not `.md`, missing frontmatter block, missing title, slug collision with a different-titled note
+
+---
+
 ### `POST /notes?/delete`
 Delete a note by ID.
 
