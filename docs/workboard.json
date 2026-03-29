@@ -396,7 +396,7 @@
       "id": "DEPLOY-002",
       "group_id": "DEPLOY",
       "title": "Run DB migrations on Neon production",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "ops",
       "summary": "Apply Drizzle migrations to the Neon production database.",
