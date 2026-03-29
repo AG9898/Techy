@@ -2,7 +2,7 @@
 
 All routes are SvelteKit. Page routes return SSR HTML. Form actions use `application/x-www-form-urlencoded`. JSON API routes use `application/json`.
 
-Authentication is enforced globally via `hooks.server.ts` — all routes except `/auth/*` require a valid session cookie.
+Authentication is enforced globally via `hooks.server.ts` — all routes except `/auth/*`, `/signin`, and `/debug/auth/*` require a valid session cookie.
 
 ---
 
@@ -357,14 +357,16 @@ Look up an existing note from a natural-language request and return a note-groun
 
 ## Auth Routes
 
-All auth routes are handled by Auth.js (`@auth/sveltekit`) via the catch-all at `src/routes/auth/[...auth]/+server.ts`.
+Auth.js actions are handled by the catch-all at `src/routes/auth/[...auth]/+server.ts`. The custom sign-in UI is a normal SvelteKit page at `src/routes/signin/+page.svelte`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/auth/signin` | Sign-in page (rendered by Auth.js) |
+| `GET` | `/signin` | Custom sign-in page |
 | `GET` | `/auth/callback/github` | GitHub OAuth callback — do not call directly |
 | `POST` | `/auth/signout` | Sign out (form POST from Nav) |
-| `GET` | `/auth/error` | Auth error page (e.g. `?error=AccessDenied`) |
+| `GET` | `/signin?error=...` | Sign-in page with auth error message (e.g. `?error=AccessDenied`) |
+| `GET` / `POST` | `/debug/auth/login` | Debug-only bypass login. Requires `DEBUG_AUTH_BYPASS_ENABLED=true` and the correct secret. |
+| `GET` / `POST` | `/debug/auth/logout` | Clears the debug bypass session cookie |
 
 **Sign-out usage** (from any Svelte component):
 ```html
@@ -372,3 +374,10 @@ All auth routes are handled by Auth.js (`@auth/sveltekit`) via the catch-all at 
   <button type="submit">Sign out</button>
 </form>
 ```
+
+**Debug bypass usage**:
+```bash
+curl -i "http://localhost:5173/debug/auth/login?secret=<DEBUG_AUTH_BYPASS_SECRET>&redirectTo=/notes"
+```
+
+The debug bypass creates a signed app session without GitHub OAuth. It is intended for local testing and agent-driven Playwright runs against deployments where the same secret is configured.

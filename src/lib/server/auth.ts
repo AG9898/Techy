@@ -34,7 +34,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		}
 	},
 	pages: {
-		signIn: '/auth/signin',
-		error: '/auth/error'
+		signIn: '/signin',
+		error: '/signin'
 	}
 });

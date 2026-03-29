@@ -20,6 +20,9 @@ Browser
   ├─ POST /api/ai/research      → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
   ├─ POST /api/ai/generate-note → +server.ts → generateNote() → Claude API → insert note + sync links
   ├─ POST /api/assistant/query  → +server.ts → queryAssistant() → Claude API (claude-opus-4-6)
+  ├─ GET /signin             → +page.server.ts / +page.svelte (custom sign-in UI)
+  ├─ /debug/auth/login       → +server.ts (secret-gated debug session cookie)
+  ├─ /debug/auth/logout      → +server.ts (clear debug session cookie)
   └─ /auth/[...auth]          → Auth.js catch-all (GitHub OAuth)
 ```
 
@@ -85,6 +88,12 @@ src/
     ├── +page.svelte            # Home: D3 graph or empty state
     ├── auth/[...auth]/
     │   └── +server.ts          # Auth.js catch-all (GET + POST)
+    ├── debug/auth/
+    │   ├── login/+server.ts    # Sets a signed debug session cookie when enabled
+    │   └── logout/+server.ts   # Clears the debug session cookie
+    ├── signin/
+    │   ├── +page.server.ts     # Loads callbackUrl + auth error query params
+    │   └── +page.svelte        # Styled GitHub sign-in page
     ├── notes/
     │   ├── +page.server.ts     # List all notes + delete + import actions
     │   ├── +page.svelte        # Notes grid with category filter + import + export
@@ -175,18 +184,20 @@ See [`docs/NOTES.md`](NOTES.md) for the note field definitions, status values, t
 ## Auth Flow
 
 ```
-1. User visits any non-/auth/* route
+1. User visits any protected route
 2. hooks.server.ts: sequence(authHandle, authGuard)
 3. authHandle (Auth.js): populates event.locals.auth
 4. authGuard: calls event.locals.auth()
-   - No session → redirect(303, '/auth/signin')
+   - No session → redirect(303, '/signin')
    - Session present → resolve(event)
-5. /auth/signin → GitHub OAuth redirect
-6. GitHub callback → Auth.js signIn() callback
+5. /signin renders the custom sign-in page
+6. POST /auth/signin/github starts the GitHub OAuth flow
+7. GitHub callback → Auth.js signIn() callback
    - Checks profile.login === ALLOWED_GITHUB_USERNAME
-   - Returns false → redirect to /auth/error?error=AccessDenied
+   - Returns false → redirect to /signin?error=AccessDenied
    - Returns true → session created via DrizzleAdapter (sessions table)
-7. Session stored in DB, session token in HTTP-only cookie
+8. Session stored in DB, session token in HTTP-only cookie
+9. Optional: `/debug/auth/login` can mint a signed debug cookie when `DEBUG_AUTH_BYPASS_ENABLED=true` and the request includes the correct bypass secret
 ```
 
 ---
