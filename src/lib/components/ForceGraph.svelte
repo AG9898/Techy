@@ -21,9 +21,9 @@
 	let container: HTMLDivElement;
 
 	const statusColor: Record<string, string> = {
-		stub: '#64748b',
-		growing: '#38bdf8',
-		mature: '#4ade80'
+		stub: 'var(--graph-node-stub)',
+		growing: 'var(--graph-node-growing)',
+		mature: 'var(--graph-node-mature)'
 	};
 
 	onMount(() => {
@@ -50,7 +50,7 @@
 			.attr('orient', 'auto')
 			.append('path')
 			.attr('d', 'M0,-5L10,0L0,5')
-			.attr('fill', '#475569');
+			.attr('fill', 'var(--text-subtle)');
 
 		const g = svg.append('g');
 
@@ -86,7 +86,7 @@
 			.selectAll('line')
 			.data(simLinks)
 			.join('line')
-			.attr('stroke', '#1e293b')
+			.attr('stroke', 'var(--graph-link)')
 			.attr('stroke-width', 1.5)
 			.attr('marker-end', 'url(#arrow)');
 
@@ -119,8 +119,8 @@
 		node
 			.append('circle')
 			.attr('r', 10)
-			.attr('fill', (d) => statusColor[d.status] ?? '#64748b')
-			.attr('stroke', '#0f172a')
+			.attr('fill', (d) => statusColor[d.status] ?? 'var(--graph-node-stub)')
+			.attr('stroke', 'var(--bg-surface)')
 			.attr('stroke-width', 2);
 
 		node
@@ -129,7 +129,7 @@
 			.attr('x', 14)
 			.attr('y', 4)
 			.attr('font-size', '11px')
-			.attr('fill', '#cbd5e1')
+			.attr('fill', 'var(--text-secondary)')
 			.attr('pointer-events', 'none');
 
 		node.append('title').text((d) => `${d.title} [${d.status}]`);
@@ -155,6 +155,6 @@
 		width: 100%;
 		height: calc(100vh - 60px);
 		overflow: hidden;
-		background: #0a0f1e;
+		background: var(--bg-base);
 	}
 </style>

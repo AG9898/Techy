@@ -15,38 +15,67 @@ Current implementation direction:
 
 ---
 
-## Colour Palette
+## Token System
 
-The canonical default palette is currently exposed as CSS custom properties in `src/app.css`. Components may still contain hardcoded values during the transition, but new work should prefer the shared tokens and keep Tailwind utility usage aligned with this palette.
+Techy uses a two-axis token system applied via `data-theme` and `data-accent` attributes on `<html>`. Tokens cascade to all child elements including the D3 graph SVG. Theme and accent selections are persisted to `localStorage` and restored without flash via an inline script in `src/app.html`.
 
-This palette should be treated as the initial `Night` theme. Future work may introduce theme and accent toggles, but every theme must preserve legibility for the graph, notes, and chat surfaces.
+All new components must use these tokens — no hardcoded hex values.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `bg-base` | `#0a0f1e` | Page background |
-| `bg-surface` | `#0f172a` | Cards, nav, inputs, form elements |
-| `bg-raised` | `#1e293b` | Hover states, tags, code blocks |
-| `border` | `#1e293b` | All borders |
-| `border-hover` | `#334155` | Borders on hover |
-| `text-primary` | `#e2e8f0` | Headings, main content |
-| `text-secondary` | `#94a3b8` | Labels, form hints, secondary text |
-| `text-muted` | `#64748b` | Timestamps, empty states, back links |
-| `text-subtle` | `#475569` | Dates, hint text |
-| `accent-blue-light` | `#7dd3fc` | Logo, links, category badges |
-| `accent-blue` | `#1d4ed8` | Primary buttons, focus borders |
-| `accent-blue-hover` | `#2563eb` | Button hover |
-| `accent-green` | `#4ade80` | Wikilink hover, mature status |
-| `accent-green-muted` | `#86efac` | Wikilink default colour |
-| `accent-red` | `#f87171` | Errors, broken wikilinks, delete actions |
-| `accent-purple` | `#a78bfa` | AI-generated badge |
+### Semantic Tokens (vary by theme and/or accent)
 
-### Status Colours (Graph Nodes & Badges)
+| Token | Usage |
+|-------|-------|
+| `--bg-base` | Page background |
+| `--bg-surface` | Cards, nav, inputs, form elements |
+| `--bg-raised` | Hover states, tags, code blocks |
+| `--bg-overlay` | Overlays, modals |
+| `--border-soft` | Default borders |
+| `--border-strong` | Hover borders, emphasis |
+| `--text-primary` | Headings, main content |
+| `--text-secondary` | Labels, form hints, secondary text |
+| `--text-muted` | Timestamps, empty states, back links |
+| `--text-subtle` | Dates, hint text |
+| `--accent-primary` | Logo, links, active controls (set by accent) |
+| `--accent-strong` | Primary buttons, focus borders (set by accent) |
+| `--accent-soft` | Tinted backgrounds for accent-coloured UI (set by accent) |
+| `--graph-node-stub` | Graph node colour — stub status |
+| `--graph-node-growing` | Graph node colour — growing status |
+| `--graph-node-mature` | Graph node colour — mature status |
+| `--graph-link` | Graph edge stroke |
+| `--graph-focus` | Graph focus/hover highlight |
+| `--accent-green` | Wikilink hover, mature status |
+| `--accent-green-muted` | Wikilink default colour |
+| `--accent-red` | Errors, broken wikilinks, delete actions |
+| `--accent-purple` | AI-generated badge |
 
-| Status | Colour |
-|--------|--------|
-| `stub` | `#64748b` (muted) |
-| `growing` | `#38bdf8` (blue) |
-| `mature` | `#4ade80` (green) |
+### Legacy Token Aliases (kept for backward compat)
+
+`--border` → `--border-soft` · `--border-hover` → `--border-strong` · `--accent-blue-light` → `--accent-primary` · `--accent-blue` → `--accent-strong` · `--accent-blue-hover` → accent hover value
+
+### Themes
+
+| Theme | Character | `--bg-base` |
+|-------|-----------|-------------|
+| `night` | Observatory, soft dark (default) | `#0a0f1e` |
+| `paper` | Warm light, editorial, archival | `#faf7f2` |
+| `mist` | Cool neutral, quiet, understated | `#f0f4f8` |
+
+### Accents
+
+| Accent | Character | `--accent-primary` |
+|--------|-----------|--------------------|
+| `sky` | Calm, clear, technical (default) | `#7dd3fc` |
+| `mint` | Fresh, research-oriented | `#86efac` |
+| `amber` | Warm, thoughtful | `#fcd34d` |
+| `rose` | Soft, personal | `#fda4af` |
+
+### Graph Node Status Colours (Night theme)
+
+| Status | Token | Value |
+|--------|-------|-------|
+| `stub` | `--graph-node-stub` | `#64748b` |
+| `growing` | `--graph-node-growing` | `#38bdf8` |
+| `mature` | `--graph-node-mature` | `#4ade80` |
 
 ---
 
@@ -218,4 +247,4 @@ A legend overlay on the home page (not yet implemented) should show:
 - **Next-topic actions**: suggested topics should be visually distinct from existing note links and clearly indicate that they are candidates for new notes, not already saved notes
 - **GSAP experiments**: motion-heavy interactions can be explored later, but animation remains secondary to clarity and should not overpower the tool-like UI
 - **Motion rule**: if GSAP is used, prefer restrained, purposeful transitions over decorative animation loops
-- **Theme and accent toggle**: support future theme selection plus independent accent color selection while preserving graph legibility
+- **Theme and accent expand**: additional themes or accents can be added by defining a new `[data-theme]` or `[data-accent]` block in `src/app.css` and adding it to the Nav toggle list

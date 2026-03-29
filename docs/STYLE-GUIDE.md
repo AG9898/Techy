@@ -333,30 +333,21 @@ Soft and personal without feeling playful.
 
 ### Token Guidance
 
-Theme tokens should be structured so D3, app chrome, and content surfaces all derive from the same system:
-- `bg-base`
-- `bg-surface`
-- `bg-raised`
-- `bg-overlay`
-- `border-soft`
-- `border-strong`
-- `text-primary`
-- `text-secondary`
-- `text-muted`
-- `accent-primary`
-- `accent-strong`
-- `accent-soft`
-- `graph-node-stub`
-- `graph-node-growing`
-- `graph-node-mature`
-- `graph-link`
-- `graph-focus`
+The token system is implemented in `src/app.css` via `[data-theme]` and `[data-accent]` selectors on `<html>`. All tokens cascade to every component including the D3 graph SVG.
+
+Current token set:
+- `--bg-base`, `--bg-surface`, `--bg-raised`, `--bg-overlay`
+- `--border-soft`, `--border-strong`
+- `--text-primary`, `--text-secondary`, `--text-muted`, `--text-subtle`
+- `--accent-primary`, `--accent-strong`, `--accent-soft` (set by accent)
+- `--graph-node-stub`, `--graph-node-growing`, `--graph-node-mature`
+- `--graph-link`, `--graph-focus`
 
 Rules:
 - theme sets neutrals and environmental contrast
 - accent sets interaction color family
 - graph tokens must stay legible within every theme
-- avoid arbitrary one-off colors in components
+- avoid arbitrary one-off colors in components — use tokens always
 
 ---
 

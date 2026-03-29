@@ -192,18 +192,26 @@ The `ForceGraph.svelte` component is **client-only** (runs in `onMount`). It rec
 
 ## Styling System
 
-Techy now uses **Tailwind CSS v4** for utility-first styling and layout work, while keeping project-owned visual language and tokens. Global styling is loaded from `src/app.css`, which currently provides:
+Techy uses **Tailwind CSS v4** for utility-first styling and layout work, with a project-owned token system for visual identity. Global styling is loaded from `src/app.css`, which provides:
 
 - the Tailwind stylesheet import
-- shared colour tokens as CSS custom properties
-- base resets and body styles
-- global wikilink styles
+- theme token blocks under `[data-theme='night' | 'paper' | 'mist']`
+- accent token blocks under `[data-accent='sky' | 'mint' | 'amber' | 'rose']`
+- base resets, body styles, and global wikilink styles
 
-**Melt UI** is the chosen primitive layer for future interactive UI work. The intent is to use Melt for accessible, headless building blocks such as dialogs, popovers, comboboxes, tabs, and other interactive controls, while keeping Techy's visual design custom rather than adopting a prebuilt component theme.
+### Theme and Accent System
 
-**GSAP** is installed as optional motion tooling for future animation-heavy interactions. It is not part of the base component layer and should be used selectively for places where motion materially improves clarity or delight, such as graph transitions, panel reveals, or guided interface choreography.
+`src/app.html` sets `data-theme="night" data-accent="sky"` on `<html>` as defaults. An inline `<script>` block in `app.html` reads `localStorage` before the first paint to prevent FOUC. `Nav.svelte` manages runtime state via Svelte 5 `$state`, syncing changes to `document.documentElement` and `localStorage`.
 
-High-level visual direction, page composition, and theming guidance live in [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md). The architecture doc should stay implementation-focused, while the style guide captures the intended feel of the graph, notes, and chat surfaces.
+All components consume tokens via `var(--token-name)`. No hardcoded hex values should appear in new components. The D3 graph (`ForceGraph.svelte`) uses `var(--graph-node-*)`, `var(--graph-link)`, `var(--bg-base)` etc. as SVG attribute values so graph colours update automatically when the theme changes.
+
+See [`docs/DESIGN-SPEC.md`](DESIGN-SPEC.md) for the full token reference, theme palettes, and accent values.
+
+**Melt UI** is the chosen primitive layer for future interactive UI work — headless building blocks for dialogs, popovers, comboboxes, and other interactive controls.
+
+**GSAP** is installed as optional motion tooling for animation-heavy interactions. Use selectively for graph transitions, panel reveals, or guided choreography.
+
+High-level visual direction, page composition, and theming guidance live in [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md).
 
 ---
 

@@ -5,23 +5,120 @@
 	--font-mono: 'Fira Code', 'Cascadia Code', monospace;
 }
 
-:root {
-	--bg-base: #0a0f1e;
+/* ─── Night theme (default) ─────────────────────────────── */
+[data-theme='night'] {
+	--bg-base:    #0a0f1e;
 	--bg-surface: #0f172a;
-	--bg-raised: #1e293b;
-	--border: #1e293b;
-	--border-hover: #334155;
-	--text-primary: #e2e8f0;
+	--bg-raised:  #1e293b;
+	--bg-overlay: #1e293b;
+	--border-soft:   #1e293b;
+	--border-strong: #334155;
+	--text-primary:   #e2e8f0;
 	--text-secondary: #94a3b8;
-	--text-muted: #64748b;
-	--text-subtle: #475569;
-	--accent-blue-light: #7dd3fc;
-	--accent-blue: #1d4ed8;
-	--accent-blue-hover: #2563eb;
-	--accent-green: #4ade80;
+	--text-muted:     #64748b;
+	--text-subtle:    #475569;
+	--graph-node-stub:    #64748b;
+	--graph-node-growing: #38bdf8;
+	--graph-node-mature:  #4ade80;
+	--graph-link:  #334155;
+	--graph-focus: var(--accent-primary);
+	/* Legacy aliases kept for backward compat */
+	--border:       var(--border-soft);
+	--border-hover: var(--border-strong);
+	--accent-green:       #4ade80;
 	--accent-green-muted: #86efac;
-	--accent-red: #f87171;
-	--accent-purple: #a78bfa;
+	--accent-red:         #f87171;
+	--accent-purple:      #a78bfa;
+}
+
+/* ─── Paper theme (warm light, editorial) ───────────────── */
+[data-theme='paper'] {
+	--bg-base:    #faf7f2;
+	--bg-surface: #f2ede3;
+	--bg-raised:  #e8dfd0;
+	--bg-overlay: #ddd6ca;
+	--border-soft:   #ddd4c2;
+	--border-strong: #b8a990;
+	--text-primary:   #1c1714;
+	--text-secondary: #57534e;
+	--text-muted:     #78716c;
+	--text-subtle:    #a8a29e;
+	--graph-node-stub:    #a8a29e;
+	--graph-node-growing: #0369a1;
+	--graph-node-mature:  #15803d;
+	--graph-link:  #ddd4c2;
+	--graph-focus: var(--accent-primary);
+	--border:       var(--border-soft);
+	--border-hover: var(--border-strong);
+	--accent-green:       #15803d;
+	--accent-green-muted: #22c55e;
+	--accent-red:         #dc2626;
+	--accent-purple:      #7c3aed;
+}
+
+/* ─── Mist theme (cool neutral, quiet) ──────────────────── */
+[data-theme='mist'] {
+	--bg-base:    #f0f4f8;
+	--bg-surface: #e2e8f0;
+	--bg-raised:  #d1d9e3;
+	--bg-overlay: #c4cdd9;
+	--border-soft:   #c8d0db;
+	--border-strong: #8fa0b4;
+	--text-primary:   #0f172a;
+	--text-secondary: #334155;
+	--text-muted:     #64748b;
+	--text-subtle:    #94a3b8;
+	--graph-node-stub:    #94a3b8;
+	--graph-node-growing: #0369a1;
+	--graph-node-mature:  #15803d;
+	--graph-link:  #c8d0db;
+	--graph-focus: var(--accent-primary);
+	--border:       var(--border-soft);
+	--border-hover: var(--border-strong);
+	--accent-green:       #15803d;
+	--accent-green-muted: #22c55e;
+	--accent-red:         #dc2626;
+	--accent-purple:      #7c3aed;
+}
+
+/* ─── Sky accent (default — calm, clear, technical) ─────── */
+[data-accent='sky'] {
+	--accent-primary:    #7dd3fc;
+	--accent-strong:     #1d4ed8;
+	--accent-soft:       #bae6fd;
+	--accent-blue-light: #7dd3fc;
+	--accent-blue:       #1d4ed8;
+	--accent-blue-hover: #2563eb;
+}
+
+/* ─── Mint accent (fresh, research-oriented) ────────────── */
+[data-accent='mint'] {
+	--accent-primary:    #86efac;
+	--accent-strong:     #16a34a;
+	--accent-soft:       #bbf7d0;
+	--accent-blue-light: #86efac;
+	--accent-blue:       #16a34a;
+	--accent-blue-hover: #22c55e;
+}
+
+/* ─── Amber accent (warm, thoughtful) ───────────────────── */
+[data-accent='amber'] {
+	--accent-primary:    #fcd34d;
+	--accent-strong:     #d97706;
+	--accent-soft:       #fde68a;
+	--accent-blue-light: #fcd34d;
+	--accent-blue:       #d97706;
+	--accent-blue-hover: #f59e0b;
+}
+
+/* ─── Rose accent (soft, personal) ──────────────────────── */
+[data-accent='rose'] {
+	--accent-primary:    #fda4af;
+	--accent-strong:     #e11d48;
+	--accent-soft:       #fecdd3;
+	--accent-blue-light: #fda4af;
+	--accent-blue:       #e11d48;
+	--accent-blue-hover: #f43f5e;
 }
 
 @layer base {
@@ -41,7 +138,7 @@
 	}
 
 	a {
-		color: var(--accent-blue-light);
+		color: var(--accent-primary);
 	}
 
 	.wikilink {

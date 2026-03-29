@@ -207,7 +207,7 @@
       "id": "UI-001",
       "group_id": "UI",
       "title": "Theme token system and theme/accent toggle foundation",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refactor shared styling tokens so Techy can support soft theme switching plus independent accent selection.",
