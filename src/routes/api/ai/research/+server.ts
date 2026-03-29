@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { researchTopic } from '$lib/ai/claude.js';
+import { researchTopic } from '$lib/server/ai/claude.js';
 
 /**
  * POST /api/ai/research
