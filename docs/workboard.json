@@ -262,7 +262,7 @@
       "id": "UI-003",
       "group_id": "UI",
       "title": "Graph home experience refresh",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refine the home page so the D3 graph reads as the hero with floating controls and soft overlays.",
@@ -274,7 +274,7 @@
         "Motion on the home page remains restrained and purposeful"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-004"],
-      "blocked_by": ["UI-002"],
+      "blocked_by": [],
       "files": [
         "src/routes/+page.svelte",
         "src/lib/components/ForceGraph.svelte",
@@ -301,7 +301,7 @@
         "The overall notes experience avoids defaulting to a wall of generic cards"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-005", "FOUND-006"],
-      "blocked_by": ["UI-002"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/+page.svelte",
         "src/routes/notes/[slug]/+page.svelte",
@@ -330,7 +330,7 @@
         "The authoring UI does not regress existing form semantics or server-action behavior"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-005"],
-      "blocked_by": ["UI-002"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/new/+page.svelte",
         "src/routes/notes/[slug]/edit/+page.svelte",
@@ -357,7 +357,7 @@
         "The page has sensible empty and loading placeholder states for future assistant wiring"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-003"],
-      "blocked_by": ["UI-002"],
+      "blocked_by": [],
       "files": [
         "src/routes/chat/+page.svelte",
         "src/routes/chat/+page.server.ts",

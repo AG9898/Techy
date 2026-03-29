@@ -97,6 +97,24 @@
 			.join('g')
 			.attr('cursor', 'pointer')
 			.on('click', (_, d) => goto(`/notes/${d.slug}`))
+			.on('mouseenter', function () {
+				d3.select(this)
+					.select('circle')
+					.transition()
+					.duration(150)
+					.attr('r', 13)
+					.attr('stroke', 'var(--graph-focus)')
+					.attr('stroke-width', 2.5);
+			})
+			.on('mouseleave', function () {
+				d3.select(this)
+					.select('circle')
+					.transition()
+					.duration(150)
+					.attr('r', 10)
+					.attr('stroke', 'var(--bg-surface)')
+					.attr('stroke-width', 2);
+			})
 			.call(
 				d3
 					.drag<SVGGElement, GraphNode>()

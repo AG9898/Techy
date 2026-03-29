@@ -190,9 +190,10 @@ Note cards should be used where repetition is the honest content pattern. They s
 
 ### `ForceGraph.svelte`
 - Full-bleed SVG inside container `height: calc(100vh - 60px)`
-- Nodes: circles r=10, stroke: bg-base stroke-width: 2
+- Nodes: circles r=10, stroke: bg-surface stroke-width: 2
+- Hover state: circle transitions to r=13, stroke → `--graph-focus`, stroke-width: 2.5 (150ms duration, reverts on mouseleave)
 - Labels: 11px, text-secondary, offset x=14 y=4 from node centre
-- Links: stroke bg-raised, stroke-width: 1.5, arrow marker
+- Links: stroke `--graph-link`, stroke-width: 1.5, arrow marker
 - Tooltip: native SVG `<title>` (browser default tooltip)
 
 ### UI Primitive Strategy
@@ -233,11 +234,12 @@ Currently desktop-first. No explicit breakpoints defined. Grid layouts use `auto
 
 ---
 
-## Graph Visual Legend (To Add)
+## Graph Visual Legend
 
-A legend overlay on the home page (not yet implemented) should show:
-- Node colour → status (stub, growing, mature)
-- Node size → proportional to link count (planned)
+A floating legend overlay is rendered in `+page.svelte` as an `absolute` positioned element (bottom-left of the graph wrapper). It shows:
+- Node colour → status (stub, growing, mature) using the `--graph-node-*` tokens
+- Styled with `bg-overlay`, `border-soft`, `border-radius: 0.75rem`, `backdrop-filter: blur(6px)`, `pointer-events: none`
+- Node size → proportional to link count (planned, not yet implemented)
 
 ---
 
