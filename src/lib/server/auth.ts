@@ -7,6 +7,7 @@ import { accounts, sessions, users, verificationTokens } from './db/schema.js';
 const ALLOWED_USERNAME = process.env.ALLOWED_GITHUB_USERNAME;
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
+	trustHost: true,
 	adapter: DrizzleAdapter(db, {
 		usersTable: users,
 		accountsTable: accounts,
