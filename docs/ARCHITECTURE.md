@@ -9,6 +9,7 @@ Browser
   │
   ├─ GET /                    → +page.server.ts (graph data) → ForceGraph.svelte (D3, client-only)
   ├─ GET /notes               → +page.server.ts (all notes)
+  ├─ GET /notes/export        → +server.ts (zip all notes as Markdown)
   ├─ GET /notes/[slug]        → +page.server.ts (note + links + rendered HTML)
   ├─ POST /notes/new          → +page.server.ts action (insert + wikilink sync)
   ├─ POST /notes/[slug]/edit  → +page.server.ts actions (update / delete)
@@ -83,7 +84,9 @@ src/
     │   └── +server.ts          # Auth.js catch-all (GET + POST)
     ├── notes/
     │   ├── +page.server.ts     # List all notes + delete + import actions
-    │   ├── +page.svelte        # Notes grid with category filter + import panel
+    │   ├── +page.svelte        # Notes grid with category filter + import + export
+    │   ├── export/
+    │   │   └── +server.ts      # GET: zip all notes as Markdown files for download
     │   ├── new/
     │   │   ├── +page.server.ts # Create note action
     │   │   └── +page.svelte    # Create form

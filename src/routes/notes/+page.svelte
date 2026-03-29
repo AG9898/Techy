@@ -30,6 +30,7 @@
 			<button class="btn-import" onclick={() => (showImport = !showImport)}>
 				{showImport ? 'Close Import' : '↑ Import'}
 			</button>
+			<a href="/notes/export" class="btn-export">↓ Export</a>
 			<a href="/notes/new" class="btn-new">+ New Note</a>
 		</div>
 	</div>
@@ -142,6 +143,19 @@
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
+	}
+	.btn-export {
+		padding: 0.4rem 1rem;
+		background: #1e293b;
+		color: #94a3b8;
+		border: 1px solid #334155;
+		border-radius: 6px;
+		text-decoration: none;
+		font-size: 0.85rem;
+	}
+	.btn-export:hover {
+		background: #273449;
+		color: #cbd5e1;
 	}
 	.btn-new {
 		padding: 0.4rem 1rem;

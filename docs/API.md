@@ -34,6 +34,17 @@ Notes list with category filter chips and orphan detection.
 
 ---
 
+### `GET /notes/export`
+Download all notes as a zip archive of Markdown files.
+
+**Response:** `application/zip` binary with `Content-Disposition: attachment; filename="techy-notes-YYYY-MM-DD.zip"`
+
+Each note is serialised to `{slug}.md` with YAML frontmatter (`title`, `tags`, `aliases`, `category`, `status`) followed by the body. The format is compatible with `POST /notes?/import`.
+
+**Errors:** `500` on DB or zip failure
+
+---
+
 ### `GET /notes/new`
 Create note form. No server load data.
 

@@ -841,7 +841,7 @@
       "id": "NOTES-005",
       "group_id": "NOTES",
       "title": "Export all notes as a Markdown zip",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Export the full note library as Markdown files in a zip archive.",
