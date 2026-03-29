@@ -417,7 +417,7 @@
       "id": "AI-001",
       "group_id": "AI",
       "title": "Implement Claude API research endpoint",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire up POST /api/ai/research to call Claude with the RESEARCH_SYSTEM_PROMPT and return a Markdown note body.",

@@ -14,7 +14,7 @@ Browser
   ├─ POST /notes/[slug]/edit  → +page.server.ts actions (update / delete)
   ├─ GET /search              → +page.server.ts (ilike + arrayOverlaps query)
   ├─ GET /chat                → +page.svelte (planned assistant chat surface)
-  ├─ POST /api/ai/research    → +server.ts stub → [Claude / OpenAI]
+  ├─ POST /api/ai/research    → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
   ├─ POST /api/assistant/query → +server.ts (planned note-grounded assistant lookup)
   └─ /auth/[...auth]          → Auth.js catch-all (GitHub OAuth)
 ```
@@ -215,11 +215,18 @@ High-level visual direction, page composition, and theming guidance live in [`do
 
 ---
 
-## AI Integration (Planned)
+## AI Integration
 
-Two providers are scaffolded (`src/lib/ai/`). Both will share the same system prompts (`prompts.ts`) and be callable from:
-- `POST /api/ai/research` — returns draft body for a topic
-- `POST /api/ai/generate-note` — creates a full note and inserts it into the DB
+Two providers are scaffolded in `src/lib/ai/`:
+
+- **`claude.ts`** — live. `researchTopic(topic)` calls `claude-opus-4-6` using `@anthropic-ai/sdk` with `RESEARCH_SYSTEM_PROMPT` and returns a Markdown string. `ANTHROPIC_API_KEY` is read from `$env/static/private`.
+- **`chatgpt.ts`** — stub only (see AI-002).
+
+Both share system prompts from `prompts.ts` and are called from:
+- `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic (Claude live; provider param for GPT planned in AI-002)
+- `POST /api/ai/generate-note` — stub; creates a full note and inserts it into the DB (planned)
+
+Error handling in `/api/ai/research`: 400 for missing topic, 401 for invalid API key, 429 for rate limits, 500 for other failures.
 
 The `ai_generated`, `ai_model`, and `ai_prompt` columns on the `notes` table track provenance of AI-created content.
 

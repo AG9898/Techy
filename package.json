@@ -18,7 +18,6 @@
 		"cookie": "0.7.2"
 	},
 	"devDependencies": {
-		"@anthropic-ai/sdk": "^0.80.0",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
@@ -33,6 +32,7 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.80.0",
 		"@auth/drizzle-adapter": "^1.11.1",
 		"@auth/sveltekit": "^1.11.1",
 		"@neondatabase/serverless": "^1.0.2",
