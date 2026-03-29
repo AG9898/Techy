@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Dummy values satisfy $env/static/private at build time.
+      # Real secrets are never required to build — if this fails,
+      # a server-only module has leaked into the client bundle.
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
+          AUTH_SECRET: ci-secret
+          GITHUB_CLIENT_ID: ci-id
+          GITHUB_CLIENT_SECRET: ci-secret
+          ALLOWED_GITHUB_USERNAME: ci-user
+          AUTH_TRUST_HOST: "true"
+
+      - name: Type check
+        run: npm run check
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
+          AUTH_SECRET: ci-secret
+          GITHUB_CLIENT_ID: ci-id
+          GITHUB_CLIENT_SECRET: ci-secret
+          ALLOWED_GITHUB_USERNAME: ci-user
+          AUTH_TRUST_HOST: "true"

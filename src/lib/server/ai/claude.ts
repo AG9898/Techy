@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { RESEARCH_SYSTEM_PROMPT } from './prompts.js';
 
 /**
@@ -8,7 +8,7 @@ import { RESEARCH_SYSTEM_PROMPT } from './prompts.js';
  * @returns Markdown string for use as a note body
  */
 export async function researchTopic(topic: string): Promise<string> {
-	const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
 	const message = await client.messages.create({
 		model: 'claude-opus-4-6',
