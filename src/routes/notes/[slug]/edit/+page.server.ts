@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db/index.js';
-import { notes, noteLinks } from '$lib/server/db/schema.js';
+import { notes, noteLinks, noteRevisions } from '$lib/server/db/schema.js';
 import { and, eq, like, ne } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
@@ -13,11 +13,19 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	update: async ({ request, params }) => {
-		const [note] = await db
-			.select({ id: notes.id, title: notes.title })
-			.from(notes)
-			.where(eq(notes.slug, params.slug));
+		const [note] = await db.select().from(notes).where(eq(notes.slug, params.slug));
 		if (!note) return fail(404, { error: 'Note not found' });
+
+		// Snapshot current state as a revision before applying changes
+		await db.insert(noteRevisions).values({
+			noteId: note.id,
+			title: note.title,
+			body: note.body,
+			tags: note.tags,
+			aliases: note.aliases,
+			category: note.category,
+			status: note.status
+		});
 
 		const data = await request.formData();
 		const title = (data.get('title') as string)?.trim();

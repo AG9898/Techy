@@ -228,3 +228,29 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 - Tailwind is the styling foundation, not the visual identity
 - Melt UI should be used for behavior and accessibility primitives, not as a final visual theme
 - GSAP may be used as an optional motion layer for selected interactions, but animation remains subordinate to readability and tool-like clarity
+
+---
+
+## ADR-010: Dedicated note_revisions table for revision history
+
+**Date:** 2026-03-29
+**Status:** Accepted
+
+**Context:** NOTES-006 requires that editing a note preserves the previous version and that users can inspect earlier revisions.
+
+**Decision:** A dedicated `note_revisions` table captures the pre-update state of a note's `title`, `body`, `tags`, `aliases`, `category`, and `status` immediately before each `update` action fires. Revisions are immutable snapshots — they are never edited after insert.
+
+**Reasons:**
+- A separate table keeps the `notes` table unchanged and query-efficient; no nullable history columns or self-joins needed
+- `ON DELETE CASCADE` ties revision lifetime to the parent note — no orphan cleanup required
+- Snapshots are taken at the application layer (inside the edit action, before the `UPDATE` query) rather than via a database trigger, keeping the logic visible and testable in SvelteKit server code
+- Storing the full field set (not just a diff) makes reading any revision self-contained — no need to replay a chain of patches
+
+**Trade-offs:**
+- Storage grows with every save; not compacted. Acceptable for a personal notes app at the expected volume
+- No rollback/restore UI in this iteration — revisions are currently read-only snapshots
+
+**Rejected alternatives:**
+- Soft-delete + `deleted_at` column: supports only a single "prior version" and complicates note queries
+- JSON diff / patch column on the `notes` table: efficient storage but requires a patch-replay engine to render any revision
+- PostgreSQL audit trigger: keeps logic in the DB rather than the application, harder to maintain alongside Drizzle migrations

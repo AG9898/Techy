@@ -10,9 +10,11 @@ Browser
   ├─ GET /                    → +page.server.ts (graph data) → ForceGraph.svelte (D3, client-only)
   ├─ GET /notes               → +page.server.ts (all notes)
   ├─ GET /notes/export        → +server.ts (zip all notes as Markdown)
-  ├─ GET /notes/[slug]        → +page.server.ts (note + links + rendered HTML)
-  ├─ POST /notes/new          → +page.server.ts action (insert + wikilink sync)
-  ├─ POST /notes/[slug]/edit  → +page.server.ts actions (update / delete)
+  ├─ GET /notes/[slug]                  → +page.server.ts (note + links + rendered HTML)
+  ├─ GET /notes/[slug]/history          → +page.server.ts (revision list for note)
+  ├─ GET /notes/[slug]/history/[id]     → +page.server.ts (single revision, rendered HTML)
+  ├─ POST /notes/new                    → +page.server.ts action (insert + wikilink sync)
+  ├─ POST /notes/[slug]/edit            → +page.server.ts actions (snapshot + update / delete)
   ├─ GET /search              → +page.server.ts (ilike + arrayOverlaps query)
   ├─ GET /chat                → +page.svelte (planned assistant chat surface)
   ├─ POST /api/ai/research    → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
@@ -93,9 +95,15 @@ src/
     │   └── [slug]/
     │       ├── +page.server.ts # Load note + links + rendered HTML
     │       ├── +page.svelte    # Note detail view
-    │       └── edit/
-    │           ├── +page.server.ts  # Update + delete actions
-    │           └── +page.svelte     # Edit form
+    │       ├── edit/
+    │       │   ├── +page.server.ts  # Snapshot to revisions + update / delete actions
+    │       │   └── +page.svelte     # Edit form
+    │       └── history/
+    │           ├── +page.server.ts  # Load note + revision list (desc)
+    │           ├── +page.svelte     # Revision history list
+    │           └── [revisionId]/
+    │               ├── +page.server.ts  # Load revision + render HTML
+    │               └── +page.svelte     # Revision detail view
     ├── search/
     │   ├── +page.server.ts     # Search query (ilike + arrayOverlaps)
     │   └── +page.svelte        # Search form + results grid
@@ -141,6 +149,18 @@ note_links (
   id              uuid PK default gen_random_uuid(),
   source_note_id  uuid NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
   target_note_id  uuid NOT NULL REFERENCES notes(id) ON DELETE CASCADE
+)
+
+note_revisions (
+  id          uuid PK default gen_random_uuid(),
+  note_id     uuid NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  body        text NOT NULL default '',
+  tags        text[] NOT NULL default '{}',
+  aliases     text[] NOT NULL default '{}',
+  category    text,
+  status      text CHECK(status IN ('stub','growing','mature')) NOT NULL default 'stub',
+  revised_at  timestamp NOT NULL default now()
 )
 ```
 

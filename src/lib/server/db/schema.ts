@@ -93,8 +93,35 @@ export const noteLinks = pgTable('note_links', {
 		.references(() => notes.id, { onDelete: 'cascade' })
 });
 
+export const noteRevisions = pgTable('note_revisions', {
+	id: uuid('id')
+		.primaryKey()
+		.default(sql`gen_random_uuid()`),
+	noteId: uuid('note_id')
+		.notNull()
+		.references(() => notes.id, { onDelete: 'cascade' }),
+	title: text('title').notNull(),
+	body: text('body').notNull().default(''),
+	tags: text('tags')
+		.array()
+		.notNull()
+		.default(sql`'{}'::text[]`),
+	aliases: text('aliases')
+		.array()
+		.notNull()
+		.default(sql`'{}'::text[]`),
+	category: text('category'),
+	status: text('status', { enum: ['stub', 'growing', 'mature'] })
+		.notNull()
+		.default('stub'),
+	revisedAt: timestamp('revised_at', { mode: 'date' })
+		.notNull()
+		.default(sql`now()`)
+});
+
 // ── Inferred TypeScript types ─────────────────────────────────────────────────
 
 export type Note = typeof notes.$inferSelect;
 export type NewNote = typeof notes.$inferInsert;
 export type NoteLink = typeof noteLinks.$inferSelect;
+export type NoteRevision = typeof noteRevisions.$inferSelect;

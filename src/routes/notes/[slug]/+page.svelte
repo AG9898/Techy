@@ -20,6 +20,7 @@
 			>
 				{data.note.status}
 			</span>
+			<a href="/notes/{data.note.slug}/history" class="btn-history">History</a>
 			<a href="/notes/{data.note.slug}/edit" class="btn-edit">Edit</a>
 		</div>
 	</div>
@@ -99,6 +100,17 @@
 		padding: 0.2rem 0.6rem;
 		border-radius: 999px;
 		font-weight: 500;
+	}
+	.btn-history {
+		padding: 0.3rem 0.85rem;
+		background: transparent;
+		color: #64748b;
+		border-radius: 6px;
+		text-decoration: none;
+		font-size: 0.85rem;
+	}
+	.btn-history:hover {
+		color: #94a3b8;
 	}
 	.btn-edit {
 		padding: 0.3rem 0.85rem;

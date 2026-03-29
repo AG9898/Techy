@@ -78,6 +78,37 @@ Edit note form. Pre-populated with existing note data.
 
 ---
 
+### `GET /notes/[slug]/history`
+Revision history list for a note, ordered most-recent first.
+
+**Server load returns:**
+```ts
+{
+  note: { id, title, slug },
+  revisions: NoteRevision[]  // ordered by revisedAt DESC
+}
+```
+
+**Errors:** `404` if slug not found
+
+---
+
+### `GET /notes/[slug]/history/[revisionId]`
+Full content of a specific revision, rendered as HTML.
+
+**Server load returns:**
+```ts
+{
+  note: { id, title, slug },
+  revision: NoteRevision,
+  htmlBody: string           // rendered Markdown with wikilinks resolved
+}
+```
+
+**Errors:** `404` if slug or revisionId not found, or revision does not belong to this note
+
+---
+
 ### `GET /search`
 Search results page.
 

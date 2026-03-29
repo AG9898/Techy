@@ -866,7 +866,7 @@
       "id": "NOTES-006",
       "group_id": "NOTES",
       "title": "Note history and revision tracking",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "implementation",
       "summary": "Add revision history so note changes can be inspected or recovered.",
