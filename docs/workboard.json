@@ -193,7 +193,7 @@
       "blocked_by": [],
       "files": [
         "src/lib/ai/claude.ts",
-        "src/lib/ai/chatgpt.ts",
+        "src/lib/server/ai/chatgpt.ts",
         "src/lib/ai/prompts.ts",
         "src/routes/api/ai/research/+server.ts",
         "src/routes/api/ai/generate-note/+server.ts"
@@ -448,7 +448,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Wire up researchTopic() in chatgpt.ts using the OpenAI SDK.",
-      "description": "Implement researchTopic() and generateNote() in src/lib/ai/chatgpt.ts using the openai SDK. Add a provider param to /api/ai/research and /api/ai/generate-note so callers can choose Claude vs GPT. Move openai from devDependencies to dependencies.",
+      "description": "Implement researchTopic() and generateNote() in src/lib/server/ai/chatgpt.ts using the openai SDK. Read OPENAI_API_KEY via $env/dynamic/private (NOT $env/static/private) — same pattern as claude.ts. Add a provider param to /api/ai/research and /api/ai/generate-note so callers can choose Claude vs GPT. Move openai from devDependencies to dependencies.",
       "acceptance_criteria": [
         "POST /api/ai/research {topic: 'SvelteKit', provider: 'chatgpt'} returns a Markdown string",
         "Provider defaults to 'claude' when not specified"
@@ -456,7 +456,7 @@
       "depends_on": ["AI-001"],
       "blocked_by": [],
       "files": [
-        "src/lib/ai/chatgpt.ts",
+        "src/lib/server/ai/chatgpt.ts",
         "src/routes/api/ai/research/+server.ts",
         "src/routes/api/ai/generate-note/+server.ts",
         "package.json"
@@ -598,7 +598,7 @@
       "id": "AI-004",
       "group_id": "AI",
       "title": "Implement AI generate-note endpoint",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire up POST /api/ai/generate-note to generate a full note draft and persist it to the database.",
@@ -646,7 +646,7 @@
         "src/routes/api/ai/generate-note/+server.ts",
         "src/routes/notes/new/+page.svelte",
         "src/lib/ai/claude.ts",
-        "src/lib/ai/chatgpt.ts"
+        "src/lib/server/ai/chatgpt.ts"
       ],
       "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
       "notes": ["Keep provider choice per-request rather than global configuration."],
@@ -675,7 +675,7 @@
         "src/routes/api/ai/generate-note/+server.ts",
         "src/lib/server/db/schema.ts",
         "src/lib/ai/claude.ts",
-        "src/lib/ai/chatgpt.ts"
+        "src/lib/server/ai/chatgpt.ts"
       ],
       "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/NOTES.md"],
       "notes": ["The schema already includes these columns; this task is about consistent write-path behavior."],

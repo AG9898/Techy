@@ -17,8 +17,9 @@ Browser
   ├─ POST /notes/[slug]/edit            → +page.server.ts actions (snapshot + update / delete)
   ├─ GET /search              → +page.server.ts (ilike + arrayOverlaps query)
   ├─ GET /chat                → +page.svelte (planned assistant chat surface)
-  ├─ POST /api/ai/research    → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
-  ├─ POST /api/assistant/query → +server.ts (planned note-grounded assistant lookup)
+  ├─ POST /api/ai/research      → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
+  ├─ POST /api/ai/generate-note → +server.ts → generateNote() → Claude API → insert note + sync links
+  ├─ POST /api/assistant/query  → +server.ts (planned note-grounded assistant lookup)
   └─ /auth/[...auth]          → Auth.js catch-all (GitHub OAuth)
 ```
 
@@ -249,16 +250,19 @@ High-level visual direction, page composition, and theming guidance live in [`do
 
 ## AI Integration
 
-Two providers are scaffolded in `src/lib/ai/`:
+Two providers are scaffolded in `src/lib/server/ai/`:
 
-- **`claude.ts`** — live. `researchTopic(topic)` calls `claude-opus-4-6` using `@anthropic-ai/sdk` with `RESEARCH_SYSTEM_PROMPT` and returns a Markdown string. `ANTHROPIC_API_KEY` is read from `$env/static/private`.
+- **`claude.ts`** — live. Exports:
+  - `researchTopic(topic)` — calls `claude-opus-4-6` with `RESEARCH_SYSTEM_PROMPT`, returns a Markdown string.
+  - `generateNote(topic)` — calls `claude-opus-4-6` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
+  - `ANTHROPIC_API_KEY` is read from `$env/dynamic/private`.
 - **`chatgpt.ts`** — stub only (see AI-002).
 
 Both share system prompts from `prompts.ts` and are called from:
 - `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic (Claude live; provider param for GPT planned in AI-002)
-- `POST /api/ai/generate-note` — stub; creates a full note and inserts it into the DB (planned)
+- `POST /api/ai/generate-note` — live. Calls `generateNote()`, parses frontmatter, inserts note with `ai_generated=true`, syncs `[[wikilinks]]`, returns `{ note: { id, slug, title } }`. Returns 409 on slug/title conflict.
 
-Error handling in `/api/ai/research`: 400 for missing topic, 401 for invalid API key, 429 for rate limits, 500 for other failures.
+Error handling: 400 for missing/invalid input, 401 for invalid API key, 409 for duplicate slug or title, 429 for rate limits, 500 for other failures.
 
 The `ai_generated`, `ai_model`, and `ai_prompt` columns on the `notes` table track provenance of AI-created content.
 

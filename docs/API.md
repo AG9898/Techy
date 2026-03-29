@@ -263,8 +263,6 @@ HTTP `501`
 ### `POST /api/ai/generate-note`
 Generate a complete note and insert it into the database.
 
-**Status:** Stub — returns `501` until AI-001 / AI-002 are implemented.
-
 **Request body:**
 ```json
 {
@@ -273,18 +271,31 @@ Generate a complete note and insert it into the database.
 }
 ```
 
-**Response (planned):**
+| Field | Required | Values |
+|-------|----------|--------|
+| `topic` | yes | Any technology or concept name |
+| `provider` | no | `"claude"` (default; `"chatgpt"` planned in AI-002) |
+
+**Response (201):**
 ```json
 {
   "note": { "id": "...", "slug": "sveltekit", "title": "SvelteKit" }
 }
 ```
 
-**Current response:**
-```json
-{ "error": "AI note generation not yet implemented" }
-```
-HTTP `501`
+**Behaviour:**
+- Calls `generateNote(topic)` via `claude-opus-4-6` using `NOTE_GENERATION_SYSTEM_PROMPT`
+- Parses frontmatter (`title`, `category`, `tags`, `status`) from the generated Markdown
+- Derives slug with `slugify(title)`
+- Inserts the note with `ai_generated=true`, `ai_model='claude-opus-4-6'`, `ai_prompt=topic`
+- Parses `[[wikilinks]]` from the note body and syncs `note_links`
+
+**Errors:**
+- `400` — topic missing or empty
+- `401` — invalid or missing ANTHROPIC_API_KEY
+- `409` — slug or title already exists (body includes `conflictId`)
+- `429` — Claude rate limit exceeded
+- `500` — generation or DB failure
 
 ---
 
