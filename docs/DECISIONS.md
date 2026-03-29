@@ -172,7 +172,7 @@ See [`docs/NOTES.md`](NOTES.md) for hub categories, tag taxonomy, and schema.
 - Links are by title (not ID), so renaming a note breaks its incoming links
 - Requires a full title-to-slug map lookup on every save
 
-**Known limitation:** Renaming a note does not automatically update `[[wikilinks]]` in other notes' bodies. A future migration task (NOTES-005) should handle this.
+**Resolved limitation:** Renaming a note now automatically propagates the title change to `[[wikilinks]]` in all other notes' bodies. On save, if the title has changed, the edit action performs a `LIKE` search for `%[[oldTitle]]%` across all note bodies, replaces every occurrence with `[[newTitle]]`, updates those notes, and re-syncs their `note_links` rows. Implemented in NOTES-003.
 
 See [`docs/NOTES.md`](NOTES.md) for the full wikilink syntax, pipeline detail, and authoring rules.
 

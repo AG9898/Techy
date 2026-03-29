@@ -574,7 +574,7 @@
       "id": "NOTES-003",
       "group_id": "NOTES",
       "title": "Wikilink rename propagation",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "bug",
       "summary": "When a note title is renamed, update [[wikilinks]] in all other notes' bodies that reference the old title.",
