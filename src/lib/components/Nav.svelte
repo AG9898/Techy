@@ -41,12 +41,14 @@
 
 <nav class="site-nav">
 	<a href="/" class="nav-logo">Techy</a>
+
 	<div class="nav-links">
 		<a href="/">Graph</a>
 		<a href="/notes">Notes</a>
 		<a href="/notes/new">+ New</a>
 		<a href="/search">Search</a>
 	</div>
+
 	<div class="nav-controls">
 		<div class="theme-toggles">
 			{#each themes as t}
@@ -70,13 +72,14 @@
 			{/each}
 		</div>
 	</div>
+
 	<div class="nav-user">
 		{#if session?.user}
 			{#if session.user.image}
 				<img src={session.user.image} alt={session.user.name ?? 'User'} class="avatar" />
 			{/if}
 			<form method="POST" action="/auth/signout">
-				<button type="submit">Sign out</button>
+				<button type="submit" class="signout-btn">Sign out</button>
 			</form>
 		{/if}
 	</div>
@@ -84,67 +87,90 @@
 
 <style>
 	.site-nav {
+		position: sticky;
+		top: 0;
+		z-index: 50;
 		display: flex;
 		align-items: center;
 		gap: 1.5rem;
-		padding: 0.75rem 1.5rem;
-		background: var(--bg-surface);
-		color: var(--text-primary);
-		border-bottom: 1px solid var(--border-soft);
+		padding: 0 1.5rem;
 		height: 60px;
+		background: var(--bg-surface);
+		border-bottom: 1px solid var(--border-soft);
 	}
+
+	/* ── Logo ─────────────────────────────────────────────── */
 	.nav-logo {
 		font-weight: 700;
 		font-size: 1.1rem;
+		letter-spacing: -0.01em;
 		color: var(--accent-primary);
 		text-decoration: none;
 	}
+
+	/* ── Navigation links ─────────────────────────────────── */
 	.nav-links {
 		display: flex;
-		gap: 1rem;
+		gap: 0.125rem;
 		margin-left: auto;
 	}
+
 	.nav-links a {
 		color: var(--text-secondary);
 		text-decoration: none;
-		font-size: 0.9rem;
+		font-size: 0.875rem;
+		padding: 0.35rem 0.75rem;
+		border-radius: 9999px;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
+
 	.nav-links a:hover {
 		color: var(--text-primary);
+		background: var(--bg-raised);
 	}
+
+	/* ── Theme + accent controls ──────────────────────────── */
 	.nav-controls {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
+
 	.theme-toggles {
 		display: flex;
-		gap: 0.2rem;
+		gap: 0.125rem;
+		padding: 0.2rem;
+		background: var(--bg-base);
+		border: 1px solid var(--border-soft);
+		border-radius: 9999px;
 	}
+
 	.theme-btn {
 		background: none;
-		border: 1px solid var(--border-soft);
+		border: none;
 		color: var(--text-muted);
-		padding: 0.2rem 0.5rem;
-		border-radius: 999px;
+		padding: 0.2rem 0.55rem;
+		border-radius: 9999px;
 		cursor: pointer;
 		font-size: 0.7rem;
-		transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
+
 	.theme-btn:hover {
 		color: var(--text-primary);
-		border-color: var(--border-strong);
 	}
+
 	.theme-btn.active {
-		background: var(--bg-raised);
+		background: var(--bg-surface);
 		color: var(--accent-primary);
-		border-color: var(--accent-primary);
 	}
+
 	.accent-toggles {
 		display: flex;
 		gap: 0.35rem;
 		align-items: center;
 	}
+
 	.accent-dot {
 		width: 12px;
 		height: 12px;
@@ -155,34 +181,43 @@
 		padding: 0;
 		transition: transform 0.15s ease, border-color 0.15s ease;
 	}
+
 	.accent-dot:hover {
 		transform: scale(1.25);
 	}
+
 	.accent-dot.active {
 		border-color: var(--text-primary);
 		transform: scale(1.15);
 	}
+
+	/* ── User area ────────────────────────────────────────── */
 	.nav-user {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.625rem;
 	}
+
 	.avatar {
 		width: 28px;
 		height: 28px;
 		border-radius: 50%;
+		border: 1.5px solid var(--border-soft);
 	}
-	button[type='submit'] {
+
+	.signout-btn {
 		background: none;
-		border: 1px solid var(--border-strong);
-		color: var(--text-secondary);
+		border: 1px solid var(--border-soft);
+		color: var(--text-muted);
 		padding: 0.25rem 0.75rem;
-		border-radius: 4px;
+		border-radius: 9999px;
 		cursor: pointer;
-		font-size: 0.8rem;
+		font-size: 0.75rem;
+		transition: color 0.15s ease, border-color 0.15s ease;
 	}
-	button[type='submit']:hover {
-		color: var(--text-primary);
-		border-color: var(--text-muted);
+
+	.signout-btn:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
 	}
 </style>

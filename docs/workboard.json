@@ -235,7 +235,7 @@
       "id": "UI-002",
       "group_id": "UI",
       "title": "Global shell and navigation refresh",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refresh the shared shell and nav so the app feels soft, rounded, and spatial instead of card-heavy.",
@@ -247,7 +247,7 @@
         "The global shell does not make the home graph feel boxed in"
       ],
       "depends_on": ["UI-001", "FOUND-003"],
-      "blocked_by": ["UI-001"],
+      "blocked_by": [],
       "files": [
         "src/routes/+layout.svelte",
         "src/lib/components/Nav.svelte",
@@ -274,7 +274,7 @@
         "Motion on the home page remains restrained and purposeful"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-004"],
-      "blocked_by": ["UI-001", "UI-002"],
+      "blocked_by": ["UI-002"],
       "files": [
         "src/routes/+page.svelte",
         "src/lib/components/ForceGraph.svelte",
@@ -301,7 +301,7 @@
         "The overall notes experience avoids defaulting to a wall of generic cards"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-005", "FOUND-006"],
-      "blocked_by": ["UI-001", "UI-002"],
+      "blocked_by": ["UI-002"],
       "files": [
         "src/routes/notes/+page.svelte",
         "src/routes/notes/[slug]/+page.svelte",
@@ -330,7 +330,7 @@
         "The authoring UI does not regress existing form semantics or server-action behavior"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-005"],
-      "blocked_by": ["UI-001", "UI-002"],
+      "blocked_by": ["UI-002"],
       "files": [
         "src/routes/notes/new/+page.svelte",
         "src/routes/notes/[slug]/edit/+page.svelte",
@@ -357,7 +357,7 @@
         "The page has sensible empty and loading placeholder states for future assistant wiring"
       ],
       "depends_on": ["UI-001", "UI-002", "FOUND-003"],
-      "blocked_by": ["UI-001", "UI-002"],
+      "blocked_by": ["UI-002"],
       "files": [
         "src/routes/chat/+page.svelte",
         "src/routes/chat/+page.server.ts",
@@ -385,7 +385,7 @@
         "Notes persist across deployments (Neon DB connected)"
       ],
       "depends_on": ["FOUND-003", "DEPLOY-002"],
-      "blocked_by": ["DEPLOY-002"],
+      "blocked_by": [],
       "files": [],
       "docs": ["docs/SETUP.md"],
       "notes": [],
@@ -454,7 +454,7 @@
         "Provider defaults to 'claude' when not specified"
       ],
       "depends_on": ["AI-001"],
-      "blocked_by": ["AI-001"],
+      "blocked_by": [],
       "files": [
         "src/lib/ai/chatgpt.ts",
         "src/routes/api/ai/research/+server.ts",
@@ -482,7 +482,7 @@
         "Submitted note has ai_generated=true in the database"
       ],
       "depends_on": ["AI-001", "UI-005"],
-      "blocked_by": ["AI-001", "UI-005"],
+      "blocked_by": ["UI-005"],
       "files": [
         "src/routes/notes/new/+page.svelte",
         "src/routes/notes/new/+page.server.ts"
@@ -610,7 +610,7 @@
         "Duplicate slug or title conflicts are handled gracefully"
       ],
       "depends_on": ["AI-001", "FOUND-005"],
-      "blocked_by": ["AI-001"],
+      "blocked_by": [],
       "files": [
         "src/lib/ai/claude.ts",
         "src/lib/ai/prompts.ts",
@@ -905,7 +905,7 @@
         "Requests with no good match return a clear not-found response"
       ],
       "depends_on": ["FOUND-005", "FOUND-006", "AI-001"],
-      "blocked_by": ["AI-001"],
+      "blocked_by": [],
       "files": [
         "src/routes/api/assistant/query/+server.ts",
         "src/lib/server/db/index.ts",

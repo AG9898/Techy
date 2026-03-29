@@ -110,7 +110,7 @@ Typography should still lean closer to polished docs pages than to a typical das
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  Nav: [Techy]        [Graph] [Notes] [+ New] [Search]  [😊▼] │  60px height
+│  Nav: [Techy]  [Graph] [Notes] [+ New] [Search]  [Night▾] ●●●●  [😊] [Sign out] │  60px, sticky
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │  <main class="page-content">                               │
@@ -119,7 +119,9 @@ Typography should still lean closer to polished docs pages than to a typical das
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Exception:** The home (graph) page uses `position: fixed` to fill the viewport below the nav, bypassing the `page-content` container.
+**Nav positioning:** `position: sticky; top: 0; z-index: 50` — stays in view as bounded pages scroll.
+
+**Full-bleed exception:** The home (graph) page uses `position: fixed; top: 60px` to fill the viewport below the sticky nav, bypassing the `page-content` container. All controls, legends, and filters on that page appear as floating overlays.
 
 ### Page Layouts
 
@@ -169,10 +171,12 @@ Chat should use familiar AI product conventions, but visually remain part of the
 ## Components
 
 ### `Nav.svelte`
-- Left: logo `Techy` (accent-blue-light)
-- Centre: navigation links (text-secondary, hover: text-primary)
-- Right: avatar image + sign-out form
-- Height: ~60px, background: bg-surface, border-bottom: border
+- Position: `sticky; top: 0; z-index: 50`
+- Height: 60px, background: `bg-surface`, border-bottom: `border-soft`
+- Left: logo `Techy` (accent-primary, bold, `letter-spacing: -0.01em`)
+- Centre (pushed right with `margin-left: auto`): navigation links — pill hover states (`bg-raised` background, `border-radius: 9999px`, padding `0.35rem 0.75rem`), text-secondary at rest, text-primary on hover
+- Right controls: theme pill-group (theme buttons wrapped in a `bg-base + border-soft` pill container; active button gets `bg-surface + accent-primary` text) + accent dot row (12×12px circles, active shows text-primary border)
+- Far right user area: avatar (28×28px, `border-radius: 50%`, soft `border-soft` border) + pill sign-out button (`border-radius: 9999px`, border-soft border, text-muted at rest, text-secondary on hover)
 
 ### `NoteCard.svelte`
 - Background: bg-surface, border: border, border-radius: 8px
