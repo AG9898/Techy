@@ -19,7 +19,7 @@ Browser
   ├─ GET /chat                → +page.svelte (planned assistant chat surface)
   ├─ POST /api/ai/research      → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
   ├─ POST /api/ai/generate-note → +server.ts → generateNote() → Claude API → insert note + sync links
-  ├─ POST /api/assistant/query  → +server.ts (planned note-grounded assistant lookup)
+  ├─ POST /api/assistant/query  → +server.ts → queryAssistant() → Claude API (claude-opus-4-6)
   └─ /auth/[...auth]          → Auth.js catch-all (GitHub OAuth)
 ```
 
@@ -255,12 +255,14 @@ Two providers are scaffolded in `src/lib/server/ai/`:
 - **`claude.ts`** — live. Exports:
   - `researchTopic(topic)` — calls `claude-opus-4-6` with `RESEARCH_SYSTEM_PROMPT`, returns a Markdown string.
   - `generateNote(topic)` — calls `claude-opus-4-6` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
+  - `queryAssistant(note, userQuery, existingTopics)` — calls `claude-opus-4-6` with `ASSISTANT_QUERY_SYSTEM_PROMPT`; returns `{ summary, possibleGaps, newTopicIdeas }` as parsed JSON.
   - `ANTHROPIC_API_KEY` is read from `$env/dynamic/private`.
 - **`chatgpt.ts`** — stub only (see AI-002).
 
-Both share system prompts from `prompts.ts` and are called from:
+All share system prompts from `prompts.ts` and are called from:
 - `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic (Claude live; provider param for GPT planned in AI-002)
 - `POST /api/ai/generate-note` — live. Calls `generateNote()`, parses frontmatter, inserts note with `ai_generated=true`, syncs `[[wikilinks]]`, returns `{ note: { id, slug, title } }`. Returns 409 on slug/title conflict.
+- `POST /api/assistant/query` — live. Resolves a natural-language query to an existing note via 5-tier matching (exact title → exact alias → title-in-query → alias-in-query → partial title), then calls `queryAssistant()` to produce a grounded summary with gap suggestions and 3 new topic ideas.
 
 Error handling: 400 for missing/invalid input, 401 for invalid API key, 409 for duplicate slug or title, 429 for rate limits, 500 for other failures.
 
@@ -268,26 +270,24 @@ The `ai_generated`, `ai_model`, and `ai_prompt` columns on the `notes` table tra
 
 ---
 
-## Note Assistant (Planned)
+## Note Assistant
 
-The assistant layer is intended to sit on top of the existing notes table rather than replace it. Its primary responsibilities are:
+The assistant layer sits on top of the existing notes table. Implemented at `POST /api/assistant/query`.
 
-- resolve a natural-language request such as "tell me about SvelteKit" to an existing note
-- return a linkable note match by title or alias
-- generate a concise summary grounded in the saved note content
-- suggest possible additions that may strengthen the note, clearly labeled as suggestions
-- suggest exactly 3 adjacent topics that are not already present as note titles or aliases
+**Retrieval flow:**
 
-Planned retrieval flow:
+1. The query string is matched against existing notes using a 5-tier cascade (most-exact-first):
+   - Exact title match (case-insensitive SQL `LOWER(title) = $query`)
+   - Exact alias match (`UNNEST(aliases)` with `LOWER(a) = $query`)
+   - Title appears in query (`LOWER($query) LIKE '%' || LOWER(title) || '%'`)
+   - Any alias appears in query (same pattern with unnested aliases)
+   - Partial title `ilike` fallback
+2. The matched note's body is passed to `queryAssistant()` alongside all existing note titles and aliases.
+3. `claude-opus-4-6` returns a JSON object with `summary`, `possibleGaps`, and `newTopicIdeas`.
+4. The handler validates the JSON shape and returns the structured response.
 
-1. Parse the user query and extract the likely target topic.
-2. Search `notes.title` first, then `notes.aliases`, with exact matches preferred over partial matches.
-3. Load the matched note plus lightweight metadata needed for context, such as category, tags, and linked notes.
-4. Pass the matched note content and the full set of existing titles and aliases into the assistant prompt.
-5. Return a structured response containing the note link, grounded summary, possible gaps, and 3 new-topic recommendations.
+**Grounding rules (enforced by `ASSISTANT_QUERY_SYSTEM_PROMPT`):**
 
-Grounding rules:
-
-- The summary should reflect the saved note first, not general model knowledge presented as if it came from the graph.
-- Any "missing" areas should be phrased as likely additions, expansion ideas, or underdeveloped sections.
-- New-topic recommendations must be de-duplicated against existing note titles and aliases before returning them.
+- The summary reflects only what is stated in the note; general model knowledge is not added.
+- Gap suggestions are phrased as possible additions, not confirmed omissions.
+- New-topic recommendations are exactly 3 and must not duplicate any existing note title or alias.

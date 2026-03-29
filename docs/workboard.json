@@ -893,7 +893,7 @@
       "id": "ASSIST-001",
       "group_id": "ASSIST",
       "title": "Natural-language note lookup and grounded summary",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Implement POST /api/assistant/query to resolve an existing note and return a note-grounded summary.",

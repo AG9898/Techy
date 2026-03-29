@@ -302,8 +302,6 @@ Generate a complete note and insert it into the database.
 ### `POST /api/assistant/query`
 Look up an existing note from a natural-language request and return a note-grounded assistant response.
 
-**Status:** Planned — not implemented yet.
-
 **Request body:**
 ```json
 {
@@ -315,7 +313,7 @@ Look up an existing note from a natural-language request and return a note-groun
 |-------|----------|--------|
 | `query` | yes | Natural-language request that should resolve to an existing note |
 
-**Response (planned):**
+**Response (200):**
 ```json
 {
   "matchedNote": {
@@ -337,16 +335,23 @@ Look up an existing note from a natural-language request and return a note-groun
 }
 ```
 
-**Planned behaviour:**
-- Resolve the target note primarily by title and aliases
-- `summary` should be grounded in the saved note content, not a free-form answer detached from the knowledge base
-- `possibleGaps` must be presented as suggested additions or underdeveloped areas, not guaranteed omissions
-- `newTopicIdeas` must contain exactly 3 suggestions
-- `newTopicIdeas` must exclude topics that already exist as note titles or aliases
+**Behaviour:**
+- Note resolution uses a 5-tier matching cascade (most-to-least exact):
+  1. Exact title match (case-insensitive)
+  2. Exact alias match (case-insensitive)
+  3. Title appears anywhere in the query (handles "tell me about SvelteKit" → note titled "SvelteKit")
+  4. Any alias appears anywhere in the query
+  5. Partial title ilike match (fallback)
+- `summary` is grounded in the saved note content, produced by `claude-opus-4-6` via `ASSISTANT_QUERY_SYSTEM_PROMPT`
+- `possibleGaps` are phrased as suggested additions or underdeveloped areas, not guaranteed omissions; may be `[]`
+- `newTopicIdeas` contains exactly 3 suggestions; topics already present as note titles or aliases are excluded before the AI call
 
-**Errors (planned):**
-- `400` — query missing
+**Errors:**
+- `400` — query missing or empty
+- `401` — invalid or missing ANTHROPIC_API_KEY
 - `404` — no matching note found
+- `429` — Claude rate limit exceeded
+- `500` — AI call or JSON parsing failure
 
 ---
 
