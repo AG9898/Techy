@@ -27,11 +27,11 @@
 	<div class="page-header">
 		<h1>Notes</h1>
 		<div class="header-actions">
-			<button class="btn-import" onclick={() => (showImport = !showImport)}>
+			<button class="btn-secondary" onclick={() => (showImport = !showImport)}>
 				{showImport ? 'Close Import' : '↑ Import'}
 			</button>
-			<a href="/notes/export" class="btn-export">↓ Export</a>
-			<a href="/notes/new" class="btn-new">+ New Note</a>
+			<a href="/notes/export" class="btn-secondary">↓ Export</a>
+			<a href="/notes/new" class="btn-primary">+ New Note</a>
 		</div>
 	</div>
 
@@ -137,54 +137,47 @@
 	h1 {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #e2e8f0;
+		color: var(--text-primary);
 	}
 	.header-actions {
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
 	}
-	.btn-export {
-		padding: 0.4rem 1rem;
-		background: #1e293b;
-		color: #94a3b8;
-		border: 1px solid #334155;
+	.btn-secondary {
+		padding: 0.35rem 0.9rem;
+		background: var(--bg-surface);
+		color: var(--text-muted);
+		border: 1px solid var(--border-soft);
 		border-radius: 6px;
 		text-decoration: none;
-		font-size: 0.85rem;
-	}
-	.btn-export:hover {
-		background: #273449;
-		color: #cbd5e1;
-	}
-	.btn-new {
-		padding: 0.4rem 1rem;
-		background: #1e3a5f;
-		color: #7dd3fc;
-		border-radius: 6px;
-		text-decoration: none;
-		font-size: 0.85rem;
-	}
-	.btn-new:hover {
-		background: #1e40af;
-	}
-	.btn-import {
-		padding: 0.4rem 1rem;
-		background: #1e293b;
-		color: #94a3b8;
-		border: 1px solid #334155;
-		border-radius: 6px;
-		font-size: 0.85rem;
+		font-size: 0.82rem;
 		cursor: pointer;
+		font-family: inherit;
+		transition: color 0.15s, border-color 0.15s;
 	}
-	.btn-import:hover {
-		background: #273449;
-		color: #cbd5e1;
+	.btn-secondary:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
+	}
+	.btn-primary {
+		padding: 0.35rem 0.9rem;
+		background: var(--bg-raised);
+		color: var(--accent-primary);
+		border: 1px solid var(--border-soft);
+		border-radius: 6px;
+		text-decoration: none;
+		font-size: 0.82rem;
+		font-weight: 500;
+		transition: border-color 0.15s;
+	}
+	.btn-primary:hover {
+		border-color: var(--border-strong);
 	}
 	.import-panel {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		border-radius: 8px;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 10px;
 		padding: 1rem 1.25rem;
 		display: flex;
 		flex-direction: column;
@@ -197,39 +190,40 @@
 		flex-wrap: wrap;
 	}
 	.import-label {
-		color: #94a3b8;
+		color: var(--text-secondary);
 		font-size: 0.85rem;
 	}
 	.import-input {
-		color: #cbd5e1;
+		color: var(--text-secondary);
 		font-size: 0.85rem;
 		flex: 1;
 		min-width: 0;
 	}
 	.btn-submit {
 		padding: 0.35rem 0.9rem;
-		background: #1e3a5f;
-		color: #7dd3fc;
+		background: var(--bg-raised);
+		color: var(--accent-primary);
 		border: none;
 		border-radius: 6px;
 		font-size: 0.85rem;
 		cursor: pointer;
 		white-space: nowrap;
+		font-family: inherit;
 	}
 	.btn-submit:hover {
-		background: #1e40af;
+		opacity: 0.85;
 	}
 	.import-result {
 		font-size: 0.85rem;
 	}
 	.result-success {
-		color: #4ade80;
+		color: var(--accent-green);
 		margin: 0;
 	}
 	.result-errors {
 		margin: 0.25rem 0 0;
 		padding-left: 1.25rem;
-		color: #fca5a5;
+		color: var(--accent-red);
 		list-style: disc;
 	}
 	.result-errors li {
@@ -237,51 +231,60 @@
 	}
 	.err-file {
 		font-family: monospace;
-		color: #fbbf24;
+		color: var(--accent-primary);
 	}
 	.result-empty {
-		color: #64748b;
+		color: var(--text-muted);
 		margin: 0;
 	}
 	.import-error {
-		color: #fca5a5;
+		color: var(--accent-red);
 		font-size: 0.85rem;
 		margin: 0;
 	}
 	.category-filters {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: 0.4rem;
 	}
 	.chip {
-		padding: 0.25rem 0.75rem;
-		background: #1e293b;
-		color: #94a3b8;
-		border: 1px solid #334155;
+		padding: 0.25rem 0.7rem;
+		background: var(--bg-surface);
+		color: var(--text-muted);
+		border: 1px solid var(--border-soft);
 		border-radius: 999px;
-		font-size: 0.8rem;
+		font-size: 0.78rem;
 		cursor: pointer;
+		font-family: inherit;
+		transition: color 0.15s, border-color 0.15s, background 0.15s;
+	}
+	.chip:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
 	}
 	.chip.active {
-		background: #1e3a5f;
-		color: #7dd3fc;
-		border-color: #1d4ed8;
+		background: color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+		color: var(--accent-primary);
+		border-color: var(--border-strong);
 	}
 	.chip-orphan {
-		color: #fbbf24;
-		border-color: #92400e;
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
 	}
 	.chip-orphan.active {
-		background: #451a03;
-		color: #fcd34d;
-		border-color: #b45309;
+		background: color-mix(in srgb, var(--accent-strong) 15%, var(--bg-surface));
+		color: var(--accent-strong);
+		border-color: var(--border-strong);
 	}
 	.notes-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 1rem;
+		gap: 0.75rem;
 	}
 	.empty {
-		color: #64748b;
+		color: var(--text-muted);
+	}
+	.empty a {
+		color: var(--accent-primary);
 	}
 </style>

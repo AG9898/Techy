@@ -131,32 +131,35 @@ The home page should preserve the feeling of a full environment rather than a bo
 
 **Notes List:**
 ```
-[Page header: "Notes"                   [+ New Note] ]
-[Category filter chips                              ]
-[Grid: auto-fill minmax(280px, 1fr)                 ]
+[Page header: "Notes"   [↑ Import] [↓ Export] [+ New Note] ]
+[Category filter chips (pill row)                          ]
+[Grid: auto-fill minmax(280px, 1fr), gap 0.75rem           ]
 ```
+Header actions: Import (toggle import panel) and Export are secondary buttons (`bg-surface + border-soft`); New Note is a primary button (`bg-raised + accent-primary text`). Category chips use `border-radius: 999px`; active chip gets accent tint via `color-mix`.
 
 **Note Detail:**
 ```
-[← Notes                          [status] [Edit] ]
-[h1: Title                                        ]
-[category badge] [tags...] [ai badge?] [date      ]
-[──────────────────────────────────────────────────]
-[  Rendered Markdown body                          ]
-[──────────────────────────────────────────────────]
-[Links to: ...    |   Linked from: ...             ]
+[← Notes                     [status badge] [History] [Edit] ]
+[h1: Title                                                   ]
+[category badge] [tag chips...] [ai badge?] [date            ]
+[─────────────────────────────────────────────────────────── ]
+[  Rendered Markdown body (max-width 720px, line-height 1.75)]
+[─────────────────────────────────────────────────────────── ]
+[Links to: ...    |   Linked from: ...                       ]
 ```
+Meta row sits between title and body, separated from body by a `border-soft` bottom border. Category badge uses `color-mix(in srgb, accent-primary 12%, bg-surface)` background. AI badge uses `color-mix(in srgb, accent-purple 15%, transparent)`. Status badge in header uses `data-status` attribute + `color-mix` (same pattern as NoteCard). History and Edit are secondary buttons (`bg-surface + border-soft`). Body prose: `font-size: 0.92rem`, `line-height: 1.75`, `color: text-secondary`. Relations section has `border-top: border-soft` and sits below the body.
 
 **Create / Edit Note:** Single-column form, max-width 720px, centred.
 
 **Search:**
 ```
-[h1: Search                                       ]
-[────────────────────── [Search] ]
-[Tags input ] [Category input   ]
-[N results                                        ]
-[Grid: results                                    ]
+[ search-command surface (bg-surface, border-soft, border-radius 12px)  ]
+[   [ search input (bg-raised)              ] [ Search button ]          ]
+[   [ TAGS label / input ] [ CATEGORY label / input ]                    ]
+[ N results                                                              ]
+[ Grid: results (auto-fill minmax(280px, 1fr), gap 0.75rem)             ]
 ```
+The search and filter controls are wrapped in a single rounded surface (`bg-surface`, `border-soft`, `border-radius: 12px`) to feel like a command area. Search input uses `bg-raised`, `font-size: 1rem`. Search button uses `accent-strong` background with `#fff` text. Filter labels use uppercase `text-muted` heading text (`font-size: 0.7rem`). No page `h1` heading — the command surface itself is the visual anchor.
 
 **Chat (Planned):**
 ```
@@ -179,12 +182,13 @@ Chat should use familiar AI product conventions, but visually remain part of the
 - Far right user area: avatar (28×28px, `border-radius: 50%`, soft `border-soft` border) + pill sign-out button (`border-radius: 9999px`, border-soft border, text-muted at rest, text-secondary on hover)
 
 ### `NoteCard.svelte`
-- Background: bg-surface, border: border, border-radius: 8px
-- Hover: border-color → border-hover
-- Header row: title (bold, text-primary) + status badge (right-aligned)
-- Second row: category (text-secondary, smaller)
-- Tags row: tag chips (bg-raised, text-muted)
-- Footer: date (text-subtle)
+- Background: `bg-surface`, border: `border-soft`, `border-radius: 10px`
+- Hover: `border-color → border-strong`, `background → bg-raised`
+- Header row: title (`font-weight: 600`, `text-primary`, `font-size: 0.9rem`) + status badge (right-aligned, `flex-shrink: 0`)
+- Status badge: `border-radius: 999px`, color and background set via `data-status` CSS attribute selector + `color-mix(in srgb, var(--graph-node-*) 15%, transparent)` — themed correctly across all themes
+- Second row: category (`accent-primary`, `font-weight: 500`, `font-size: 0.75rem`) — no background
+- Tags row: tag chips (`bg-raised`, `text-muted`, `border-radius: 4px`)
+- Footer: date (`text-subtle`, `font-size: 0.68rem`)
 
 Note cards should be used where repetition is the honest content pattern. They should not become the default wrapper for every page section.
 

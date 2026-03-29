@@ -6,47 +6,49 @@
 </script>
 
 <div class="search-page">
-	<h1>Search</h1>
-
-	<form method="GET" class="search-form">
-		<div class="search-row">
-			<input
-				type="text"
-				name="q"
-				value={data.q}
-				placeholder="Search by title or category..."
-				class="search-input"
-			/>
-			<button type="submit" class="btn-search">Search</button>
-		</div>
-		<div class="filter-row">
-			<label class="filter-label">
-				<span>Tags</span>
+	<div class="search-command">
+		<form method="GET" class="search-form">
+			<div class="search-row">
 				<input
 					type="text"
-					name="tags"
-					value={data.tagsParam}
-					placeholder="svelte, typescript (comma-separated)"
-					class="filter-input"
+					name="q"
+					value={data.q}
+					placeholder="Search notes..."
+					class="search-input"
 				/>
-			</label>
-			<label class="filter-label">
-				<span>Category</span>
-				<input
-					type="text"
-					name="category"
-					value={data.category}
-					placeholder="Web Frameworks"
-					class="filter-input"
-				/>
-			</label>
-		</div>
-	</form>
+				<button type="submit" class="btn-search">Search</button>
+			</div>
+			<div class="filter-row">
+				<label class="filter-label">
+					<span class="filter-name">Tags</span>
+					<input
+						type="text"
+						name="tags"
+						value={data.tagsParam}
+						placeholder="svelte, typescript"
+						class="filter-input"
+					/>
+				</label>
+				<label class="filter-label">
+					<span class="filter-name">Category</span>
+					<input
+						type="text"
+						name="category"
+						value={data.category}
+						placeholder="Web Frameworks"
+						class="filter-input"
+					/>
+				</label>
+			</div>
+		</form>
+	</div>
 
 	{#if data.q || data.tagsParam || data.category}
-		<p class="result-count">
-			{data.results.length} result{data.results.length !== 1 ? 's' : ''}
-		</p>
+		<div class="results-header">
+			<span class="result-count">
+				{data.results.length} result{data.results.length !== 1 ? 's' : ''}
+			</span>
+		</div>
 
 		{#if data.results.length === 0}
 			<p class="empty">No notes match your search.</p>
@@ -72,12 +74,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		max-width: 900px;
+		max-width: 860px;
 	}
-	h1 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #e2e8f0;
+	.search-command {
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 12px;
+		padding: 1.25rem 1.5rem;
 	}
 	.search-form {
 		display: flex;
@@ -86,33 +89,38 @@
 	}
 	.search-row {
 		display: flex;
-		gap: 0.75rem;
+		gap: 0.6rem;
 	}
 	.search-input {
 		flex: 1;
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		color: #e2e8f0;
-		border-radius: 6px;
-		padding: 0.6rem 0.75rem;
-		font-size: 0.95rem;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
+		color: var(--text-primary);
+		border-radius: 8px;
+		padding: 0.65rem 1rem;
+		font-size: 1rem;
 		font-family: inherit;
+		transition: border-color 0.15s;
 	}
 	.search-input:focus {
 		outline: none;
-		border-color: #1d4ed8;
+		border-color: var(--border-strong);
 	}
 	.btn-search {
-		padding: 0.6rem 1.25rem;
-		background: #1d4ed8;
+		padding: 0.65rem 1.25rem;
+		background: var(--accent-strong);
 		color: #fff;
 		border: none;
-		border-radius: 6px;
+		border-radius: 8px;
 		cursor: pointer;
 		font-size: 0.9rem;
+		font-family: inherit;
+		font-weight: 500;
+		white-space: nowrap;
+		transition: opacity 0.15s;
 	}
 	.btn-search:hover {
-		background: #2563eb;
+		opacity: 0.85;
 	}
 	.filter-row {
 		display: flex;
@@ -121,34 +129,44 @@
 	.filter-label {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
+		gap: 0.2rem;
 		flex: 1;
-		font-size: 0.8rem;
-		color: #64748b;
+	}
+	.filter-name {
+		font-size: 0.7rem;
+		color: var(--text-muted);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 	.filter-input {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		color: #e2e8f0;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
+		color: var(--text-primary);
 		border-radius: 6px;
-		padding: 0.45rem 0.65rem;
+		padding: 0.4rem 0.65rem;
 		font-size: 0.85rem;
 		font-family: inherit;
+		transition: border-color 0.15s;
 	}
 	.filter-input:focus {
 		outline: none;
-		border-color: #1d4ed8;
+		border-color: var(--border-strong);
+	}
+	.results-header {
+		display: flex;
+		align-items: center;
 	}
 	.result-count {
-		font-size: 0.85rem;
-		color: #64748b;
+		font-size: 0.82rem;
+		color: var(--text-muted);
 	}
 	.empty {
-		color: #64748b;
+		color: var(--text-muted);
 	}
 	.results-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 1rem;
+		gap: 0.75rem;
 	}
 </style>

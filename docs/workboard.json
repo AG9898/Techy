@@ -289,7 +289,7 @@
       "id": "UI-004",
       "group_id": "UI",
       "title": "Notes browse and detail experience refresh",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refresh search, notes list, and note detail so they feel like a clean docs flow rather than a dashboard grid.",
