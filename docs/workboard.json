@@ -374,7 +374,7 @@
       "id": "DEPLOY-001",
       "group_id": "DEPLOY",
       "title": "Deploy to Vercel",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "ops",
       "summary": "Deploy the app to Vercel with all environment variables configured.",

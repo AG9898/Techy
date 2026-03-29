@@ -122,13 +122,26 @@ npm run check
 
 ## Deployment (Vercel)
 
-1. Push to GitHub
-2. Import the repo in Vercel
-3. Add all environment variables from `.env` in Vercel's project settings
-4. Update the GitHub OAuth App callback URL to your Vercel production domain
-5. Deploy — `adapter-auto` will detect Vercel automatically
+1. Push the repo to GitHub
+2. Go to [vercel.com](https://vercel.com) → **Add New Project** → import the repo
+3. In **Project Settings → Environment Variables**, add every variable from `.env`:
 
-**Note:** Use the Neon **pooled** connection string for the `DATABASE_URL` in production. The direct connection string does not work reliably in serverless environments.
+   | Variable | Notes |
+   |----------|-------|
+   | `AUTH_SECRET` | Generate with `openssl rand -hex 32` |
+   | `GITHUB_CLIENT_ID` | From your production GitHub OAuth App |
+   | `GITHUB_CLIENT_SECRET` | From your production GitHub OAuth App |
+   | `ALLOWED_GITHUB_USERNAME` | Your GitHub login (case-sensitive) |
+   | `DATABASE_URL` | Neon **pooled** connection string (see below) |
+   | `AUTH_TRUST_HOST` | Set to `true` — required on Vercel so Auth.js trusts the host header |
+
+4. Create a second GitHub OAuth App (or update the existing one) with:
+   - **Callback URL:** `https://<your-vercel-domain>/auth/callback/github`
+5. Click **Deploy** — `adapter-auto` detects Vercel automatically
+
+**Important:** Use the Neon **pooled** connection string for `DATABASE_URL` in production. The direct connection string does not work reliably in serverless environments.
+
+**Build note:** The build requires `DATABASE_URL` to be set in the Vercel environment variables — the DB client is initialised at module load time. Vercel injects env vars into the build, so this works automatically once the variable is configured.
 
 ---
 
@@ -149,6 +162,7 @@ Opens Drizzle Studio at http://local.drizzle.studio — a GUI for browsing and e
 | `DATABASE_URL environment variable is not set` | `.env` file missing or not loaded |
 | `AccessDenied` on GitHub sign-in | `ALLOWED_GITHUB_USERNAME` doesn't match your GitHub login (case-sensitive) |
 | `AUTH_SECRET` errors | Run `openssl rand -hex 32` and set the output as `AUTH_SECRET` |
+| CSRF / bad request errors on Vercel sign-in | `AUTH_TRUST_HOST` env var not set to `true` in Vercel settings |
 | D3 graph blank in production | Check browser console — likely a CSP issue with inline SVG |
 | Wikilinks show as broken (red) | The linked note's title must match exactly — check capitalisation. See [`docs/NOTES.md`](NOTES.md). |
 
