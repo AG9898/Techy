@@ -257,11 +257,14 @@ Two providers are scaffolded in `src/lib/server/ai/`:
   - `generateNote(topic)` — calls `claude-opus-4-6` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
   - `queryAssistant(note, userQuery, existingTopics)` — calls `claude-opus-4-6` with `ASSISTANT_QUERY_SYSTEM_PROMPT`; returns `{ summary, possibleGaps, newTopicIdeas }` as parsed JSON.
   - `ANTHROPIC_API_KEY` is read from `$env/dynamic/private`.
-- **`chatgpt.ts`** — stub only (see AI-002).
+- **`chatgpt.ts`** — live. Exports:
+  - `researchTopic(topic)` — calls `gpt-4o` with `RESEARCH_SYSTEM_PROMPT`, returns a Markdown string.
+  - `generateNote(topic)` — calls `gpt-4o` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
+  - `OPENAI_API_KEY` is read from `$env/dynamic/private`.
 
 All share system prompts from `prompts.ts` and are called from:
-- `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic (Claude live; provider param for GPT planned in AI-002)
-- `POST /api/ai/generate-note` — live. Calls `generateNote()`, parses frontmatter, inserts note with `ai_generated=true`, syncs `[[wikilinks]]`, returns `{ note: { id, slug, title } }`. Returns 409 on slug/title conflict.
+- `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic. Accepts optional `provider: 'claude' | 'chatgpt'` (defaults to `'claude'`).
+- `POST /api/ai/generate-note` — live. Accepts optional `provider: 'claude' | 'chatgpt'` (defaults to `'claude'`). Calls the chosen provider's `generateNote()`, parses frontmatter, inserts note with `ai_generated=true` and `ai_model` set to the provider's model, syncs `[[wikilinks]]`, returns `{ note: { id, slug, title } }`. Returns 409 on slug/title conflict.
 - `POST /api/assistant/query` — live. Resolves a natural-language query to an existing note via 5-tier matching (exact title → exact alias → title-in-query → alias-in-query → partial title), then calls `queryAssistant()` to produce a grounded summary with gap suggestions and 3 new topic ideas.
 
 Error handling: 400 for missing/invalid input, 401 for invalid API key, 409 for duplicate slug or title, 429 for rate limits, 500 for other failures.

@@ -24,7 +24,6 @@
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/d3": "^7.4.3",
 		"drizzle-kit": "^0.31.10",
-		"openai": "^6.33.0",
 		"svelte": "^5.54.0",
 		"svelte-check": "^4.4.2",
 		"tailwindcss": "^4.2.2",
@@ -39,6 +38,7 @@
 		"d3": "^7.9.0",
 		"drizzle-orm": "^0.45.2",
 		"fflate": "^0.8.2",
+		"openai": "^6.33.0",
 		"gsap": "^3.14.2",
 		"marked": "^17.0.5",
 		"melt": "^0.44.0"

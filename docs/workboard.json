@@ -444,7 +444,7 @@
       "id": "AI-002",
       "group_id": "AI",
       "title": "Implement ChatGPT API research endpoint",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Wire up researchTopic() in chatgpt.ts using the OpenAI SDK.",

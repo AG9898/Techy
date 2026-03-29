@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { generateNote } from '$lib/server/ai/claude.js';
+import { generateNote as claudeGenerateNote } from '$lib/server/ai/claude.js';
+import { generateNote as chatgptGenerateNote } from '$lib/server/ai/chatgpt.js';
 import { parseFrontmatter } from '$lib/utils/frontmatter.js';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
@@ -12,14 +13,16 @@ import { eq, or } from 'drizzle-orm';
  * POST /api/ai/generate-note
  * Body: { topic: string, provider?: 'claude' | 'chatgpt' }
  *
- * Generates a full note from a topic prompt via Claude, inserts it into the DB,
+ * Generates a full note from a topic prompt via the chosen AI provider, inserts it into the DB,
  * syncs [[wikilinks]], and returns the created note metadata.
  */
 export const POST: RequestHandler = async ({ request }) => {
 	let topic: string;
+	let provider: string;
 	try {
 		const data = await request.json();
 		topic = data?.topic;
+		provider = data?.provider ?? 'claude';
 	} catch {
 		return json({ error: 'Invalid JSON body' }, { status: 400 });
 	}
@@ -29,9 +32,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 	topic = topic.trim();
 
+	if (provider !== 'claude' && provider !== 'chatgpt') {
+		return json({ error: 'Invalid provider — must be "claude" or "chatgpt"' }, { status: 400 });
+	}
+
 	let markdown: string;
 	try {
-		markdown = await generateNote(topic);
+		markdown =
+			provider === 'chatgpt' ? await chatgptGenerateNote(topic) : await claudeGenerateNote(topic);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		if (
@@ -39,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			message.includes('invalid_api_key') ||
 			message.includes('authentication')
 		) {
-			return json({ error: 'Invalid or missing ANTHROPIC_API_KEY' }, { status: 401 });
+			return json({ error: 'Invalid or missing API key' }, { status: 401 });
 		}
 		if (message.includes('429') || message.includes('rate_limit')) {
 			return json({ error: 'Rate limit exceeded — try again later' }, { status: 429 });
@@ -90,7 +98,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			category,
 			status,
 			aiGenerated: true,
-			aiModel: 'claude-opus-4-6',
+			aiModel: provider === 'chatgpt' ? 'gpt-4o' : 'claude-opus-4-6',
 			aiPrompt: topic
 		})
 		.returning({ id: notes.id, slug: notes.slug, title: notes.title });
