@@ -1,0 +1,999 @@
+{
+  "tasks": [
+    {
+      "id": "FOUND-001",
+      "group_id": "FOUND",
+      "title": "SvelteKit 5 project scaffold",
+      "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Bare SvelteKit 5 project initialised with TypeScript strict mode and Vite.",
+      "description": "Base SvelteKit project created with Svelte 5 rune mode enabled in svelte.config.js, TypeScript 5 in strict mode, and adapter-auto for environment-agnostic deployment. node_modules installed.",
+      "acceptance_criteria": [
+        "npm run dev starts without errors",
+        "npm run check passes with 0 errors",
+        "svelte.config.js has runes: true"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "package.json",
+        "svelte.config.js",
+        "vite.config.ts",
+        "tsconfig.json",
+        "src/app.html",
+        "src/app.d.ts"
+      ],
+      "docs": ["docs/ARCHITECTURE.md", "docs/SETUP.md"],
+      "notes": ["Done. Base scaffold verified."],
+      "commands": ["npm run dev", "npm run check"],
+      "estimate": "S"
+    },
+    {
+      "id": "FOUND-002",
+      "group_id": "FOUND",
+      "title": "Database layer: Neon + Drizzle schema",
+      "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Neon PostgreSQL connection + Drizzle schema for notes, note_links, and Auth.js tables.",
+      "description": "Drizzle ORM configured with @neondatabase/serverless HTTP transport. Schema defines notes (with tags[], aliases[], status enum, AI metadata), note_links (FK cascade), and the four Auth.js adapter tables. drizzle.config.ts at project root. Migration scripts added to package.json.",
+      "acceptance_criteria": [
+        "npm run db:generate produces migration SQL",
+        "npm run db:migrate applies schema to Neon without errors",
+        "db client exports from src/lib/server/db/index.ts"
+      ],
+      "depends_on": ["FOUND-001"],
+      "blocked_by": [],
+      "files": [
+        "drizzle.config.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/db/index.ts",
+        "package.json"
+      ],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "notes": ["Done. Schema verified via svelte-check."],
+      "commands": ["npm run db:generate", "npm run db:migrate", "npm run db:studio"],
+      "estimate": "M"
+    },
+    {
+      "id": "FOUND-003",
+      "group_id": "FOUND",
+      "title": "GitHub OAuth single-user auth",
+      "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Auth.js with GitHub provider gated to ALLOWED_GITHUB_USERNAME. Session stored in Neon via DrizzleAdapter.",
+      "description": "SvelteKitAuth configured with GitHub provider. signIn callback checks profile.login against ALLOWED_GITHUB_USERNAME env var, returning false to block all other accounts. Auth guard in hooks.server.ts redirects unauthenticated requests to /auth/signin. Session exposed to all pages via +layout.server.ts.",
+      "acceptance_criteria": [
+        "Visiting / without session redirects to /auth/signin",
+        "Signing in with the correct GitHub account succeeds",
+        "Signing in with any other GitHub account shows AccessDenied",
+        "Session persists across page reloads"
+      ],
+      "depends_on": ["FOUND-002"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/auth.ts",
+        "src/hooks.server.ts",
+        "src/app.d.ts",
+        "src/routes/auth/[...auth]/+server.ts",
+        "src/routes/+layout.server.ts",
+        ".env.example"
+      ],
+      "docs": ["docs/ARCHITECTURE.md", "docs/SETUP.md"],
+      "notes": ["Done. Requires GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, ALLOWED_GITHUB_USERNAME, AUTH_SECRET in .env."],
+      "commands": ["npm run dev"],
+      "estimate": "M"
+    },
+    {
+      "id": "FOUND-004",
+      "group_id": "FOUND",
+      "title": "D3 force-directed graph (home page)",
+      "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Interactive D3 force graph on home page. Nodes = notes, edges = note_links. Click node navigates to note detail.",
+      "description": "ForceGraph.svelte component using D3 v7. Force simulation with forceLink, forceManyBody, forceCenter, forceCollide. Node colour by status. Pan/zoom via d3.zoom(). Drag to reposition. onMount/onDestroy lifecycle. Home page server load fetches all nodes and links.",
+      "acceptance_criteria": [
+        "Home page renders D3 graph with no JS errors",
+        "Clicking a node navigates to /notes/{slug}",
+        "Pan and zoom work",
+        "Empty state shown when no notes exist"
+      ],
+      "depends_on": ["FOUND-001"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/+page.server.ts",
+        "src/routes/+page.svelte"
+      ],
+      "docs": ["docs/ARCHITECTURE.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Done. D3 drag type required explicit SVGGElement generic to satisfy TypeScript."],
+      "commands": ["npm run dev", "npm run check"],
+      "estimate": "M"
+    },
+    {
+      "id": "FOUND-005",
+      "group_id": "FOUND",
+      "title": "Note CRUD routes",
+      "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Full create / read / update / delete for notes. Wikilinks parsed on save to sync note_links.",
+      "description": "Routes: /notes (list + delete action), /notes/new (create action with slug generation + wikilink extraction), /notes/[slug] (detail with rendered Markdown + related notes), /notes/[slug]/edit (update + delete actions with wikilink re-sync). NoteCard.svelte reusable component. slugify() and extractWikilinks() utilities.",
+      "acceptance_criteria": [
+        "Create note inserts row, syncs note_links, redirects to detail",
+        "Edit note updates row, re-syncs note_links",
+        "Delete note cascades note_links",
+        "Detail page renders Markdown, resolves [[wikilinks]] to anchors",
+        "Broken wikilinks render as red strikethrough"
+      ],
+      "depends_on": ["FOUND-002"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/utils/slugify.ts",
+        "src/lib/utils/wikilinks.ts",
+        "src/lib/components/NoteCard.svelte",
+        "src/routes/notes/+page.server.ts",
+        "src/routes/notes/+page.svelte",
+        "src/routes/notes/new/+page.server.ts",
+        "src/routes/notes/new/+page.svelte",
+        "src/routes/notes/[slug]/+page.server.ts",
+        "src/routes/notes/[slug]/+page.svelte",
+        "src/routes/notes/[slug]/edit/+page.server.ts",
+        "src/routes/notes/[slug]/edit/+page.svelte"
+      ],
+      "docs": ["docs/ARCHITECTURE.md", "docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Done. Delete form must not be nested inside update form — separate <form> elements used."],
+      "commands": ["npm run check"],
+      "estimate": "L"
+    },
+    {
+      "id": "FOUND-006",
+      "group_id": "FOUND",
+      "title": "Search by title, category, and tags",
+      "status": "done",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "GET /search with query params for title/category (ilike) and tags (arrayOverlaps).",
+      "description": "Search page uses SvelteKit GET form actions — no JS required. Drizzle ilike() on title and category fields, arrayOverlaps() on tags array. Results rendered as NoteCard grid.",
+      "acceptance_criteria": [
+        "Search by title fragment returns matching notes",
+        "Search by tag(s) returns notes with overlapping tags",
+        "Search by category returns matching notes",
+        "Empty query returns no results (not all notes)"
+      ],
+      "depends_on": ["FOUND-005"],
+      "blocked_by": [],
+      "files": [
+        "src/routes/search/+page.server.ts",
+        "src/routes/search/+page.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Done."],
+      "commands": ["npm run check"],
+      "estimate": "S"
+    },
+    {
+      "id": "FOUND-007",
+      "group_id": "FOUND",
+      "title": "AI integration skeleton",
+      "status": "done",
+      "priority": "low",
+      "type": "scaffolding",
+      "summary": "Stub files for Claude and ChatGPT API integration. Routes return 501.",
+      "description": "src/lib/ai/claude.ts, chatgpt.ts, prompts.ts — stub functions throwing 'Not implemented'. API routes POST /api/ai/research and POST /api/ai/generate-note return {error: '...', status: 501}. Anthropic and OpenAI SDKs installed as devDependencies.",
+      "acceptance_criteria": [
+        "POST /api/ai/research returns 501",
+        "POST /api/ai/generate-note returns 501",
+        "npm run check passes with 0 errors on AI files"
+      ],
+      "depends_on": ["FOUND-001"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/ai/claude.ts",
+        "src/lib/ai/chatgpt.ts",
+        "src/lib/ai/prompts.ts",
+        "src/routes/api/ai/research/+server.ts",
+        "src/routes/api/ai/generate-note/+server.ts"
+      ],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "notes": ["Skeleton only. See AI-001 and AI-002 for real implementation."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-001",
+      "group_id": "UI",
+      "title": "Theme token system and theme/accent toggle foundation",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refactor shared styling tokens so Techy can support soft theme switching plus independent accent selection.",
+      "description": "Extend src/app.css and the root layout to support the initial Night, Paper, and Mist themes plus Sky, Mint, Amber, and Rose accents. Theme and accent state should be applied at the app shell level, persisted locally, and exposed consistently to page chrome and D3 graph styling.",
+      "acceptance_criteria": [
+        "App shell supports switching between Night, Paper, and Mist themes",
+        "Accent selection is independent from theme selection",
+        "Theme and accent choices persist across reloads",
+        "Shared tokens are available to graph, notes, and chat surfaces without one-off color definitions"
+      ],
+      "depends_on": ["FOUND-004", "FOUND-005", "FOUND-006"],
+      "blocked_by": [],
+      "files": [
+        "src/app.css",
+        "src/routes/+layout.svelte",
+        "src/lib/components/Nav.svelte",
+        "src/lib/components/ForceGraph.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md", "docs/ARCHITECTURE.md"],
+      "notes": ["Keep the implementation token-driven so future UI work consumes the same theme system rather than reintroducing hardcoded page-specific colors."],
+      "commands": ["npm run check"],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-002",
+      "group_id": "UI",
+      "title": "Global shell and navigation refresh",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refresh the shared shell and nav so the app feels soft, rounded, and spatial instead of card-heavy.",
+      "description": "Rework the global layout and navigation to follow the style guide's soft observatory direction. The shell should support the new theme tokens, keep the graph page full-bleed where needed, and establish shared surface rules for notes and chat routes.",
+      "acceptance_criteria": [
+        "Nav and shared shell use the new soft rounded visual language",
+        "Shared layout supports both full-bleed and bounded page surfaces cleanly",
+        "Theme and accent controls are available from the shared shell",
+        "The global shell does not make the home graph feel boxed in"
+      ],
+      "depends_on": ["UI-001", "FOUND-003"],
+      "blocked_by": ["UI-001"],
+      "files": [
+        "src/routes/+layout.svelte",
+        "src/lib/components/Nav.svelte",
+        "src/app.css"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Treat pages as a few coordinated zones rather than many interchangeable cards."],
+      "commands": ["npm run check"],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-003",
+      "group_id": "UI",
+      "title": "Graph home experience refresh",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refine the home page so the D3 graph reads as the hero with floating controls and soft overlays.",
+      "description": "Update the graph page presentation to match the style guide: full-bleed canvas, minimal chrome, soft overlay controls, and restrained motion. The graph should feel central and immersive rather than contained inside a conventional app panel.",
+      "acceptance_criteria": [
+        "Home page preserves a full-bleed graph environment",
+        "Controls, legends, and related UI appear as overlays or docks rather than a card wall",
+        "Graph styling respects the shared theme and accent tokens",
+        "Motion on the home page remains restrained and purposeful"
+      ],
+      "depends_on": ["UI-001", "UI-002", "FOUND-004"],
+      "blocked_by": ["UI-001", "UI-002"],
+      "files": [
+        "src/routes/+page.svelte",
+        "src/lib/components/ForceGraph.svelte",
+        "src/app.css"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["This is the visual anchor for the rest of the UI work."],
+      "commands": ["npm run check"],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-004",
+      "group_id": "UI",
+      "title": "Notes browse and detail experience refresh",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refresh search, notes list, and note detail so they feel like a clean docs flow rather than a dashboard grid.",
+      "description": "Rework the notes browsing and reading surfaces to follow the style guide. Search should feel like a soft command surface, result repetition should stay restrained, and note detail should read like a polished internal docs page with lightweight supporting metadata.",
+      "acceptance_criteria": [
+        "Search and notes list feel like part of the same calm docs-oriented system",
+        "Full note view presents one dominant reading surface with lightweight supporting regions",
+        "Metadata, backlinks, and related-note regions support the note body without overwhelming it",
+        "The overall notes experience avoids defaulting to a wall of generic cards"
+      ],
+      "depends_on": ["UI-001", "UI-002", "FOUND-005", "FOUND-006"],
+      "blocked_by": ["UI-001", "UI-002"],
+      "files": [
+        "src/routes/notes/+page.svelte",
+        "src/routes/notes/[slug]/+page.svelte",
+        "src/routes/search/+page.svelte",
+        "src/lib/components/NoteCard.svelte",
+        "src/app.css"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Keep repetition where it is honest, but avoid turning every section into the same boxed treatment."],
+      "commands": ["npm run check"],
+      "estimate": "L"
+    },
+    {
+      "id": "UI-005",
+      "group_id": "UI",
+      "title": "Note authoring surface refresh",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Refresh create/edit note forms so authoring feels like part of the same soft docs environment.",
+      "description": "Apply the style-guide direction to the note create and edit routes. The forms should feel clean and intentional, with soft controls, strong hierarchy, and enough structure for future AI assist and preview features without looking like a default form stack.",
+      "acceptance_criteria": [
+        "Create and edit note pages share a coherent authoring layout",
+        "Form controls follow the shared theme tokens and soft rounded shape language",
+        "The pages leave room for future preview, autocomplete, and AI-assist features without a major layout rewrite",
+        "The authoring UI does not regress existing form semantics or server-action behavior"
+      ],
+      "depends_on": ["UI-001", "UI-002", "FOUND-005"],
+      "blocked_by": ["UI-001", "UI-002"],
+      "files": [
+        "src/routes/notes/new/+page.svelte",
+        "src/routes/notes/[slug]/edit/+page.svelte",
+        "src/app.css"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md", "docs/API.md"],
+      "notes": ["Keep form behavior server-authoritative; this task is about presentation and layout, not changing validation flow."],
+      "commands": ["npm run check"],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-006",
+      "group_id": "UI",
+      "title": "Chat route scaffold and shell",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Create the dedicated /chat route and base conversation layout that future assistant features will use.",
+      "description": "Add a first-pass chat page that follows current AI product conventions while staying inside Techy's soft observatory system. The route should provide the conversation column, composer area, and optional desktop context region so assistant features have a clear home instead of being bolted onto the graph page.",
+      "acceptance_criteria": [
+        "GET /chat renders behind the existing auth guard",
+        "Chat page uses the shared shell, theme tokens, and rounded surface language",
+        "The layout includes a primary conversation area and a persistent composer region",
+        "The page has sensible empty and loading placeholder states for future assistant wiring"
+      ],
+      "depends_on": ["UI-001", "UI-002", "FOUND-003"],
+      "blocked_by": ["UI-001", "UI-002"],
+      "files": [
+        "src/routes/chat/+page.svelte",
+        "src/routes/chat/+page.server.ts",
+        "src/routes/+layout.svelte",
+        "src/lib/components/Nav.svelte",
+        "src/app.css"
+      ],
+      "docs": ["docs/ARCHITECTURE.md", "docs/API.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Run npm run prepare after adding the route so generated $types stay current."],
+      "commands": ["npm run prepare", "npm run check"],
+      "estimate": "M"
+    },
+    {
+      "id": "DEPLOY-001",
+      "group_id": "DEPLOY",
+      "title": "Deploy to Vercel",
+      "status": "todo",
+      "priority": "high",
+      "type": "ops",
+      "summary": "Deploy the app to Vercel with all environment variables configured.",
+      "description": "Push repo to GitHub, import into Vercel, configure all env vars (AUTH_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, ALLOWED_GITHUB_USERNAME, DATABASE_URL). Update GitHub OAuth App callback URL to production domain.",
+      "acceptance_criteria": [
+        "Production URL loads and redirects to /auth/signin",
+        "GitHub sign-in works on production domain",
+        "Notes persist across deployments (Neon DB connected)"
+      ],
+      "depends_on": ["FOUND-003", "DEPLOY-002"],
+      "blocked_by": ["DEPLOY-002"],
+      "files": [],
+      "docs": ["docs/SETUP.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "DEPLOY-002",
+      "group_id": "DEPLOY",
+      "title": "Run DB migrations on Neon production",
+      "status": "todo",
+      "priority": "high",
+      "type": "ops",
+      "summary": "Apply Drizzle migrations to the Neon production database.",
+      "description": "With DATABASE_URL pointing to Neon, run npm run db:migrate to apply the generated SQL from the drizzle/ folder. Verify all tables exist via Neon console or Drizzle Studio.",
+      "acceptance_criteria": [
+        "All tables exist in Neon: users, accounts, sessions, verification_tokens, notes, note_links",
+        "npm run db:studio can connect and browse tables"
+      ],
+      "depends_on": ["FOUND-002"],
+      "blocked_by": [],
+      "files": ["drizzle/"],
+      "docs": ["docs/SETUP.md"],
+      "notes": ["Run locally with .env pointing to the production DATABASE_URL, or set env var inline."],
+      "commands": ["npm run db:migrate", "npm run db:studio"],
+      "estimate": "XS"
+    },
+    {
+      "id": "AI-001",
+      "group_id": "AI",
+      "title": "Implement Claude API research endpoint",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Wire up POST /api/ai/research to call Claude with the RESEARCH_SYSTEM_PROMPT and return a Markdown note body.",
+      "description": "Implement researchTopic() in src/lib/ai/claude.ts using @anthropic-ai/sdk. Update the /api/ai/research route to call it, passing the topic from the request body. Return {body: string} on success. Move @anthropic-ai/sdk from devDependencies to dependencies.",
+      "acceptance_criteria": [
+        "POST /api/ai/research {topic: 'SvelteKit'} returns a non-empty Markdown string",
+        "Response includes ANTHROPIC_API_KEY usage",
+        "Errors handled gracefully (invalid key, rate limit)"
+      ],
+      "depends_on": ["FOUND-007"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/ai/claude.ts",
+        "src/lib/ai/prompts.ts",
+        "src/routes/api/ai/research/+server.ts",
+        "package.json"
+      ],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "notes": ["ANTHROPIC_API_KEY must be set in .env"],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "AI-002",
+      "group_id": "AI",
+      "title": "Implement ChatGPT API research endpoint",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Wire up researchTopic() in chatgpt.ts using the OpenAI SDK.",
+      "description": "Implement researchTopic() and generateNote() in src/lib/ai/chatgpt.ts using the openai SDK. Add a provider param to /api/ai/research and /api/ai/generate-note so callers can choose Claude vs GPT. Move openai from devDependencies to dependencies.",
+      "acceptance_criteria": [
+        "POST /api/ai/research {topic: 'SvelteKit', provider: 'chatgpt'} returns a Markdown string",
+        "Provider defaults to 'claude' when not specified"
+      ],
+      "depends_on": ["AI-001"],
+      "blocked_by": ["AI-001"],
+      "files": [
+        "src/lib/ai/chatgpt.ts",
+        "src/routes/api/ai/research/+server.ts",
+        "src/routes/api/ai/generate-note/+server.ts",
+        "package.json"
+      ],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "notes": ["OPENAI_API_KEY must be set in .env"],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "AI-003",
+      "group_id": "AI",
+      "title": "AI research button on New Note page",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add a 'Research with AI' button to the create-note form that calls /api/ai/research and populates the body textarea.",
+      "description": "On /notes/new, add a button next to the title field. On click, POST to /api/ai/research with the current title value, then populate the body textarea with the returned Markdown. Show a loading spinner during the request. Set ai_generated=true, ai_model, ai_prompt as hidden fields.",
+      "acceptance_criteria": [
+        "Button disabled until a title is entered",
+        "Clicking button shows loading state",
+        "Body textarea populated with AI response",
+        "Submitted note has ai_generated=true in the database"
+      ],
+      "depends_on": ["AI-001", "UI-005"],
+      "blocked_by": ["AI-001", "UI-005"],
+      "files": [
+        "src/routes/notes/new/+page.svelte",
+        "src/routes/notes/new/+page.server.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["Requires client-side fetch — break out of pure form-action pattern for this feature."],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "GRAPH-001",
+      "group_id": "GRAPH",
+      "title": "Graph category/status filter panel",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Add a filter panel to the home graph to show/hide nodes by category or status.",
+      "description": "Add an overlay panel (bottom-left or side drawer) to ForceGraph.svelte with checkboxes for each category and status value. Filtering hides nodes and their connected edges without re-running the simulation. Node data passed from +page.server.ts already includes category and status.",
+      "acceptance_criteria": [
+        "Toggling a category hides all nodes in that category",
+        "Toggling a status hides all nodes with that status",
+        "Filtered nodes' connected edges also hide",
+        "Filter state is local (not persisted)"
+      ],
+      "depends_on": ["FOUND-004", "UI-003"],
+      "blocked_by": ["UI-003"],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/+page.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-001",
+      "group_id": "NOTES",
+      "title": "Markdown preview pane in note editor",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Split-pane editor: textarea on the left, live Markdown preview on the right.",
+      "description": "Add a client-side preview pane to the create/edit note forms. Use a Svelte reactive binding on the textarea to update the preview in real-time. Render via marked() client-side. Wikilinks in preview should be resolved against a list of note titles passed from the server.",
+      "acceptance_criteria": [
+        "Typing in textarea updates preview without page reload",
+        "[[wikilinks]] render as styled spans (not anchor tags) in preview",
+        "Preview pane is optional / collapsible"
+      ],
+      "depends_on": ["FOUND-005", "UI-005"],
+      "blocked_by": ["UI-005"],
+      "files": [
+        "src/routes/notes/new/+page.svelte",
+        "src/routes/notes/[slug]/edit/+page.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-002",
+      "group_id": "NOTES",
+      "title": "Tag autocomplete in note form",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Show existing tags as suggestions when typing in the tags input field.",
+      "description": "Load distinct tags from the DB in the create/edit server load function. Pass them to the page as a datalist or custom autocomplete component. User can select existing tags or type new ones.",
+      "acceptance_criteria": [
+        "Typing in tags field shows dropdown of matching existing tags",
+        "Selecting a suggestion appends it to the input",
+        "New tags (not in suggestions) are also accepted"
+      ],
+      "depends_on": ["FOUND-005", "UI-005"],
+      "blocked_by": ["UI-005"],
+      "files": [
+        "src/routes/notes/new/+page.server.ts",
+        "src/routes/notes/new/+page.svelte",
+        "src/routes/notes/[slug]/edit/+page.server.ts",
+        "src/routes/notes/[slug]/edit/+page.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": ["HTML <datalist> is the simplest approach — no custom component needed."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "NOTES-003",
+      "group_id": "NOTES",
+      "title": "Wikilink rename propagation",
+      "status": "todo",
+      "priority": "low",
+      "type": "bug",
+      "summary": "When a note title is renamed, update [[wikilinks]] in all other notes' bodies that reference the old title.",
+      "description": "Currently, renaming a note title does not update [[wikilinks]] referencing that title in other notes. On the update action in /notes/[slug]/edit/+page.server.ts, if the title has changed: find all notes whose body contains [[old title]], replace with [[new title]], update those notes and re-sync their note_links.",
+      "acceptance_criteria": [
+        "Renaming a note title updates all [[oldtitle]] → [[newtitle]] in other notes",
+        "note_links table remains consistent after rename",
+        "No orphaned links after rename"
+      ],
+      "depends_on": ["FOUND-005"],
+      "blocked_by": [],
+      "files": [
+        "src/routes/notes/[slug]/edit/+page.server.ts"
+      ],
+      "docs": ["docs/DECISIONS.md"],
+      "notes": ["See ADR-007 for the known limitation context."],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "AI-004",
+      "group_id": "AI",
+      "title": "Implement AI generate-note endpoint",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Wire up POST /api/ai/generate-note to generate a full note draft and persist it to the database.",
+      "description": "Implement the end-to-end generate-note flow so a topic prompt can produce a full note draft, insert a new note row, sync wikilinks, and return the created note metadata. Default provider can be Claude first; provider expansion can remain separate.",
+      "acceptance_criteria": [
+        "POST /api/ai/generate-note returns a created note object with id, slug, and title",
+        "Generated note is inserted into the notes table",
+        "Generated note body is parsed for [[wikilinks]] and note_links are synced",
+        "Duplicate slug or title conflicts are handled gracefully"
+      ],
+      "depends_on": ["AI-001", "FOUND-005"],
+      "blocked_by": ["AI-001"],
+      "files": [
+        "src/lib/ai/claude.ts",
+        "src/lib/ai/prompts.ts",
+        "src/routes/api/ai/generate-note/+server.ts",
+        "src/routes/notes/new/+page.server.ts",
+        "src/lib/utils/slugify.ts",
+        "src/lib/utils/wikilinks.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": ["This task closes the current gap where generate-note is mentioned in the PRD and API but not explicitly tracked on the workboard."],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "AI-005",
+      "group_id": "AI",
+      "title": "Provider selection across AI workflows",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Allow Claude vs ChatGPT selection for research and generate-note flows from the UI and API.",
+      "description": "Add provider selection plumbing so the chosen model provider can be passed through research and generate-note requests. The API already anticipates a provider field; this task makes the behavior explicit in both server handlers and any relevant UI controls.",
+      "acceptance_criteria": [
+        "Research flow can explicitly choose Claude or ChatGPT",
+        "Generate-note flow can explicitly choose Claude or ChatGPT",
+        "When no provider is selected, the system defaults to Claude",
+        "Unsupported provider values return a clear validation error"
+      ],
+      "depends_on": ["AI-002", "AI-003", "AI-004"],
+      "blocked_by": ["AI-002", "AI-003", "AI-004"],
+      "files": [
+        "src/routes/api/ai/research/+server.ts",
+        "src/routes/api/ai/generate-note/+server.ts",
+        "src/routes/notes/new/+page.svelte",
+        "src/lib/ai/claude.ts",
+        "src/lib/ai/chatgpt.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": ["Keep provider choice per-request rather than global configuration."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "AI-006",
+      "group_id": "AI",
+      "title": "Persist AI provenance metadata consistently",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Ensure ai_generated, ai_model, and ai_prompt are populated consistently for AI-assisted note creation flows.",
+      "description": "Audit and complete the metadata path so notes created or prefilled through AI-assisted flows persist provenance consistently. This includes create-form assistance, direct generate-note insertion, and any server-side fallback paths.",
+      "acceptance_criteria": [
+        "AI-generated notes persist ai_generated=true",
+        "The model identifier is stored in ai_model",
+        "The originating prompt or topic request is stored in ai_prompt",
+        "Non-AI notes keep AI metadata unset or false"
+      ],
+      "depends_on": ["AI-003", "AI-004"],
+      "blocked_by": ["AI-003", "AI-004"],
+      "files": [
+        "src/routes/notes/new/+page.server.ts",
+        "src/routes/api/ai/generate-note/+server.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/ai/claude.ts",
+        "src/lib/ai/chatgpt.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/NOTES.md"],
+      "notes": ["The schema already includes these columns; this task is about consistent write-path behavior."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "GRAPH-002",
+      "group_id": "GRAPH",
+      "title": "Graph colour-by-category toggle",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Add a graph display toggle so node colour can represent category instead of status.",
+      "description": "Extend the home graph controls to switch the node colour mapping between status and category. Categories should use a stable, documented palette so the graph remains legible across reloads.",
+      "acceptance_criteria": [
+        "Users can toggle between status colours and category colours",
+        "Category colours remain stable for the same category values",
+        "The default graph mode remains status colours"
+      ],
+      "depends_on": ["FOUND-004", "GRAPH-001", "UI-003"],
+      "blocked_by": ["GRAPH-001", "UI-003"],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/+page.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md", "docs/ARCHITECTURE.md"],
+      "notes": ["If new category colours are introduced, document them in the design spec."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "GRAPH-003",
+      "group_id": "GRAPH",
+      "title": "Graph node size proportional to link count",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Scale graph node size by the number of note links.",
+      "description": "Calculate each note's degree from incoming and outgoing links and use that value to scale node radius in the D3 graph. Keep labels legible and avoid extreme sizing for highly connected notes.",
+      "acceptance_criteria": [
+        "Nodes with more links render larger than sparsely connected nodes",
+        "Sizing uses note link count rather than a fixed radius",
+        "The graph remains readable and draggable after the size change"
+      ],
+      "depends_on": ["FOUND-004", "UI-003"],
+      "blocked_by": ["UI-003"],
+      "files": [
+        "src/routes/+page.server.ts",
+        "src/lib/components/ForceGraph.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md", "docs/ARCHITECTURE.md"],
+      "notes": ["This also closes the explicit planned item already called out in the design spec legend section."],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "GRAPH-004",
+      "group_id": "GRAPH",
+      "title": "Graph edge click drilldown",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Allow clicking an edge to inspect the two connected notes.",
+      "description": "Make graph edges interactive so clicking a connection opens a lightweight detail state showing the source and target notes, with links to both note detail pages. Preserve existing pan, zoom, and node-click behavior.",
+      "acceptance_criteria": [
+        "Clicking an edge reveals the two connected notes",
+        "Users can navigate from the edge drilldown to either note detail page",
+        "Edge interactions do not break node drag or node click navigation"
+      ],
+      "depends_on": ["FOUND-004", "UI-003"],
+      "blocked_by": ["UI-003"],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/+page.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "GRAPH-005",
+      "group_id": "GRAPH",
+      "title": "Orphan note detection",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Surface notes with no incoming or outgoing links.",
+      "description": "Add an orphan-note view or indicator so notes without graph connections can be identified quickly. The feature can live on the graph page, notes list, or a dedicated route, but it should be query-backed rather than manually inferred in the UI.",
+      "acceptance_criteria": [
+        "Notes with no incoming and no outgoing links are identified correctly",
+        "Users can navigate from the orphan list or indicator to the note detail page",
+        "The orphan view updates as links are added or removed"
+      ],
+      "depends_on": ["FOUND-005"],
+      "blocked_by": [],
+      "files": [
+        "src/routes/+page.server.ts",
+        "src/routes/+page.svelte",
+        "src/routes/notes/+page.server.ts",
+        "src/routes/notes/+page.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "GRAPH-006",
+      "group_id": "GRAPH",
+      "title": "Graph legend overlay",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Add a legend overlay to explain graph colours and node sizing.",
+      "description": "Implement the legend overlay called out in the design spec so the graph communicates status colours and node-size meaning. If the graph gains category-colour mode, the legend should adapt to the active display mode.",
+      "acceptance_criteria": [
+        "Legend is visible on the home graph without obscuring core interactions",
+        "Legend explains the active node colour mapping",
+        "Legend explains that larger nodes indicate more linked notes"
+      ],
+      "depends_on": ["FOUND-004", "GRAPH-003", "UI-003"],
+      "blocked_by": ["GRAPH-003", "UI-003"],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/+page.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "NOTES-004",
+      "group_id": "NOTES",
+      "title": "Import notes from Markdown files",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Support batch import of note files with frontmatter into the database.",
+      "description": "Implement a note import path that reads Markdown files with Techy frontmatter, validates them against the note schema, inserts or updates note rows, and syncs wikilinks after import. The import surface can be an authenticated route, action, or script-backed admin workflow.",
+      "acceptance_criteria": [
+        "Markdown files with valid frontmatter can be imported in batch",
+        "Imported notes preserve title, tags, aliases, category, status, and body",
+        "Wikilinks are parsed and note_links are synced after import",
+        "Invalid files produce clear validation errors without corrupting the import batch"
+      ],
+      "depends_on": ["FOUND-005"],
+      "blocked_by": [],
+      "files": [
+        "src/routes/notes/+page.server.ts",
+        "src/routes/notes/+page.svelte",
+        "src/lib/utils/wikilinks.ts",
+        "src/lib/utils/slugify.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/NOTES.md"],
+      "notes": ["Decide later whether the import entry point should be a UI form, a CLI script, or both."],
+      "commands": [],
+      "estimate": "L"
+    },
+    {
+      "id": "NOTES-005",
+      "group_id": "NOTES",
+      "title": "Export all notes as a Markdown zip",
+      "status": "todo",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Export the full note library as Markdown files in a zip archive.",
+      "description": "Add an authenticated export path that serializes each note to Markdown with frontmatter, bundles the files into a zip, and returns the archive for download. The export format should round-trip cleanly with the planned import workflow.",
+      "acceptance_criteria": [
+        "Users can download a zip containing one Markdown file per note",
+        "Exported files include frontmatter and body content",
+        "The exported format is compatible with the planned import flow"
+      ],
+      "depends_on": ["FOUND-005"],
+      "blocked_by": [],
+      "files": [
+        "src/routes/notes/+page.server.ts",
+        "src/routes/notes/+page.svelte"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/NOTES.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-006",
+      "group_id": "NOTES",
+      "title": "Note history and revision tracking",
+      "status": "todo",
+      "priority": "low",
+      "type": "implementation",
+      "summary": "Add revision history so note changes can be inspected or recovered.",
+      "description": "Introduce a revision strategy for note edits, either as soft delete plus historical snapshots or a dedicated revisions table. Capture prior note state on update and expose a minimal history view on the note detail or edit page.",
+      "acceptance_criteria": [
+        "Editing a note preserves the previous version in a revision record",
+        "Users can inspect earlier revisions for a note",
+        "The chosen revision model is documented clearly"
+      ],
+      "depends_on": ["FOUND-005", "FOUND-002"],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/db/schema.ts",
+        "src/routes/notes/[slug]/+page.server.ts",
+        "src/routes/notes/[slug]/+page.svelte",
+        "src/routes/notes/[slug]/edit/+page.server.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/DECISIONS.md"],
+      "notes": ["If the chosen design changes the schema, add an ADR describing why."],
+      "commands": ["npm run db:generate", "npm run db:migrate"],
+      "estimate": "L"
+    },
+    {
+      "id": "ASSIST-001",
+      "group_id": "ASSIST",
+      "title": "Natural-language note lookup and grounded summary",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Implement POST /api/assistant/query to resolve an existing note and return a note-grounded summary.",
+      "description": "Add the assistant query endpoint that takes a natural-language request such as 'tell me about SvelteKit', resolves the best matching note by title or alias, returns a note link, and produces a concise summary grounded in the saved note content.",
+      "acceptance_criteria": [
+        "Natural-language queries can resolve a note by title or alias",
+        "Response returns matched note metadata including a note URL",
+        "Summary is grounded in the saved note content rather than a generic answer",
+        "Requests with no good match return a clear not-found response"
+      ],
+      "depends_on": ["FOUND-005", "FOUND-006", "AI-001"],
+      "blocked_by": ["AI-001"],
+      "files": [
+        "src/routes/api/assistant/query/+server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/ai/prompts.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": ["Prefer exact title and alias matches before falling back to partial matching."],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "ASSIST-002",
+      "group_id": "ASSIST",
+      "title": "Chat page assistant interface",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Wire the assistant experience into the dedicated /chat page and render grounded responses in the new conversation UI.",
+      "description": "Implement the assistant chat interface on /chat. The page should accept natural-language questions, call the assistant query endpoint, and render the matched note link, grounded summary, possible additions, and new-topic ideas inside the dedicated chat layout rather than on the graph home page.",
+      "acceptance_criteria": [
+        "User can submit a natural-language request from the /chat page",
+        "Response includes a clickable link to the matched note",
+        "Summary, possible additions, and new-topic ideas are visually separated",
+        "The interface feels native to the shared chat shell rather than bolted onto another page"
+      ],
+      "depends_on": ["ASSIST-001", "ASSIST-003", "ASSIST-004", "UI-006"],
+      "blocked_by": ["ASSIST-001", "ASSIST-003", "ASSIST-004", "UI-006"],
+      "files": [
+        "src/routes/chat/+page.svelte",
+        "src/routes/chat/+page.server.ts",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": ["docs/DESIGN-SPEC.md", "docs/STYLE-GUIDE.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": ["The dedicated chat page is now the primary assistant surface instead of an ask bar on the graph home page."],
+      "commands": [],
+      "estimate": "M"
+    },
+    {
+      "id": "ASSIST-003",
+      "group_id": "ASSIST",
+      "title": "Assistant possible-additions suggestions",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Return suggested areas that may be missing or underdeveloped in the matched note.",
+      "description": "Extend the assistant response so it can suggest likely additions for the current note. Suggestions must be framed as optional improvements or underdeveloped sections, not definitive claims that the note is wrong or incomplete.",
+      "acceptance_criteria": [
+        "Assistant response includes a structured possibleGaps or equivalent field",
+        "Suggestions are phrased as additions or underdeveloped areas, not guaranteed omissions",
+        "Suggestions are derived from the current note context rather than returned as generic boilerplate"
+      ],
+      "depends_on": ["ASSIST-001"],
+      "blocked_by": ["ASSIST-001"],
+      "files": [
+        "src/routes/api/assistant/query/+server.ts",
+        "src/lib/ai/prompts.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md"],
+      "notes": [],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "ASSIST-004",
+      "group_id": "ASSIST",
+      "title": "Next-note recommendations with de-duplication",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Return exactly 3 relevant topic ideas that do not already exist as note titles or aliases.",
+      "description": "Add next-note recommendations to assistant responses and AI note-generation confirmations. Recommendations should be adjacent, worthwhile standalone topics, and must be filtered against existing titles and aliases so already-covered topics are excluded.",
+      "acceptance_criteria": [
+        "Assistant response returns exactly 3 topic suggestions",
+        "Suggested topics are relevant to the matched or generated note",
+        "Suggestions do not duplicate existing note titles or aliases",
+        "Suggestions are clearly presented as candidates for new notes"
+      ],
+      "depends_on": ["ASSIST-001", "AI-004"],
+      "blocked_by": ["ASSIST-001", "AI-004"],
+      "files": [
+        "src/routes/api/assistant/query/+server.ts",
+        "src/routes/api/ai/generate-note/+server.ts",
+        "src/lib/ai/prompts.ts"
+      ],
+      "docs": ["docs/PRD.md", "docs/API.md", "docs/ARCHITECTURE.md", "docs/DESIGN-SPEC.md"],
+      "notes": ["De-duplicate against both titles and aliases before finalizing the 3 suggestions."],
+      "commands": [],
+      "estimate": "S"
+    }
+  ]
+}

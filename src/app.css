@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+@theme {
+	--font-sans: 'Inter', system-ui, sans-serif;
+	--font-mono: 'Fira Code', 'Cascadia Code', monospace;
+}
+
+:root {
+	--bg-base: #0a0f1e;
+	--bg-surface: #0f172a;
+	--bg-raised: #1e293b;
+	--border: #1e293b;
+	--border-hover: #334155;
+	--text-primary: #e2e8f0;
+	--text-secondary: #94a3b8;
+	--text-muted: #64748b;
+	--text-subtle: #475569;
+	--accent-blue-light: #7dd3fc;
+	--accent-blue: #1d4ed8;
+	--accent-blue-hover: #2563eb;
+	--accent-green: #4ade80;
+	--accent-green-muted: #86efac;
+	--accent-red: #f87171;
+	--accent-purple: #a78bfa;
+}
+
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	body {
+		background: var(--bg-base);
+		color: var(--text-primary);
+		font-family: var(--font-sans);
+		min-height: 100vh;
+	}
+
+	a {
+		color: var(--accent-blue-light);
+	}
+
+	.wikilink {
+		color: var(--accent-green-muted);
+		text-decoration: none;
+		border-bottom: 1px dotted var(--accent-green-muted);
+	}
+
+	.wikilink:hover {
+		color: var(--accent-green);
+	}
+
+	.wikilink-broken {
+		color: var(--accent-red);
+		text-decoration: line-through;
+		cursor: help;
+	}
+}
+
+.page-content {
+	padding: 2rem;
+	max-width: 1200px;
+	margin: 0 auto;
+}
