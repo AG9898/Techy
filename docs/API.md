@@ -22,12 +22,13 @@ Home page. Loads all notes and links for the D3 force graph.
 ---
 
 ### `GET /notes`
-Notes list with category filter chips.
+Notes list with category filter chips and orphan detection.
 
 **Server load returns:**
 ```ts
 {
-  notes: { id, title, slug, tags, category, status, createdAt }[]
+  notes: { id, title, slug, tags, category, status, createdAt }[],
+  orphanIds: string[]   // IDs of notes with no incoming or outgoing links
 }
 ```
 

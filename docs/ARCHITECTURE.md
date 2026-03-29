@@ -177,6 +177,14 @@ Utilities: `src/lib/utils/wikilinks.ts`
 
 ---
 
+## Orphan Note Detection
+
+The `/notes` page detects orphan notes — notes with no incoming or outgoing links — via a server-side query in `src/routes/notes/+page.server.ts`. On each load, both notes and all `note_links` rows are fetched in parallel. A `Set` of all linked note IDs (union of `source_note_id` and `target_note_id`) is built in-memory; any note whose ID is absent from this set is an orphan. The load function returns `orphanIds: string[]` alongside the notes array.
+
+The UI surfaces orphans as an "Orphans (N)" filter chip in the category filter row on `/notes`. Selecting it filters the grid to orphan notes only; each orphan card links to its detail page as normal. The chip is hidden when `orphanIds` is empty.
+
+---
+
 ## D3 Force Graph
 
 The `ForceGraph.svelte` component is **client-only** (runs in `onMount`). It receives pre-fetched `nodes` and `links` arrays from `+page.server.ts` as props.

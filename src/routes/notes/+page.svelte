@@ -5,11 +5,17 @@
 	let { data }: { data: PageData } = $props();
 
 	let selectedCategory = $state<string | null>(null);
+	let showOrphans = $state(false);
 
 	const categories = $derived([...new Set(data.notes.map((n) => n.category).filter(Boolean))] as string[]);
+	const orphanIdSet = $derived(new Set(data.orphanIds));
 
 	const filtered = $derived(
-		selectedCategory ? data.notes.filter((n) => n.category === selectedCategory) : data.notes
+		showOrphans
+			? data.notes.filter((n) => orphanIdSet.has(n.id))
+			: selectedCategory
+				? data.notes.filter((n) => n.category === selectedCategory)
+				: data.notes
 	);
 </script>
 
@@ -19,26 +25,33 @@
 		<a href="/notes/new" class="btn-new">+ New Note</a>
 	</div>
 
-	{#if categories.length > 0}
-		<div class="category-filters">
+	<div class="category-filters">
+		<button
+			class="chip"
+			class:active={!showOrphans && selectedCategory === null}
+			onclick={() => { showOrphans = false; selectedCategory = null; }}
+		>
+			All
+		</button>
+		{#each categories as cat}
 			<button
 				class="chip"
-				class:active={selectedCategory === null}
-				onclick={() => (selectedCategory = null)}
+				class:active={!showOrphans && selectedCategory === cat}
+				onclick={() => { showOrphans = false; selectedCategory = cat; }}
 			>
-				All
+				{cat}
 			</button>
-			{#each categories as cat}
-				<button
-					class="chip"
-					class:active={selectedCategory === cat}
-					onclick={() => (selectedCategory = cat)}
-				>
-					{cat}
-				</button>
-			{/each}
-		</div>
-	{/if}
+		{/each}
+		{#if data.orphanIds.length > 0}
+			<button
+				class="chip chip-orphan"
+				class:active={showOrphans}
+				onclick={() => { showOrphans = !showOrphans; selectedCategory = null; }}
+			>
+				Orphans ({data.orphanIds.length})
+			</button>
+		{/if}
+	</div>
 
 	{#if filtered.length === 0}
 		<p class="empty">No notes yet. <a href="/notes/new">Create one →</a></p>
@@ -103,6 +116,15 @@
 		background: #1e3a5f;
 		color: #7dd3fc;
 		border-color: #1d4ed8;
+	}
+	.chip-orphan {
+		color: #fbbf24;
+		border-color: #92400e;
+	}
+	.chip-orphan.active {
+		background: #451a03;
+		color: #fcd34d;
+		border-color: #b45309;
 	}
 	.notes-grid {
 		display: grid;

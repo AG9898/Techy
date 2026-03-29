@@ -761,7 +761,7 @@
       "id": "GRAPH-005",
       "group_id": "GRAPH",
       "title": "Orphan note detection",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Surface notes with no incoming or outgoing links.",
