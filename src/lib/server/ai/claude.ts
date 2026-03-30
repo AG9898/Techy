@@ -3,7 +3,8 @@ import { env } from '$env/dynamic/private';
 import {
 	RESEARCH_SYSTEM_PROMPT,
 	NOTE_GENERATION_SYSTEM_PROMPT,
-	ASSISTANT_QUERY_SYSTEM_PROMPT
+	ASSISTANT_QUERY_SYSTEM_PROMPT,
+	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT
 } from './prompts.js';
 
 export interface AssistantQueryResult {
@@ -54,6 +55,48 @@ export async function generateNote(topic: string): Promise<string> {
 		throw new Error('Unexpected response type from Claude API');
 	}
 	return block.text;
+}
+
+/**
+ * Get 3 next-note topic recommendations for a generated note, de-duplicated against existing topics.
+ * @param topic - The topic of the note that was just generated
+ * @param existingTopics - All current note titles and aliases (for de-duplication)
+ */
+export async function getNextNoteRecommendations(
+	topic: string,
+	existingTopics: string[]
+): Promise<string[]> {
+	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+
+	const userMessage = `Topic: ${topic}
+
+Existing note topics (do NOT suggest these):
+${existingTopics.join(', ')}`;
+
+	const message = await client.messages.create({
+		model: 'claude-opus-4-6',
+		max_tokens: 256,
+		system: NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
+		messages: [{ role: 'user', content: userMessage }]
+	});
+
+	const block = message.content[0];
+	if (block.type !== 'text') {
+		throw new Error('Unexpected response type from Claude API');
+	}
+
+	let parsed: string[];
+	try {
+		parsed = JSON.parse(block.text) as string[];
+	} catch {
+		throw new Error('Claude returned invalid JSON for recommendations');
+	}
+
+	if (!Array.isArray(parsed) || parsed.length !== 3 || !parsed.every((t) => typeof t === 'string')) {
+		throw new Error('Claude recommendations response has unexpected shape');
+	}
+
+	return parsed;
 }
 
 /**

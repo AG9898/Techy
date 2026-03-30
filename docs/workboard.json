@@ -972,7 +972,7 @@
       "id": "ASSIST-004",
       "group_id": "ASSIST",
       "title": "Next-note recommendations with de-duplication",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Return exactly 3 relevant topic ideas that do not already exist as note titles or aliases.",

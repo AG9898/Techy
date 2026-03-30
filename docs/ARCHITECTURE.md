@@ -268,15 +268,17 @@ Two providers are scaffolded in `src/lib/server/ai/`:
   - `researchTopic(topic)` — calls `claude-opus-4-6` with `RESEARCH_SYSTEM_PROMPT`, returns a Markdown string.
   - `generateNote(topic)` — calls `claude-opus-4-6` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
   - `queryAssistant(note, userQuery, existingTopics)` — calls `claude-opus-4-6` with `ASSISTANT_QUERY_SYSTEM_PROMPT`; returns `{ summary, possibleGaps, newTopicIdeas }` as parsed JSON.
+  - `getNextNoteRecommendations(topic, existingTopics)` — calls `claude-opus-4-6` with `NOTE_RECOMMENDATIONS_SYSTEM_PROMPT`; returns a `string[]` of exactly 3 adjacent topic candidates, de-duplicated against `existingTopics`.
   - `ANTHROPIC_API_KEY` is read from `$env/dynamic/private`.
 - **`chatgpt.ts`** — live. Exports:
   - `researchTopic(topic)` — calls `gpt-4o` with `RESEARCH_SYSTEM_PROMPT`, returns a Markdown string.
   - `generateNote(topic)` — calls `gpt-4o` with `NOTE_GENERATION_SYSTEM_PROMPT`, returns Markdown with frontmatter.
+  - `getNextNoteRecommendations(topic, existingTopics)` — calls `gpt-4o` with `NOTE_RECOMMENDATIONS_SYSTEM_PROMPT`; returns a `string[]` of exactly 3 adjacent topic candidates, de-duplicated against `existingTopics`.
   - `OPENAI_API_KEY` is read from `$env/dynamic/private`.
 
 All share system prompts from `prompts.ts` and are called from:
 - `POST /api/ai/research` — returns `{body: string}` draft Markdown for a topic. Accepts optional `provider: 'claude' | 'chatgpt'` (defaults to `'claude'`).
-- `POST /api/ai/generate-note` — live. Accepts optional `provider: 'claude' | 'chatgpt'` (defaults to `'claude'`). Calls the chosen provider's `generateNote()`, parses frontmatter, inserts note with `ai_generated=true` and `ai_model` set to the provider's model, syncs `[[wikilinks]]`, returns `{ note: { id, slug, title } }`. Returns 409 on slug/title conflict.
+- `POST /api/ai/generate-note` — live. Accepts optional `provider: 'claude' | 'chatgpt'` (defaults to `'claude'`). Calls the chosen provider's `generateNote()`, parses frontmatter, inserts note with `ai_generated=true` and `ai_model` set to the provider's model, syncs `[[wikilinks]]`, then calls `getNextNoteRecommendations(topic, existingTopics)` to produce 3 de-duplicated next-note candidates. Returns `{ note: { id, slug, title }, nextNoteIdeas: string[] }`. Returns 409 on slug/title conflict.
 - `POST /api/assistant/query` — live. Resolves a natural-language query to an existing note via 5-tier matching (exact title → exact alias → title-in-query → alias-in-query → partial title), then calls `queryAssistant()` to produce a grounded summary with gap suggestions and 3 new topic ideas.
 
 Error handling: 400 for missing/invalid input, 401 for invalid API key, 409 for duplicate slug or title, 429 for rate limits, 500 for other failures.

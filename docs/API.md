@@ -281,7 +281,8 @@ Generate a complete note and insert it into the database.
 **Response (201):**
 ```json
 {
-  "note": { "id": "...", "slug": "sveltekit", "title": "SvelteKit" }
+  "note": { "id": "...", "slug": "sveltekit", "title": "SvelteKit" },
+  "nextNoteIdeas": ["Topic A", "Topic B", "Topic C"]
 }
 ```
 
@@ -291,6 +292,7 @@ Generate a complete note and insert it into the database.
 - Derives slug with `slugify(title)`
 - Inserts the note with `ai_generated=true`, `ai_model='claude-opus-4-6'`, `ai_prompt=topic`
 - Parses `[[wikilinks]]` from the note body and syncs `note_links`
+- After insertion, calls `getNextNoteRecommendations(topic, existingTopics)` using `NOTE_RECOMMENDATIONS_SYSTEM_PROMPT` to return exactly 3 adjacent topic candidates not already present as note titles or aliases; failures are non-fatal (returns `[]`)
 
 **Errors:**
 - `400` — topic missing or empty

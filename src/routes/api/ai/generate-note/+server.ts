@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { generateNote as claudeGenerateNote } from '$lib/server/ai/claude.js';
-import { generateNote as chatgptGenerateNote } from '$lib/server/ai/chatgpt.js';
+import { generateNote as claudeGenerateNote, getNextNoteRecommendations as claudeRecommendations } from '$lib/server/ai/claude.js';
+import { generateNote as chatgptGenerateNote, getNextNoteRecommendations as chatgptRecommendations } from '$lib/server/ai/chatgpt.js';
 import { parseFrontmatter } from '$lib/utils/frontmatter.js';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
@@ -103,10 +103,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		})
 		.returning({ id: notes.id, slug: notes.slug, title: notes.title });
 
-	// Sync [[wikilinks]] to note_links
+	// Sync [[wikilinks]] to note_links and gather all note titles/aliases for recommendations
+	const allNotes = await db.select({ id: notes.id, title: notes.title, aliases: notes.aliases }).from(notes);
+
 	const linkedTitles = extractWikilinks(body);
 	if (linkedTitles.length > 0) {
-		const allNotes = await db.select({ id: notes.id, title: notes.title }).from(notes);
 		const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
 
 		const linkRows = linkedTitles
@@ -119,5 +120,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	return json({ note: { id: inserted.id, slug: inserted.slug, title: inserted.title } }, { status: 201 });
+	// Build de-duplication list (all existing titles and aliases, including the just-inserted note)
+	const existingTopics = [
+		...allNotes.map((n) => n.title),
+		...allNotes.flatMap((n) => n.aliases)
+	].filter(Boolean);
+
+	let nextNoteIdeas: string[] = [];
+	try {
+		const getRecommendations = provider === 'chatgpt' ? chatgptRecommendations : claudeRecommendations;
+		nextNoteIdeas = await getRecommendations(topic, existingTopics);
+	} catch (err) {
+		console.error('[/api/ai/generate-note] recommendations failed (non-fatal)', err);
+	}
+
+	return json(
+		{ note: { id: inserted.id, slug: inserted.slug, title: inserted.title }, nextNoteIdeas },
+		{ status: 201 }
+	);
 };
