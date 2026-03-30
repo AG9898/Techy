@@ -226,12 +226,13 @@ Chat uses familiar AI product conventions while remaining part of the same round
 Note cards should be used where repetition is the honest content pattern. They should not become the default wrapper for every page section.
 
 ### `ForceGraph.svelte`
-- Full-bleed SVG inside container `height: calc(100vh - 60px)`
+- Full-bleed SVG inside container `height: calc(100vh - 60px)`, `position: relative`
 - Nodes: circles r=10, stroke: bg-surface stroke-width: 2
 - Hover state: circle transitions to r=13, stroke → `--graph-focus`, stroke-width: 2.5 (150ms duration, reverts on mouseleave)
 - Labels: 11px, text-secondary, offset x=14 y=4 from node centre
 - Links: stroke `--graph-link`, stroke-width: 1.5, arrow marker
 - Tooltip: native SVG `<title>` (browser default tooltip)
+- **Filter panel overlay:** floating panel at bottom-right (`position: absolute; bottom: 1.5rem; right: 1.5rem`). Rendered as a "Filters" button (bg-overlay, border-soft, 0.75rem radius, backdrop-filter blur). Clicking the button toggles a panel with two sections — "Category" checkboxes and "Status" checkboxes (with coloured status dots). When active filters exist, the button shows a count badge ("Filters · N") and highlights with `accent-primary` colour. Filtering hides D3 nodes and their connected edges via `display: none` (no simulation restart). Filter state is local Svelte `$state<string[]>([])` — not persisted.
 
 ### UI Primitive Strategy
 - Prefer Melt UI primitives for new interactive controls where accessibility or keyboard interaction matters
@@ -282,7 +283,7 @@ A floating legend overlay is rendered in `+page.svelte` as an `absolute` positio
 
 ## Future Design Considerations
 
-- **Graph filter panel**: slide-in drawer with category/status toggles
+- **Graph filter panel**: ✅ implemented — floating toggle button + overlay panel at bottom-right of ForceGraph.svelte (see component spec above)
 - **Dedicated chat page**: natural-language prompt surface with a familiar conversation layout, grounded note link, concise summary, a separate "possible additions" section, and exactly 3 new topic ideas
 - **Chat page**: familiar conversation UI with an optional context panel for matched notes, sources, and suggested follow-ups
 - **Next-topic actions**: suggested topics should be visually distinct from existing note links and clearly indicate that they are candidates for new notes, not already saved notes
