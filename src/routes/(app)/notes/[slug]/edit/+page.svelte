@@ -8,6 +8,17 @@
 	const note = $derived(data.note);
 	let bodyValue = $state(untrack(() => data.note.body));
 	let showPreview = $state(false);
+	let tagsValue = $state(untrack(() => data.note.tags.join(', ')));
+
+	const tagOptions = $derived.by(() => {
+		const parts = tagsValue.split(',');
+		const token = parts[parts.length - 1].trimStart();
+		const prefix = parts.length > 1 ? parts.slice(0, -1).join(',') + ', ' : '';
+		const done = parts.slice(0, -1).map((t) => t.trim()).filter(Boolean);
+		return data.existingTags
+			.filter((t) => t.toLowerCase().includes(token.toLowerCase()) && !done.includes(t))
+			.map((t) => prefix + t);
+	});
 
 	const noteTitlesSet = $derived(new Set(data.noteTitles));
 	const previewHtml = $derived(renderPreview(bodyValue, noteTitlesSet));
@@ -57,8 +68,18 @@
 			<div class="fields-row">
 				<label>
 					<span class="field-label">Tags <span class="hint">(comma-separated)</span></span>
-					<input type="text" name="tags" value={note.tags.join(', ')} />
+					<input
+						type="text"
+						name="tags"
+						list="tags-suggestions"
+						bind:value={tagsValue}
+					/>
 				</label>
+				<datalist id="tags-suggestions">
+					{#each tagOptions as option}
+						<option value={option}></option>
+					{/each}
+				</datalist>
 
 				<label>
 					<span class="field-label">Aliases <span class="hint">(comma-separated)</span></span>

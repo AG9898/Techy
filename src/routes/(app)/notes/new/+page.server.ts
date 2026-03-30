@@ -7,8 +7,9 @@ import { extractWikilinks } from '$lib/utils/wikilinks.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async () => {
-	const allNotes = await db.select({ title: notes.title }).from(notes);
-	return { noteTitles: allNotes.map((n) => n.title) };
+	const allNotes = await db.select({ title: notes.title, tags: notes.tags }).from(notes);
+	const existingTags = [...new Set(allNotes.flatMap((n) => n.tags))].sort();
+	return { noteTitles: allNotes.map((n) => n.title), existingTags };
 };
 
 export const actions: Actions = {

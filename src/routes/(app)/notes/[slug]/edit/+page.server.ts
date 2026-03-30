@@ -8,8 +8,9 @@ import type { Actions, PageServerLoad } from './$types.js';
 export const load: PageServerLoad = async ({ params }) => {
 	const [note] = await db.select().from(notes).where(eq(notes.slug, params.slug));
 	if (!note) error(404, 'Note not found');
-	const allNotes = await db.select({ title: notes.title }).from(notes);
-	return { note, noteTitles: allNotes.map((n) => n.title) };
+	const allNotes = await db.select({ title: notes.title, tags: notes.tags }).from(notes);
+	const existingTags = [...new Set(allNotes.flatMap((n) => n.tags))].sort();
+	return { note, noteTitles: allNotes.map((n) => n.title), existingTags };
 };
 
 export const actions: Actions = {

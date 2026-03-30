@@ -547,7 +547,7 @@
       "id": "NOTES-002",
       "group_id": "NOTES",
       "title": "Tag autocomplete in note form",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Show existing tags as suggestions when typing in the tags input field.",

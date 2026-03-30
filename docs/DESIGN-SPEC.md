@@ -176,6 +176,8 @@ Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border
 
 **Markdown preview pane (`.preview-pane`):** Shown when the user toggles "Preview" / "Hide Preview" (`btn-preview`). Sits to the right of the textarea in a flex row (`.body-split`). Renders the textarea content via `marked.parse()` client-side. `[[wikilinks]]` are pre-processed before passing to marked: resolved titles (matched against `data.noteTitles` from the server) render as `<span class="wikilink">` (`accent-green-muted`); unresolved titles render as `<span class="wikilink-broken">` (`accent-red`, strikethrough). Preview background: `bg-raised`, `border-soft`, 8px radius, `font-size: 0.9rem`, `line-height: 1.75`. Toggle button (`btn-preview`): `bg-raised` background, `border-soft` border, `text-muted` label, 6px radius — a small secondary control in the body-header row.
 
+**Tag autocomplete (`<datalist>`):** The Tags input in both Create and Edit note forms is wired to a `<datalist id="tags-suggestions">`. Options are computed client-side from `data.existingTags` (all distinct tags loaded by the server) filtered against the token being typed (text after the last comma). The option values include the full prefix (previously typed tags) so that selecting a suggestion preserves earlier entries. New tags not in the list are accepted freely — no validation is applied on the client. No custom component is used.
+
 **AI research button (`btn-ai`):** Sits inline with the title input in a flex `.title-row`. Disabled until the title field has a non-empty value. On click, POSTs `{ topic: title }` to `/api/ai/research`, populates the body textarea with the returned Markdown, and sets hidden fields `ai_generated=true`, `ai_model`, `ai_prompt`. During the request, shows a CSS spinner and "Researching…" text. Errors appear as an `ai-error` banner (`accent-red` tint) directly below the title row. Button styling: `color-mix(in srgb, accent-purple 14%, bg-raised)` background, `accent-purple` text and border — uses `--accent-purple` to signal AI provenance consistently with the AI badge on note detail.
 
 **Search:**
@@ -280,7 +282,6 @@ A floating legend overlay is rendered in `+page.svelte` as an `absolute` positio
 
 ## Future Design Considerations
 
-- **Tag autocomplete**: typeahead on the tags input field
 - **Graph filter panel**: slide-in drawer with category/status toggles
 - **Dedicated chat page**: natural-language prompt surface with a familiar conversation layout, grounded note link, concise summary, a separate "possible additions" section, and exactly 3 new topic ideas
 - **Chat page**: familiar conversation UI with an optional context panel for matched notes, sources, and suggested follow-ups
