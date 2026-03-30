@@ -2,6 +2,40 @@
 	import type { ActionData } from './$types.js';
 
 	let { form }: { form: ActionData } = $props();
+
+	let titleValue = $state('');
+	let bodyValue = $state('');
+	let aiLoading = $state(false);
+	let aiError = $state<string | null>(null);
+	let aiGenerated = $state(false);
+	let aiModel = $state('');
+	let aiPrompt = $state('');
+
+	async function researchWithAI() {
+		if (!titleValue.trim() || aiLoading) return;
+		aiLoading = true;
+		aiError = null;
+		try {
+			const res = await fetch('/api/ai/research', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ topic: titleValue.trim() })
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				aiError = data.error ?? 'AI research failed';
+				return;
+			}
+			bodyValue = data.body;
+			aiGenerated = true;
+			aiModel = 'claude-opus-4-6';
+			aiPrompt = titleValue.trim();
+		} catch {
+			aiError = 'Network error — could not reach AI service';
+		} finally {
+			aiLoading = false;
+		}
+	}
 </script>
 
 <div class="authoring-page">
@@ -15,11 +49,40 @@
 	{/if}
 
 	<form method="POST" class="authoring-form">
+		<input type="hidden" name="ai_generated" value={aiGenerated ? 'true' : 'false'} />
+		<input type="hidden" name="ai_model" value={aiModel} />
+		<input type="hidden" name="ai_prompt" value={aiPrompt} />
+
 		<div class="fields-meta">
 			<label>
 				<span class="field-label">Title <span class="required">*</span></span>
-				<input type="text" name="title" required placeholder="e.g. SvelteKit" />
+				<div class="title-row">
+					<input
+						type="text"
+						name="title"
+						required
+						placeholder="e.g. SvelteKit"
+						bind:value={titleValue}
+					/>
+					<button
+						type="button"
+						class="btn-ai"
+						onclick={researchWithAI}
+						disabled={!titleValue.trim() || aiLoading}
+					>
+						{#if aiLoading}
+							<span class="spinner"></span>
+							Researching…
+						{:else}
+							✦ Research with AI
+						{/if}
+					</button>
+				</div>
 			</label>
+
+			{#if aiError}
+				<p class="ai-error">{aiError}</p>
+			{/if}
 
 			<div class="fields-row">
 				<label>
@@ -58,6 +121,7 @@
 					name="body"
 					rows="18"
 					placeholder="# SvelteKit&#10;&#10;SvelteKit is a framework for [[Svelte]]..."
+					bind:value={bodyValue}
 				></textarea>
 			</label>
 		</div>
@@ -133,6 +197,17 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1rem;
+	}
+
+	.title-row {
+		display: flex;
+		gap: 0.6rem;
+		align-items: stretch;
+	}
+
+	.title-row input {
+		flex: 1;
+		min-width: 0;
 	}
 
 	.fields-body {
@@ -238,5 +313,57 @@
 
 	.btn-save:hover {
 		opacity: 0.88;
+	}
+
+	.btn-ai {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1rem;
+		background: color-mix(in srgb, var(--accent-purple) 14%, var(--bg-raised));
+		color: var(--accent-purple);
+		border: 1px solid color-mix(in srgb, var(--accent-purple) 30%, transparent);
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 500;
+		white-space: nowrap;
+		transition: opacity 150ms ease, background 150ms ease;
+		flex-shrink: 0;
+	}
+
+	.btn-ai:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--accent-purple) 22%, var(--bg-raised));
+	}
+
+	.btn-ai:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+
+	.ai-error {
+		padding: 0.6rem 0.9rem;
+		background: color-mix(in srgb, var(--accent-red) 12%, var(--bg-surface));
+		color: var(--accent-red);
+		border: 1px solid color-mix(in srgb, var(--accent-red) 25%, transparent);
+		border-radius: 8px;
+		font-size: 0.85rem;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.spinner {
+		display: inline-block;
+		width: 11px;
+		height: 11px;
+		border: 2px solid color-mix(in srgb, var(--accent-purple) 35%, transparent);
+		border-top-color: var(--accent-purple);
+		border-radius: 50%;
+		animation: spin 600ms linear infinite;
+		flex-shrink: 0;
 	}
 </style>

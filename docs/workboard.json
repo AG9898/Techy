@@ -470,7 +470,7 @@
       "id": "AI-003",
       "group_id": "AI",
       "title": "AI research button on New Note page",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Add a 'Research with AI' button to the create-note form that calls /api/ai/research and populates the body textarea.",
@@ -669,7 +669,7 @@
         "Non-AI notes keep AI metadata unset or false"
       ],
       "depends_on": ["AI-003", "AI-004"],
-      "blocked_by": ["AI-003", "AI-004"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/new/+page.server.ts",
         "src/routes/api/ai/generate-note/+server.ts",

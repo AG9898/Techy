@@ -57,7 +57,7 @@ Single user — the owner/developer of this repository. No onboarding, no regist
 |----|---------|----------|
 | F-10 | AI research endpoint: given a topic, return a draft note body | High |
 | F-11 | AI generate-note: full note creation from a prompt, saved to DB | High |
-| F-12 | UI: "Research with AI" button on New Note page | Medium |
+| F-12 | UI: "Research with AI" button on New Note page | Done |
 | F-13 | Provider selection: Claude vs ChatGPT per-request | Low |
 | F-14 | AI-generated notes tagged with `ai_generated=true`, model, prompt | High |
 

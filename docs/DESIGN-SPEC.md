@@ -157,7 +157,8 @@ Meta row sits between title and body, separated from body by a `border-soft` bot
 [error-banner? (accent-red tint, border-soft)   ]
 ┌─ authoring-form (bg-surface, border-soft, 12px radius) ──────────────┐
 │  fields-meta (padding 1.5rem, border-bottom: border-soft)             │
-│    Title (full width)                                                  │
+│    [Title input (flex: 1)   ] [ ✦ Research with AI (btn-ai) ]         │
+│    [ai-error banner? (accent-red tint, border-soft)         ]         │
 │    [Category            ] [Status              ]                      │
 │    [Tags                ] [Aliases             ]                      │
 ├───────────────────────────────────────────────────────────────────────┤
@@ -171,6 +172,8 @@ Meta row sits between title and body, separated from body by a `border-soft` bot
 ```
 
 Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border-color → accent-strong` + `box-shadow: 0 0 0 3px color-mix(in srgb, accent-strong 18%, transparent)`. Field labels are `0.8rem / 500 / text-secondary`. Error banner: `color-mix(in srgb, accent-red 15%, bg-surface)` background with `accent-red` border. Save/Create button: `accent-strong` background, `#fff` text. Delete button: `color-mix(in srgb, accent-red 40%, transparent)` border, `accent-red` text — separate `<form>` element so it is never nested inside the edit form. The body section is a self-contained zone structured to accept a side-by-side preview pane or AI-assist toolbar without a major layout rewrite.
+
+**AI research button (`btn-ai`):** Sits inline with the title input in a flex `.title-row`. Disabled until the title field has a non-empty value. On click, POSTs `{ topic: title }` to `/api/ai/research`, populates the body textarea with the returned Markdown, and sets hidden fields `ai_generated=true`, `ai_model`, `ai_prompt`. During the request, shows a CSS spinner and "Researching…" text. Errors appear as an `ai-error` banner (`accent-red` tint) directly below the title row. Button styling: `color-mix(in srgb, accent-purple 14%, bg-raised)` background, `accent-purple` text and border — uses `--accent-purple` to signal AI provenance consistently with the AI badge on note detail.
 
 **Search:**
 ```

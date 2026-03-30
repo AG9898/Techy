@@ -16,6 +16,9 @@ export const actions: Actions = {
 		const aliasesRaw = (data.get('aliases') as string) ?? '';
 		const category = (data.get('category') as string)?.trim() || null;
 		const status = (data.get('status') as 'stub' | 'growing' | 'mature') ?? 'stub';
+		const aiGenerated = data.get('ai_generated') === 'true';
+		const aiModel = (data.get('ai_model') as string)?.trim() || null;
+		const aiPrompt = (data.get('ai_prompt') as string)?.trim() || null;
 
 		if (!title) {
 			return fail(400, { error: 'Title is required' });
@@ -40,7 +43,7 @@ export const actions: Actions = {
 
 		const [inserted] = await db
 			.insert(notes)
-			.values({ title, slug, body, tags, aliases, category, status })
+			.values({ title, slug, body, tags, aliases, category, status, aiGenerated, aiModel, aiPrompt })
 			.returning({ id: notes.id });
 
 		// Resolve [[wikilinks]] and insert note_links rows
