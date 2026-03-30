@@ -149,7 +149,7 @@ Header actions: Import (toggle import panel) and Export are secondary buttons (`
 ```
 Meta row sits between title and body, separated from body by a `border-soft` bottom border. Category badge uses `color-mix(in srgb, accent-primary 12%, bg-surface)` background. AI badge uses `color-mix(in srgb, accent-purple 15%, transparent)`. Status badge in header uses `data-status` attribute + `color-mix` (same pattern as NoteCard). History and Edit are secondary buttons (`bg-surface + border-soft`). Body prose: `font-size: 0.92rem`, `line-height: 1.75`, `color: text-secondary`. Relations section has `border-top: border-soft` and sits below the body.
 
-**Create / Edit Note:** Single-column authoring surface, max-width 720px, centred.
+**Create / Edit Note:** Authoring surface, max-width 720px at rest, expands to 1400px when the preview pane is open.
 
 ```
 [← Back link                                    ]
@@ -163,15 +163,18 @@ Meta row sits between title and body, separated from body by a `border-soft` bot
 │    [Tags                ] [Aliases             ]                      │
 ├───────────────────────────────────────────────────────────────────────┤
 │  fields-body (padding 1.5rem, border-bottom: border-soft)             │
-│    Body textarea (font-mono, rows 18, resize: vertical)               │
-│    <!-- AI-assist toolbar and markdown preview will slot in here -->   │
+│    body-header: [Body label + hint]      [Preview / Hide Preview btn] │
+│    body-split (flex row when preview open):                           │
+│      [textarea (font-mono, rows 18)]  [preview-pane (bg-raised)]      │
 ├───────────────────────────────────────────────────────────────────────┤
 │  form-actions (padding 1rem 1.5rem)  [Cancel]  [Save / Create]        │
 └───────────────────────────────────────────────────────────────────────┘
 [delete-section (separate <form>, border-top: border-soft) — edit only  ]
 ```
 
-Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border-color → accent-strong` + `box-shadow: 0 0 0 3px color-mix(in srgb, accent-strong 18%, transparent)`. Field labels are `0.8rem / 500 / text-secondary`. Error banner: `color-mix(in srgb, accent-red 15%, bg-surface)` background with `accent-red` border. Save/Create button: `accent-strong` background, `#fff` text. Delete button: `color-mix(in srgb, accent-red 40%, transparent)` border, `accent-red` text — separate `<form>` element so it is never nested inside the edit form. The body section is a self-contained zone structured to accept a side-by-side preview pane or AI-assist toolbar without a major layout rewrite.
+Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border-color → accent-strong` + `box-shadow: 0 0 0 3px color-mix(in srgb, accent-strong 18%, transparent)`. Field labels are `0.8rem / 500 / text-secondary`. Error banner: `color-mix(in srgb, accent-red 15%, bg-surface)` background with `accent-red` border. Save/Create button: `accent-strong` background, `#fff` text. Delete button: `color-mix(in srgb, accent-red 40%, transparent)` border, `accent-red` text — separate `<form>` element so it is never nested inside the edit form.
+
+**Markdown preview pane (`.preview-pane`):** Shown when the user toggles "Preview" / "Hide Preview" (`btn-preview`). Sits to the right of the textarea in a flex row (`.body-split`). Renders the textarea content via `marked.parse()` client-side. `[[wikilinks]]` are pre-processed before passing to marked: resolved titles (matched against `data.noteTitles` from the server) render as `<span class="wikilink">` (`accent-green-muted`); unresolved titles render as `<span class="wikilink-broken">` (`accent-red`, strikethrough). Preview background: `bg-raised`, `border-soft`, 8px radius, `font-size: 0.9rem`, `line-height: 1.75`. Toggle button (`btn-preview`): `bg-raised` background, `border-soft` border, `text-muted` label, 6px radius — a small secondary control in the body-header row.
 
 **AI research button (`btn-ai`):** Sits inline with the title input in a flex `.title-row`. Disabled until the title field has a non-empty value. On click, POSTs `{ topic: title }` to `/api/ai/research`, populates the body textarea with the returned Markdown, and sets hidden fields `ai_generated=true`, `ai_model`, `ai_prompt`. During the request, shows a CSS spinner and "Researching…" text. Errors appear as an `ai-error` banner (`accent-red` tint) directly below the title row. Button styling: `color-mix(in srgb, accent-purple 14%, bg-raised)` background, `accent-purple` text and border — uses `--accent-purple` to signal AI provenance consistently with the AI badge on note detail.
 
@@ -277,7 +280,6 @@ A floating legend overlay is rendered in `+page.svelte` as an `absolute` positio
 
 ## Future Design Considerations
 
-- **Markdown preview pane** in editor: side-by-side textarea + rendered output
 - **Tag autocomplete**: typeahead on the tags input field
 - **Graph filter panel**: slide-in drawer with category/status toggles
 - **Dedicated chat page**: natural-language prompt surface with a familiar conversation layout, grounded note link, concise summary, a separate "possible additions" section, and exactly 3 new topic ideas

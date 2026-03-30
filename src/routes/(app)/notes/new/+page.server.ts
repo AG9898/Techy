@@ -4,7 +4,12 @@ import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
-import type { Actions } from './$types.js';
+import type { Actions, PageServerLoad } from './$types.js';
+
+export const load: PageServerLoad = async () => {
+	const allNotes = await db.select({ title: notes.title }).from(notes);
+	return { noteTitles: allNotes.map((n) => n.title) };
+};
 
 export const actions: Actions = {
 	default: async ({ request }) => {

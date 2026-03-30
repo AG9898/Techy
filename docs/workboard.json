@@ -522,7 +522,7 @@
       "id": "NOTES-001",
       "group_id": "NOTES",
       "title": "Markdown preview pane in note editor",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Split-pane editor: textarea on the left, live Markdown preview on the right.",

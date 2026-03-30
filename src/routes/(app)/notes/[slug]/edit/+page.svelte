@@ -1,12 +1,27 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types.js';
+	import { marked } from 'marked';
+	import { untrack } from 'svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const note = $derived(data.note);
+	let bodyValue = $state(untrack(() => data.note.body));
+	let showPreview = $state(false);
+
+	const noteTitlesSet = $derived(new Set(data.noteTitles));
+	const previewHtml = $derived(renderPreview(bodyValue, noteTitlesSet));
+
+	function renderPreview(body: string, knownTitles: Set<string>): string {
+		const preprocessed = body.replace(/\[\[([^\]]+)\]\]/g, (_, title) => {
+			const cls = knownTitles.has(title) ? 'wikilink' : 'wikilink-broken';
+			return `<span class="${cls}">${title}</span>`;
+		});
+		return marked.parse(preprocessed) as string;
+	}
 </script>
 
-<div class="authoring-page">
+<div class="authoring-page" class:preview-open={showPreview}>
 	<div class="authoring-header">
 		<a href="/notes/{note.slug}" class="back-link">← {note.title}</a>
 		<h1>Edit Note</h1>
@@ -53,11 +68,24 @@
 		</div>
 
 		<div class="fields-body">
-			<label class="body-label">
+			<div class="body-header">
 				<span class="field-label">Body <span class="hint">(Markdown · [[Note Title]] for wikilinks)</span></span>
-				<!-- AI-assist toolbar and markdown preview will slot in here -->
-				<textarea name="body" rows="18">{note.body}</textarea>
-			</label>
+				<button type="button" class="btn-preview" onclick={() => (showPreview = !showPreview)}>
+					{showPreview ? 'Hide Preview' : 'Preview'}
+				</button>
+			</div>
+			<div class="body-split">
+				<textarea name="body" rows="18" bind:value={bodyValue}></textarea>
+				{#if showPreview}
+					<div class="preview-pane">
+						{#if bodyValue.trim()}
+							{@html previewHtml}
+						{:else}
+							<span class="preview-empty">Nothing to preview yet…</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 
 		<div class="form-actions">
@@ -83,6 +111,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
+		transition: max-width 200ms ease;
+	}
+
+	.authoring-page.preview-open {
+		max-width: 1400px;
 	}
 
 	.authoring-header {
@@ -143,9 +176,88 @@
 	}
 
 	.fields-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		padding: 1.5rem;
 		border-bottom: 1px solid var(--border-soft);
 	}
+
+	.body-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.body-split {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.authoring-page.preview-open .body-split {
+		flex-direction: row;
+		gap: 1rem;
+		align-items: flex-start;
+	}
+
+	.authoring-page.preview-open .body-split textarea {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.preview-pane {
+		flex: 1;
+		min-width: 0;
+		min-height: 18lh;
+		overflow-y: auto;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
+		border-radius: 8px;
+		padding: 0.75rem 1rem;
+		font-size: 0.9rem;
+		line-height: 1.75;
+		color: var(--text-secondary);
+	}
+
+	.preview-empty {
+		color: var(--text-muted);
+		font-size: 0.85rem;
+		font-style: italic;
+	}
+
+	.preview-pane :global(h1) { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin: 0.75rem 0 0.4rem; }
+	.preview-pane :global(h2) { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0.6rem 0 0.3rem; }
+	.preview-pane :global(h3) { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0.5rem 0 0.25rem; }
+	.preview-pane :global(p) { margin: 0.4rem 0; }
+	.preview-pane :global(ul),
+	.preview-pane :global(ol) { padding-left: 1.25rem; margin: 0.4rem 0; }
+	.preview-pane :global(li) { margin: 0.2rem 0; }
+	.preview-pane :global(code) {
+		background: var(--bg-overlay);
+		border-radius: 3px;
+		padding: 0.1em 0.3em;
+		font-family: var(--font-mono, 'Fira Code', monospace);
+		font-size: 0.85em;
+	}
+	.preview-pane :global(pre) {
+		background: var(--bg-overlay);
+		border-radius: 6px;
+		padding: 0.75rem;
+		overflow-x: auto;
+		margin: 0.5rem 0;
+	}
+	.preview-pane :global(pre code) { background: none; padding: 0; }
+	.preview-pane :global(blockquote) {
+		border-left: 3px solid var(--border-strong);
+		padding-left: 0.75rem;
+		color: var(--text-muted);
+		margin: 0.4rem 0;
+	}
+	.preview-pane :global(a) { color: var(--accent-primary); text-decoration: underline; }
+	.preview-pane :global(hr) { border: none; border-top: 1px solid var(--border-soft); margin: 0.75rem 0; }
+	.preview-pane :global(.wikilink) { color: var(--accent-green-muted); }
+	.preview-pane :global(.wikilink-broken) { color: var(--accent-red); text-decoration: line-through; }
 
 	label {
 		display: flex;
@@ -203,12 +315,6 @@
 		line-height: 1.65;
 	}
 
-	.body-label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
 	.form-actions {
 		display: flex;
 		gap: 0.75rem;
@@ -245,6 +351,24 @@
 
 	.btn-save:hover {
 		opacity: 0.88;
+	}
+
+	.btn-preview {
+		padding: 0.3rem 0.75rem;
+		background: var(--bg-raised);
+		color: var(--text-muted);
+		border: 1px solid var(--border-soft);
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.75rem;
+		font-weight: 500;
+		transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+	}
+
+	.btn-preview:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
+		background: var(--bg-overlay);
 	}
 
 	.delete-section {
