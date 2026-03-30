@@ -26,11 +26,31 @@
 		mature: 'var(--graph-node-mature)'
 	};
 
+	// Stable category colour palette (tailwind-400 range, works on dark/light)
+	const CATEGORY_PALETTE = [
+		'#7dd3fc', // sky
+		'#86efac', // mint
+		'#fcd34d', // amber
+		'#fda4af', // rose
+		'#c084fc', // purple
+		'#fb923c', // orange
+		'#2dd4bf', // teal
+		'#818cf8' //  indigo
+	];
+
 	// Unique filter values derived from node data
 	let categories = $derived(
 		[...new Set(nodes.map((n) => n.category).filter((c): c is string => c !== null))].sort()
 	);
 	let statuses = $derived([...new Set(nodes.map((n) => n.status))].sort());
+
+	// Stable category→colour map (sorted so same set always produces same assignment)
+	let categoryColorMap = $derived(
+		Object.fromEntries(categories.map((cat, i) => [cat, CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]]))
+	);
+
+	// Colour mode toggle (local, not persisted)
+	let colorMode = $state<'status' | 'category'>('status');
 
 	// Filter state (local, not persisted)
 	let hiddenCategories = $state<string[]>([]);
@@ -88,6 +108,18 @@
 
 	$effect(() => {
 		applyFilters(hiddenCategories, hiddenStatuses);
+	});
+
+	$effect(() => {
+		if (!nodeSelection) return;
+		const mode = colorMode;
+		const catMap = categoryColorMap;
+		nodeSelection.select('circle').attr('fill', (d: GraphNode) => {
+			if (mode === 'category') {
+				return catMap[d.category ?? ''] ?? '#64748b';
+			}
+			return statusColor[d.status] ?? 'var(--graph-node-stub)';
+		});
 	});
 
 	let activeFilters = $derived(hiddenCategories.length + hiddenStatuses.length);
@@ -306,6 +338,41 @@
 			</div>
 		</div>
 	{/if}
+	<!-- Legend — bottom-left, shows current colour mode items -->
+	<div class="graph-legend">
+		<div class="legend-mode-row">
+			<button
+				class="legend-mode-btn"
+				class:active={colorMode === 'status'}
+				onclick={() => (colorMode = 'status')}
+			>Status</button>
+			<button
+				class="legend-mode-btn"
+				class:active={colorMode === 'category'}
+				onclick={() => (colorMode = 'category')}
+			>Category</button>
+		</div>
+		{#if colorMode === 'status'}
+			{#each ['stub', 'growing', 'mature'] as s}
+				<span class="legend-item">
+					<span class="legend-dot" style="background: {statusColor[s]}"></span>
+					<span>{s}</span>
+				</span>
+			{/each}
+		{:else}
+			{#if categories.length === 0}
+				<span class="legend-empty">No categories</span>
+			{:else}
+				{#each categories as cat}
+					<span class="legend-item">
+						<span class="legend-dot" style="background: {categoryColorMap[cat]}"></span>
+						<span>{cat}</span>
+					</span>
+				{/each}
+			{/if}
+		{/if}
+	</div>
+
 	{#if categories.length > 0 || statuses.length > 0}
 		<div class="filter-wrap">
 			{#if filterOpen}
@@ -368,6 +435,74 @@
 		height: calc(100vh - 60px);
 		overflow: hidden;
 		background: var(--bg-base);
+	}
+
+	/* Legend — bottom-left */
+	.graph-legend {
+		position: absolute;
+		bottom: 1.5rem;
+		left: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		background: var(--bg-overlay);
+		border: 1px solid var(--border-soft);
+		border-radius: 0.75rem;
+		padding: 0.6rem 0.9rem;
+		backdrop-filter: blur(6px);
+		z-index: 10;
+	}
+
+	.legend-mode-row {
+		display: flex;
+		gap: 0.2rem;
+		margin-bottom: 0.15rem;
+	}
+
+	.legend-mode-btn {
+		flex: 1;
+		background: none;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.4rem;
+		padding: 0.15rem 0.4rem;
+		font-size: 0.68rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		letter-spacing: 0.01em;
+		transition: border-color 120ms, color 120ms, background 120ms;
+	}
+
+	.legend-mode-btn:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
+	}
+
+	.legend-mode-btn.active {
+		color: var(--accent-primary);
+		border-color: var(--accent-primary);
+		background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+	}
+
+	.legend-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+		letter-spacing: 0.01em;
+	}
+
+	.legend-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.legend-empty {
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		font-style: italic;
 	}
 
 	/* Edge drilldown panel — bottom-center */

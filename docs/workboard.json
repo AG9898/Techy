@@ -916,7 +916,7 @@
       "id": "GRAPH-002",
       "group_id": "GRAPH",
       "title": "Graph colour-by-category toggle",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Add a graph display toggle so node colour can represent category instead of status.",

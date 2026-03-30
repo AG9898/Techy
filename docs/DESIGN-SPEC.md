@@ -77,6 +77,23 @@ All new components must use these tokens — no hardcoded hex values.
 | `growing` | `--graph-node-growing` | `#38bdf8` |
 | `mature` | `--graph-node-mature` | `#4ade80` |
 
+### Graph Node Category Colours (fixed palette, theme-agnostic)
+
+When the graph is in category colour mode, categories are assigned colours from this fixed palette in sorted order. The same set of categories always produces the same assignment.
+
+| Palette index | Colour | Hex |
+|---------------|--------|-----|
+| 0 | sky | `#7dd3fc` |
+| 1 | mint | `#86efac` |
+| 2 | amber | `#fcd34d` |
+| 3 | rose | `#fda4af` |
+| 4 | purple | `#c084fc` |
+| 5 | orange | `#fb923c` |
+| 6 | teal | `#2dd4bf` |
+| 7 | indigo | `#818cf8` |
+
+The palette loops if there are more than 8 categories. All values are tailwind-400 range, legible on the night theme and acceptable on paper/mist themes.
+
 ---
 
 ## Typography
@@ -249,6 +266,7 @@ Note cards should be used where repetition is the honest content pattern. They s
 - Tooltip: native SVG `<title>` (browser default tooltip)
 - **Filter panel overlay:** floating panel at bottom-right (`position: absolute; bottom: 1.5rem; right: 1.5rem`). Rendered as a "Filters" button (bg-overlay, border-soft, 0.75rem radius, backdrop-filter blur). Clicking the button toggles a panel with two sections — "Category" checkboxes and "Status" checkboxes (with coloured status dots). When active filters exist, the button shows a count badge ("Filters · N") and highlights with `accent-primary` colour. Filtering hides D3 nodes and their connected edges via `display: none` (no simulation restart). Filter state is local Svelte `$state<string[]>([])` — not persisted.
 - **Edge click drilldown:** clicking an edge opens a lightweight panel anchored bottom-centre (`position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%)`). Styled the same as the filter panel (bg-overlay, border-soft, 0.75rem radius, backdrop-filter blur). Shows a "CONNECTION" label row with a close button (×), and two note chips (bg-raised, border-soft, 0.4rem radius) with status-coloured dots and titles, separated by a `→` arrow. Each chip is an anchor linking to `/notes/[slug]`. Edges use a wider transparent hit zone (stroke-width 12, transparent) stacked above the visible link layer but below nodes, so clicks are easy to register. Clicking the SVG background clears the selection. Node clicks include `event.stopPropagation()` to prevent interfering with the background-click dismiss. Selected edge state is local `$state<{ source: GraphNode; target: GraphNode } | null>(null)` — not persisted.
+- **Colour-mode toggle + dynamic legend:** the legend (previously static in `+page.svelte`) now lives inside `ForceGraph.svelte` at bottom-left. It contains a two-button pill toggle ("Status" / "Category") that switches `colorMode` state (`'status' | 'category'`, defaults to `'status'`). In status mode the legend lists stub/growing/mature with their `--graph-node-*` tokens. In category mode it lists all present categories with their assigned palette colours. A `$effect` re-applies `circle.fill` to all D3 nodes whenever `colorMode` or `categoryColorMap` changes. Category→colour assignment is derived from the sorted category list mapped to the `CATEGORY_PALETTE` array (see Token System above) — same set of categories always produces the same colours.
 
 ### UI Primitive Strategy
 - Prefer Melt UI primitives for new interactive controls where accessibility or keyboard interaction matters
@@ -290,9 +308,12 @@ Currently desktop-first. No explicit breakpoints defined. Grid layouts use `auto
 
 ## Graph Visual Legend
 
-A floating legend overlay is rendered in `+page.svelte` as an `absolute` positioned element (bottom-left of the graph wrapper). It shows:
-- Node colour → status (stub, growing, mature) using the `--graph-node-*` tokens
-- Styled with `bg-overlay`, `border-soft`, `border-radius: 0.75rem`, `backdrop-filter: blur(6px)`, `pointer-events: none`
+A floating legend overlay lives inside `ForceGraph.svelte` (`position: absolute; bottom: 1.5rem; left: 1.5rem`). It includes:
+- A two-button "Status / Category" toggle (pill buttons, `legend-mode-btn`, active button gets accent-primary tint)
+- In **status mode**: three items — stub, growing, mature — with `--graph-node-*` colour dots
+- In **category mode**: one item per category with its assigned palette colour dot; shows "No categories" italic hint if none exist
+- Styled with `bg-overlay`, `border-soft`, `border-radius: 0.75rem`, `backdrop-filter: blur(6px)`
+- The legend is interactive (toggle buttons); individual items are display-only
 - Node size → proportional to link count (degree = incoming + outgoing). Radius range: 6–20px via `max(6, min(20, 6 + sqrt(degree) * 2))`. Collision radius is also scaled.
 
 ---
@@ -300,6 +321,7 @@ A floating legend overlay is rendered in `+page.svelte` as an `absolute` positio
 ## Future Design Considerations
 
 - **Graph filter panel**: ✅ implemented — floating toggle button + overlay panel at bottom-right of ForceGraph.svelte (see component spec above)
+- **Graph colour-by-category toggle**: ✅ implemented — "Status / Category" toggle inside the legend at bottom-left; category colours use the fixed CATEGORY_PALETTE (see Token System above)
 - **Dedicated chat page**: ✅ implemented — natural-language prompt surface with user bubbles, grounded note link, summary, "Possible additions" and "Explore next" sections; calls `POST /api/assistant/query` client-side
 - **Next-topic actions**: ✅ implemented — "Explore next" pill chips visually separate new topic ideas from existing note links; chips do not link anywhere (they are candidates, not saved notes)
 - **GSAP experiments**: motion-heavy interactions can be explored later, but animation remains secondary to clarity and should not overpower the tool-like UI
