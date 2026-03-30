@@ -1251,9 +1251,7 @@
         "ASSIST-004",
         "UI-006"
       ],
-      "blocked_by": [
-        "ASSIST-003"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/chat/+page.svelte",
         "src/routes/chat/+page.server.ts",
@@ -1275,7 +1273,7 @@
       "id": "ASSIST-003",
       "group_id": "ASSIST",
       "title": "Assistant possible-additions suggestions",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Return suggested areas that may be missing or underdeveloped in the matched note.",

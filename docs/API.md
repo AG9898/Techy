@@ -347,7 +347,7 @@ Look up an existing note from a natural-language request and return a note-groun
   4. Any alias appears anywhere in the query
   5. Partial title ilike match (fallback)
 - `summary` is grounded in the saved note content, produced by `claude-opus-4-6` via `ASSISTANT_QUERY_SYSTEM_PROMPT`
-- `possibleGaps` are phrased as suggested additions or underdeveloped areas, not guaranteed omissions; may be `[]`
+- `possibleGaps` are phrased as suggested additions or underdeveloped areas, not guaranteed omissions; each suggestion is grounded in specific content already present in the note (not generic advice); may be `[]`
 - `newTopicIdeas` contains exactly 3 suggestions; topics already present as note titles or aliases are excluded before the AI call
 
 **Errors:**

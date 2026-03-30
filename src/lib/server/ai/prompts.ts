@@ -45,7 +45,7 @@ Respond with valid JSON only — no markdown fences, no prose outside the JSON:
 
 Rules:
 - summary: Reflect only what is stated in the note. Do not add general knowledge not present in the note body.
-- possibleGaps: Areas that appear underdeveloped or absent in the note, phrased as possible additions. May be an empty array.
+- possibleGaps: Identify areas that appear underdeveloped or absent based specifically on the content of this note. Each suggestion must be grounded in what the note already covers — reference specific sections, terms, or concepts already present to justify why the suggestion is relevant. Do not return generic suggestions that would apply to any tech note (e.g. "add more examples", "include a comparison", "discuss history"). May be an empty array if the note is comprehensive or if no specific gaps are identifiable.
 - newTopicIdeas: Exactly 3 adjacent tech topics suitable for new notes. Must not duplicate any topic in the provided existing-topics list.
 `.trim();
 
