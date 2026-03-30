@@ -136,14 +136,15 @@ Empty query (all params absent or blank) returns `results: []`.
 ### `GET /chat`
 Dedicated assistant chat page. Auth-protected via the `(app)` layout guard.
 
-**Server load returns:** `{}` (scaffold — no data required for the shell)
+**Server load returns:** `{}` (no SSR data required — the page calls `POST /api/assistant/query` client-side on each submission)
 
-**Page layout:**
-- Primary conversation surface (`bg-surface`, 16px radius) filling available viewport height
-- Empty state: centred glyph, title, and hint text
-- Loading state: animated three-dot pulse while the assistant responds
-- Persistent composer region at the bottom (`bg-surface`, 14px radius) with a textarea and Send button
-- Conversation column capped at 720px width, centred within the page shell
+**Page behaviour:**
+- On submit, POSTs `{ query }` to `POST /api/assistant/query` and renders the structured response
+- User messages: right-aligned bubbles
+- Assistant responses: grounded note link (clickable, routes to `/notes/[slug]`), summary, "Possible additions" list, "Explore next" topic chips
+- Empty state shown when no messages; centred loading dots shown during first query; inline loading dots at bottom of messages list during subsequent queries
+- `Enter` submits; `Shift+Enter` inserts newline; Send button disabled when textarea is empty or loading
+- Conversation column capped at 720px width, centred; shell fills `calc(100vh - 60px - 4rem)`
 - All styling uses design-token variables; no hardcoded hex values
 
 ---

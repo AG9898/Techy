@@ -1234,7 +1234,7 @@
       "id": "ASSIST-002",
       "group_id": "ASSIST",
       "title": "Chat page assistant interface",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Wire the assistant experience into the dedicated /chat page and render grounded responses in the new conversation UI.",

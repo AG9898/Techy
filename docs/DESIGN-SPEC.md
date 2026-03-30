@@ -200,7 +200,22 @@ The search and filter controls are wrapped in a single rounded surface (`bg-surf
 [  [textarea                              ] [ Send ]             ]
 ```
 
-Chat uses familiar AI product conventions while remaining part of the same rounded, calm system. The shell fills `calc(100vh - 60px - 4rem)` so the composer is always visible without page scroll. Empty and loading placeholder states are wired into `isLoading` state for future assistant integration. The Send button is disabled until the textarea is non-empty. All surfaces use `--bg-surface`, `--border-soft`, and `--border-strong`; the Send button uses `--accent-strong` with white text.
+Chat uses familiar AI product conventions while remaining part of the same rounded, calm system. The shell fills `calc(100vh - 60px - 4rem)` so the composer is always visible without page scroll. All surfaces use `--bg-surface`, `--border-soft`, and `--border-strong`; the Send button uses `--accent-strong` with white text.
+
+**Conversation states:**
+- Empty state: centred glyph (`◈`), title, and hint text — shown when `messages` is empty and not loading
+- Centred loading state: animated three-dot pulse — shown on first query before any messages exist
+- Messages list: rendered when at least one exchange has occurred; inline loading dots appear at the bottom during subsequent queries
+
+**Message layout:**
+- User messages: right-aligned pill bubble (`bg-raised`, `border-soft`, `border-radius: 14px 14px 4px 14px`, max-width 80%)
+- Assistant responses: left-aligned, max-width 92%, structured into:
+  1. **Note link** (if matched) — inline `◈` glyph + note title as an anchor; background `accent-soft`, border `color-mix(in srgb, accent-primary 22%, transparent)`, radius 6px — links directly to `/notes/[slug]`
+  2. **Summary** — `font-size: 0.9rem`, `line-height: 1.75`, `text-secondary` — grounded in the matched note
+  3. **Possible additions** section — `border-top: border-soft` separator, `section-label` uppercase heading (`0.68rem / 500 / text-muted`), bullet list
+  4. **Explore next** section — same separator and label, 3 pill chips (`bg-raised`, `border-soft`, `border-radius: 999px`, `0.75rem`) for new topic ideas not already in the graph
+
+**Send behaviour:** `Enter` submits (Shift+Enter inserts newline). Send button disabled when textarea empty or loading. On submission, calls `POST /api/assistant/query` client-side; conversation area auto-scrolls to bottom after each exchange.
 
 ---
 
@@ -284,9 +299,8 @@ A floating legend overlay is rendered in `+page.svelte` as an `absolute` positio
 ## Future Design Considerations
 
 - **Graph filter panel**: ✅ implemented — floating toggle button + overlay panel at bottom-right of ForceGraph.svelte (see component spec above)
-- **Dedicated chat page**: natural-language prompt surface with a familiar conversation layout, grounded note link, concise summary, a separate "possible additions" section, and exactly 3 new topic ideas
-- **Chat page**: familiar conversation UI with an optional context panel for matched notes, sources, and suggested follow-ups
-- **Next-topic actions**: suggested topics should be visually distinct from existing note links and clearly indicate that they are candidates for new notes, not already saved notes
+- **Dedicated chat page**: ✅ implemented — natural-language prompt surface with user bubbles, grounded note link, summary, "Possible additions" and "Explore next" sections; calls `POST /api/assistant/query` client-side
+- **Next-topic actions**: ✅ implemented — "Explore next" pill chips visually separate new topic ideas from existing note links; chips do not link anywhere (they are candidates, not saved notes)
 - **GSAP experiments**: motion-heavy interactions can be explored later, but animation remains secondary to clarity and should not overpower the tool-like UI
 - **Motion rule**: if GSAP is used, prefer restrained, purposeful transitions over decorative animation loops
 - **Theme and accent expand**: additional themes or accents can be added by defining a new `[data-theme]` or `[data-accent]` block in `src/app.css` and adding it to the Nav toggle list

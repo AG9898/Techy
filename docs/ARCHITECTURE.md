@@ -16,7 +16,7 @@ Browser
   ├─ POST /notes/new                    → +page.server.ts action (insert + wikilink sync)
   ├─ POST /notes/[slug]/edit            → +page.server.ts actions (snapshot + update / delete)
   ├─ GET /search              → +page.server.ts (ilike + arrayOverlaps query)
-  ├─ GET /chat                → (app)/chat/+page.server.ts + +page.svelte (assistant chat surface, auth-protected)
+  ├─ GET /chat                → (app)/chat/+page.server.ts + +page.svelte (assistant chat UI — calls POST /api/assistant/query client-side)
   ├─ POST /api/ai/research      → +server.ts → researchTopic() → Claude API (claude-opus-4-6)
   ├─ POST /api/ai/generate-note → +server.ts → generateNote() → Claude API → insert note + sync links
   ├─ POST /api/assistant/query  → +server.ts → queryAssistant() → Claude API (claude-opus-4-6)
@@ -112,8 +112,8 @@ src/
     │   │   ├── +page.server.ts     # Search query (ilike + arrayOverlaps)
     │   │   └── +page.svelte        # Search form + results grid
     │   └── chat/
-    │       ├── +page.server.ts     # Chat page data loader (scaffold)
-    │       └── +page.svelte        # Assistant chat UI — conversation column + composer
+    │       ├── +page.server.ts     # Chat page data loader (returns {})
+    │       └── +page.svelte        # Assistant chat UI — user bubbles, note link, summary, possible additions, topic chips
     ├── auth/[...auth]/
     │   └── +server.ts          # Auth.js catch-all (GET + POST)
     ├── debug/auth/
