@@ -239,8 +239,6 @@ Delete a note by slug.
 ### `POST /api/ai/research`
 Research a topic using an AI provider and return a draft note body.
 
-**Status:** Stub — returns `501` until AI-001 / AI-002 are implemented.
-
 **Request body:**
 ```json
 {
@@ -277,7 +275,7 @@ Generate a complete note and insert it into the database.
 | Field | Required | Values |
 |-------|----------|--------|
 | `topic` | yes | Any technology or concept name |
-| `provider` | no | `"claude"` (default; `"chatgpt"` planned in AI-002) |
+| `provider` | no | `"claude"` (default) \| `"chatgpt"` |
 
 **Response (201):**
 ```json

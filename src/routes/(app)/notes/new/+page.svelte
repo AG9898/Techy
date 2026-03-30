@@ -11,6 +11,7 @@
 	let aiGenerated = $state(false);
 	let aiModel = $state('');
 	let aiPrompt = $state('');
+	let aiProvider = $state<'claude' | 'chatgpt'>('claude');
 	let showPreview = $state(false);
 	let tagsValue = $state('');
 
@@ -43,7 +44,7 @@
 			const res = await fetch('/api/ai/research', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ topic: titleValue.trim() })
+				body: JSON.stringify({ topic: titleValue.trim(), provider: aiProvider })
 			});
 			const data = await res.json();
 			if (!res.ok) {
@@ -88,6 +89,10 @@
 						placeholder="e.g. SvelteKit"
 						bind:value={titleValue}
 					/>
+					<select class="provider-select" bind:value={aiProvider} disabled={aiLoading}>
+						<option value="claude">Claude</option>
+						<option value="chatgpt">ChatGPT</option>
+					</select>
 					<button
 						type="button"
 						class="btn-ai"
@@ -261,6 +266,19 @@
 	.title-row input {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.provider-select {
+		width: auto;
+		padding: 0.55rem 0.65rem;
+		font-size: 0.82rem;
+		flex-shrink: 0;
+		cursor: pointer;
+	}
+
+	.provider-select:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.fields-body {

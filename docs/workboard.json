@@ -838,7 +838,7 @@
       "id": "AI-005",
       "group_id": "AI",
       "title": "Provider selection across AI workflows",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Allow Claude vs ChatGPT selection for research and generate-note flows from the UI and API.",
