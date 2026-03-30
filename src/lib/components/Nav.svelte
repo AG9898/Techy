@@ -47,6 +47,7 @@
 		<a href="/notes">Notes</a>
 		<a href="/notes/new">+ New</a>
 		<a href="/search">Search</a>
+		<a href="/chat">Chat</a>
 	</div>
 
 	<div class="nav-controls">

@@ -161,13 +161,17 @@ Meta row sits between title and body, separated from body by a `border-soft` bot
 ```
 The search and filter controls are wrapped in a single rounded surface (`bg-surface`, `border-soft`, `border-radius: 12px`) to feel like a command area. Search input uses `bg-raised`, `font-size: 1rem`. Search button uses `accent-strong` background with `#fff` text. Filter labels use uppercase `text-muted` heading text (`font-size: 0.7rem`). No page `h1` heading — the command surface itself is the visual anchor.
 
-**Chat (Planned):**
+**Chat:**
 ```
-[Optional conversation rail] [Conversation column....................] [Optional context panel]
-                                                [composer.................................]
+[Conversation column (max-width 720px, centred).....................]
+[  conversation-area (bg-surface, 16px radius, flex: 1)          ]
+[    empty-state  ◈  "Ask about your notes"                      ]
+[    loading-state  • • •  "Thinking…"                           ]
+[composer-wrap (bg-surface, 14px radius, bottom of column).........]
+[  [textarea                              ] [ Send ]             ]
 ```
 
-Chat should use familiar AI product conventions, but visually remain part of the same rounded, calm system used by the graph and notes experiences.
+Chat uses familiar AI product conventions while remaining part of the same rounded, calm system. The shell fills `calc(100vh - 60px - 4rem)` so the composer is always visible without page scroll. Empty and loading placeholder states are wired into `isLoading` state for future assistant integration. The Send button is disabled until the textarea is non-empty. All surfaces use `--bg-surface`, `--border-soft`, and `--border-strong`; the Send button uses `--accent-strong` with white text.
 
 ---
 

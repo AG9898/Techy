@@ -134,11 +134,17 @@ Empty query (all params absent or blank) returns `results: []`.
 ---
 
 ### `GET /chat`
-Dedicated assistant chat page.
+Dedicated assistant chat page. Auth-protected via the `(app)` layout guard.
 
-**Status:** Planned — not implemented yet.
+**Server load returns:** `{}` (scaffold — no data required for the shell)
 
-This route will host the primary assistant UI, using a familiar chat layout with a persistent composer and supporting grounded-note context.
+**Page layout:**
+- Primary conversation surface (`bg-surface`, 16px radius) filling available viewport height
+- Empty state: centred glyph, title, and hint text
+- Loading state: animated three-dot pulse while the assistant responds
+- Persistent composer region at the bottom (`bg-surface`, 14px radius) with a textarea and Send button
+- Conversation column capped at 720px width, centred within the page shell
+- All styling uses design-token variables; no hardcoded hex values
 
 ---
 

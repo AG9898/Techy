@@ -345,7 +345,7 @@
       "id": "UI-006",
       "group_id": "UI",
       "title": "Chat route scaffold and shell",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create the dedicated /chat route and base conversation layout that future assistant features will use.",
