@@ -954,7 +954,7 @@
       "id": "GRAPH-003",
       "group_id": "GRAPH",
       "title": "Graph node size proportional to link count",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Scale graph node size by the number of note links.",

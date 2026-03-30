@@ -87,6 +87,21 @@
 		const width = container.clientWidth || 800;
 		const height = container.clientHeight || 600;
 
+		// Compute degree (incoming + outgoing) for each node from link props
+		const degreeMap = new Map<string, number>();
+		for (const n of nodes) degreeMap.set(n.id, 0);
+		for (const l of links) {
+			const src = l.source as string;
+			const tgt = l.target as string;
+			degreeMap.set(src, (degreeMap.get(src) ?? 0) + 1);
+			degreeMap.set(tgt, (degreeMap.get(tgt) ?? 0) + 1);
+		}
+
+		function getRadius(id: string): number {
+			const degree = degreeMap.get(id) ?? 0;
+			return Math.max(6, Math.min(20, 6 + Math.sqrt(degree) * 2));
+		}
+
 		const svg = d3
 			.select(container)
 			.append('svg')
@@ -136,7 +151,7 @@
 			)
 			.force('charge', d3.forceManyBody().strength(-200))
 			.force('center', d3.forceCenter(width / 2, height / 2))
-			.force('collision', d3.forceCollide(20));
+			.force('collision', d3.forceCollide<GraphNode>((d) => getRadius(d.id) + 5));
 
 		linkSelection = g
 			.append('g')
@@ -154,21 +169,21 @@
 			.join('g')
 			.attr('cursor', 'pointer')
 			.on('click', (_, d) => goto(`/notes/${d.slug}`))
-			.on('mouseenter', function () {
+			.on('mouseenter', function (_, d) {
 				d3.select(this)
 					.select('circle')
 					.transition()
 					.duration(150)
-					.attr('r', 13)
+					.attr('r', getRadius(d.id) + 3)
 					.attr('stroke', 'var(--graph-focus)')
 					.attr('stroke-width', 2.5);
 			})
-			.on('mouseleave', function () {
+			.on('mouseleave', function (_, d) {
 				d3.select(this)
 					.select('circle')
 					.transition()
 					.duration(150)
-					.attr('r', 10)
+					.attr('r', getRadius(d.id))
 					.attr('stroke', 'var(--bg-surface)')
 					.attr('stroke-width', 2);
 			})
@@ -193,7 +208,7 @@
 
 		nodeSelection
 			.append('circle')
-			.attr('r', 10)
+			.attr('r', (d) => getRadius(d.id))
 			.attr('fill', (d) => statusColor[d.status] ?? 'var(--graph-node-stub)')
 			.attr('stroke', 'var(--bg-surface)')
 			.attr('stroke-width', 2);

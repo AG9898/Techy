@@ -242,8 +242,8 @@ Note cards should be used where repetition is the honest content pattern. They s
 
 ### `ForceGraph.svelte`
 - Full-bleed SVG inside container `height: calc(100vh - 60px)`, `position: relative`
-- Nodes: circles r=10, stroke: bg-surface stroke-width: 2
-- Hover state: circle transitions to r=13, stroke → `--graph-focus`, stroke-width: 2.5 (150ms duration, reverts on mouseleave)
+- Nodes: circles with radius proportional to link degree — `max(6, min(20, 6 + sqrt(degree) * 2))`. Orphan nodes (degree 0) render at r=6. Stroke: bg-surface stroke-width: 2
+- Hover state: circle transitions to `nodeRadius + 3`, stroke → `--graph-focus`, stroke-width: 2.5 (150ms duration, reverts on mouseleave)
 - Labels: 11px, text-secondary, offset x=14 y=4 from node centre
 - Links: stroke `--graph-link`, stroke-width: 1.5, arrow marker
 - Tooltip: native SVG `<title>` (browser default tooltip)
@@ -292,7 +292,7 @@ Currently desktop-first. No explicit breakpoints defined. Grid layouts use `auto
 A floating legend overlay is rendered in `+page.svelte` as an `absolute` positioned element (bottom-left of the graph wrapper). It shows:
 - Node colour → status (stub, growing, mature) using the `--graph-node-*` tokens
 - Styled with `bg-overlay`, `border-soft`, `border-radius: 0.75rem`, `backdrop-filter: blur(6px)`, `pointer-events: none`
-- Node size → proportional to link count (planned, not yet implemented)
+- Node size → proportional to link count (degree = incoming + outgoing). Radius range: 6–20px via `max(6, min(20, 6 + sqrt(degree) * 2))`. Collision radius is also scaled.
 
 ---
 
