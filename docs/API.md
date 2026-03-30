@@ -253,16 +253,12 @@ Research a topic using an AI provider and return a draft note body.
 | `topic` | yes | Any technology or concept name |
 | `provider` | no | `"claude"` (default) \| `"chatgpt"` |
 
-**Response (planned):**
+**Response (200):**
 ```json
-{ "body": "# SvelteKit\n\n..." }
+{ "body": "# SvelteKit\n\n...", "model": "claude-opus-4-6" }
 ```
 
-**Current response:**
-```json
-{ "error": "AI research not yet implemented" }
-```
-HTTP `501`
+`model` is the identifier of the AI model that produced the body (`"claude-opus-4-6"` for Claude, `"gpt-4o"` for ChatGPT). The New Note page stores this value in the `ai_model` field when the user submits the form after researching.
 
 ---
 

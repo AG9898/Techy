@@ -28,7 +28,7 @@
 			}
 			bodyValue = data.body;
 			aiGenerated = true;
-			aiModel = 'claude-opus-4-6';
+			aiModel = data.model ?? 'claude-opus-4-6';
 			aiPrompt = titleValue.trim();
 		} catch {
 			aiError = 'Network error — could not reach AI service';

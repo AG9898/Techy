@@ -657,7 +657,7 @@
       "id": "AI-006",
       "group_id": "AI",
       "title": "Persist AI provenance metadata consistently",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Ensure ai_generated, ai_model, and ai_prompt are populated consistently for AI-assisted note creation flows.",

@@ -32,7 +32,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			provider === 'chatgpt'
 				? await chatgptResearch(topic.trim())
 				: await claudeResearch(topic.trim());
-		return json({ body });
+		const model = provider === 'chatgpt' ? 'gpt-4o' : 'claude-opus-4-6';
+		return json({ body, model });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 
