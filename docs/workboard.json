@@ -318,7 +318,7 @@
       "id": "UI-005",
       "group_id": "UI",
       "title": "Note authoring surface refresh",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Refresh create/edit note forms so authoring feels like part of the same soft docs environment.",
@@ -482,7 +482,7 @@
         "Submitted note has ai_generated=true in the database"
       ],
       "depends_on": ["AI-001", "UI-005"],
-      "blocked_by": ["UI-005"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/new/+page.svelte",
         "src/routes/notes/new/+page.server.ts"
@@ -533,7 +533,7 @@
         "Preview pane is optional / collapsible"
       ],
       "depends_on": ["FOUND-005", "UI-005"],
-      "blocked_by": ["UI-005"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/new/+page.svelte",
         "src/routes/notes/[slug]/edit/+page.svelte"
@@ -558,7 +558,7 @@
         "New tags (not in suggestions) are also accepted"
       ],
       "depends_on": ["FOUND-005", "UI-005"],
-      "blocked_by": ["UI-005"],
+      "blocked_by": [],
       "files": [
         "src/routes/notes/new/+page.server.ts",
         "src/routes/notes/new/+page.svelte",

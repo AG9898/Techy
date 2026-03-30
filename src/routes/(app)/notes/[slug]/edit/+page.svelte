@@ -6,50 +6,59 @@
 	const note = $derived(data.note);
 </script>
 
-<div class="form-page">
-	<div class="form-header">
+<div class="authoring-page">
+	<div class="authoring-header">
 		<a href="/notes/{note.slug}" class="back-link">← {note.title}</a>
 		<h1>Edit Note</h1>
 	</div>
 
 	{#if form?.error}
-		<p class="error">{form.error}</p>
+		<p class="error-banner">{form.error}</p>
 	{/if}
 
-	<form method="POST" action="?/update" class="note-form">
-		<label>
-			<span>Title <span class="required">*</span></span>
-			<input type="text" name="title" required value={note.title} />
-		</label>
+	<form method="POST" action="?/update" class="authoring-form">
+		<div class="fields-meta">
+			<label>
+				<span class="field-label">Title <span class="required">*</span></span>
+				<input type="text" name="title" required value={note.title} />
+			</label>
 
-		<label>
-			<span>Category</span>
-			<input type="text" name="category" value={note.category ?? ''} />
-		</label>
+			<div class="fields-row">
+				<label>
+					<span class="field-label">Category</span>
+					<input type="text" name="category" value={note.category ?? ''} />
+				</label>
 
-		<label>
-			<span>Status</span>
-			<select name="status">
-				{#each ['stub', 'growing', 'mature'] as s}
-					<option value={s} selected={note.status === s}>{s}</option>
-				{/each}
-			</select>
-		</label>
+				<label>
+					<span class="field-label">Status</span>
+					<select name="status">
+						{#each ['stub', 'growing', 'mature'] as s}
+							<option value={s} selected={note.status === s}>{s}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
 
-		<label>
-			<span>Tags <span class="hint">(comma-separated)</span></span>
-			<input type="text" name="tags" value={note.tags.join(', ')} />
-		</label>
+			<div class="fields-row">
+				<label>
+					<span class="field-label">Tags <span class="hint">(comma-separated)</span></span>
+					<input type="text" name="tags" value={note.tags.join(', ')} />
+				</label>
 
-		<label>
-			<span>Aliases <span class="hint">(comma-separated)</span></span>
-			<input type="text" name="aliases" value={note.aliases.join(', ')} />
-		</label>
+				<label>
+					<span class="field-label">Aliases <span class="hint">(comma-separated)</span></span>
+					<input type="text" name="aliases" value={note.aliases.join(', ')} />
+				</label>
+			</div>
+		</div>
 
-		<label class="body-label">
-			<span>Body <span class="hint">(Markdown, use [[Note Title]] for links)</span></span>
-			<textarea name="body" rows="16">{note.body}</textarea>
-		</label>
+		<div class="fields-body">
+			<label class="body-label">
+				<span class="field-label">Body <span class="hint">(Markdown · [[Note Title]] for wikilinks)</span></span>
+				<!-- AI-assist toolbar and markdown preview will slot in here -->
+				<textarea name="body" rows="18">{note.body}</textarea>
+			</label>
+		</div>
 
 		<div class="form-actions">
 			<a href="/notes/{note.slug}" class="btn-cancel">Cancel</a>
@@ -68,116 +77,194 @@
 </div>
 
 <style>
-	.form-page {
+	.authoring-page {
 		max-width: 720px;
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
 	}
-	.form-header {
+
+	.authoring-header {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: 0.3rem;
 	}
+
 	.back-link {
 		font-size: 0.85rem;
-		color: #64748b;
+		color: var(--text-muted);
 		text-decoration: none;
+		transition: color 150ms ease;
 	}
+
+	.back-link:hover {
+		color: var(--text-secondary);
+	}
+
 	h1 {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #e2e8f0;
+		color: var(--text-primary);
+		letter-spacing: -0.01em;
 	}
-	.error {
+
+	.error-banner {
 		padding: 0.75rem 1rem;
-		background: #450a0a;
-		color: #f87171;
-		border-radius: 6px;
+		background: color-mix(in srgb, var(--accent-red) 15%, var(--bg-surface));
+		color: var(--accent-red);
+		border: 1px solid color-mix(in srgb, var(--accent-red) 30%, transparent);
+		border-radius: 8px;
 		font-size: 0.9rem;
 	}
-	.note-form {
+
+	.authoring-form {
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 0;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 12px;
+		overflow: hidden;
 	}
+
+	.fields-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding: 1.5rem;
+		border-bottom: 1px solid var(--border-soft);
+	}
+
+	.fields-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+
+	.fields-body {
+		padding: 1.5rem;
+		border-bottom: 1px solid var(--border-soft);
+	}
+
 	label {
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
-		font-size: 0.85rem;
-		color: #94a3b8;
 	}
+
+	.field-label {
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--text-secondary);
+		letter-spacing: 0.01em;
+	}
+
 	.required {
-		color: #f87171;
+		color: var(--accent-red);
 	}
+
 	.hint {
-		color: #475569;
+		color: var(--text-subtle);
 		font-size: 0.75rem;
+		font-weight: 400;
 	}
+
 	input,
 	select,
 	textarea {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		color: #e2e8f0;
-		border-radius: 6px;
-		padding: 0.6rem 0.75rem;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
+		color: var(--text-primary);
+		border-radius: 8px;
+		padding: 0.55rem 0.75rem;
 		font-size: 0.9rem;
 		font-family: inherit;
 		width: 100%;
+		transition: border-color 150ms ease, box-shadow 150ms ease;
 	}
+
 	input:focus,
 	select:focus,
 	textarea:focus {
 		outline: none;
-		border-color: #1d4ed8;
+		border-color: var(--accent-strong);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 18%, transparent);
 	}
+
+	select {
+		cursor: pointer;
+	}
+
 	textarea {
 		resize: vertical;
-		font-family: 'Fira Code', 'Cascadia Code', monospace;
+		font-family: var(--font-mono, 'Fira Code', 'Cascadia Code', monospace);
 		font-size: 0.85rem;
-		line-height: 1.6;
+		line-height: 1.65;
 	}
+
+	.body-label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
 	.form-actions {
 		display: flex;
-		gap: 1rem;
+		gap: 0.75rem;
 		justify-content: flex-end;
 		align-items: center;
+		padding: 1rem 1.5rem;
 	}
+
 	.btn-cancel {
-		padding: 0.5rem 1.25rem;
-		color: #64748b;
+		padding: 0.5rem 1.1rem;
+		color: var(--text-muted);
 		text-decoration: none;
 		font-size: 0.9rem;
+		border-radius: 8px;
+		transition: color 150ms ease, background 150ms ease;
 	}
+
+	.btn-cancel:hover {
+		color: var(--text-secondary);
+		background: var(--bg-raised);
+	}
+
 	.btn-save {
 		padding: 0.5rem 1.25rem;
-		background: #1d4ed8;
+		background: var(--accent-strong);
 		color: #fff;
 		border: none;
-		border-radius: 6px;
+		border-radius: 8px;
 		cursor: pointer;
 		font-size: 0.9rem;
+		font-weight: 500;
+		transition: opacity 150ms ease;
 	}
+
 	.btn-save:hover {
-		background: #2563eb;
+		opacity: 0.88;
 	}
+
 	.delete-section {
-		border-top: 1px solid #1e293b;
-		padding-top: 1rem;
+		border-top: 1px solid var(--border-soft);
+		padding-top: 0.75rem;
 	}
+
 	.btn-delete {
 		background: none;
-		border: 1px solid #7f1d1d;
-		color: #f87171;
+		border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent);
+		color: var(--accent-red);
 		padding: 0.4rem 0.85rem;
-		border-radius: 6px;
+		border-radius: 8px;
 		cursor: pointer;
 		font-size: 0.85rem;
+		transition: background 150ms ease, border-color 150ms ease;
 	}
+
 	.btn-delete:hover {
-		background: #450a0a;
+		background: color-mix(in srgb, var(--accent-red) 10%, transparent);
+		border-color: var(--accent-red);
 	}
 </style>

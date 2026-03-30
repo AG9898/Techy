@@ -149,7 +149,28 @@ Header actions: Import (toggle import panel) and Export are secondary buttons (`
 ```
 Meta row sits between title and body, separated from body by a `border-soft` bottom border. Category badge uses `color-mix(in srgb, accent-primary 12%, bg-surface)` background. AI badge uses `color-mix(in srgb, accent-purple 15%, transparent)`. Status badge in header uses `data-status` attribute + `color-mix` (same pattern as NoteCard). History and Edit are secondary buttons (`bg-surface + border-soft`). Body prose: `font-size: 0.92rem`, `line-height: 1.75`, `color: text-secondary`. Relations section has `border-top: border-soft` and sits below the body.
 
-**Create / Edit Note:** Single-column form, max-width 720px, centred.
+**Create / Edit Note:** Single-column authoring surface, max-width 720px, centred.
+
+```
+[← Back link                                    ]
+[h1: New Note / Edit Note                       ]
+[error-banner? (accent-red tint, border-soft)   ]
+┌─ authoring-form (bg-surface, border-soft, 12px radius) ──────────────┐
+│  fields-meta (padding 1.5rem, border-bottom: border-soft)             │
+│    Title (full width)                                                  │
+│    [Category            ] [Status              ]                      │
+│    [Tags                ] [Aliases             ]                      │
+├───────────────────────────────────────────────────────────────────────┤
+│  fields-body (padding 1.5rem, border-bottom: border-soft)             │
+│    Body textarea (font-mono, rows 18, resize: vertical)               │
+│    <!-- AI-assist toolbar and markdown preview will slot in here -->   │
+├───────────────────────────────────────────────────────────────────────┤
+│  form-actions (padding 1rem 1.5rem)  [Cancel]  [Save / Create]        │
+└───────────────────────────────────────────────────────────────────────┘
+[delete-section (separate <form>, border-top: border-soft) — edit only  ]
+```
+
+Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border-color → accent-strong` + `box-shadow: 0 0 0 3px color-mix(in srgb, accent-strong 18%, transparent)`. Field labels are `0.8rem / 500 / text-secondary`. Error banner: `color-mix(in srgb, accent-red 15%, bg-surface)` background with `accent-red` border. Save/Create button: `accent-strong` background, `#fff` text. Delete button: `color-mix(in srgb, accent-red 40%, transparent)` border, `accent-red` text — separate `<form>` element so it is never nested inside the edit form. The body section is a self-contained zone structured to accept a side-by-side preview pane or AI-assist toolbar without a major layout rewrite.
 
 **Search:**
 ```
