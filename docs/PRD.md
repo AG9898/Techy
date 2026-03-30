@@ -68,7 +68,7 @@ Single user — the owner/developer of this repository. No onboarding, no regist
 | F-15 | Graph: filter nodes by category or status | Medium |
 | F-16 | Graph: colour by category (not just status) toggle | Low |
 | F-17 | Graph: node size proportional to link count | Low |
-| F-18 | Graph: click edge to view both connected notes | Low |
+| F-18 | Graph: click edge to view both connected notes | Done |
 | F-19 | Orphan note detection (notes with no links) | Medium |
 
 ### Phase 4 — Content & UX

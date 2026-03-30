@@ -989,7 +989,7 @@
       "id": "GRAPH-004",
       "group_id": "GRAPH",
       "title": "Graph edge click drilldown",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Allow clicking an edge to inspect the two connected notes.",
