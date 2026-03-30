@@ -1054,7 +1054,7 @@
       "id": "GRAPH-006",
       "group_id": "GRAPH",
       "title": "Graph legend overlay",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Add a legend overlay to explain graph colours and node sizing.",
@@ -1069,12 +1069,10 @@
         "GRAPH-003",
         "UI-003"
       ],
-      "blocked_by": [
-        "GRAPH-003"
-      ],
+      "blocked_by": [],
       "files": [
         "src/lib/components/ForceGraph.svelte",
-        "src/routes/+page.svelte"
+        "src/routes/(app)/+page.svelte"
       ],
       "docs": [
         "docs/DESIGN-SPEC.md",

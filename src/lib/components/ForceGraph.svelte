@@ -371,6 +371,13 @@
 				{/each}
 			{/if}
 		{/if}
+		<div class="legend-size-hint">
+			<span class="size-hint-bubbles">
+				<span class="size-bubble small"></span>
+				<span class="size-bubble large"></span>
+			</span>
+			<span>size = link count</span>
+		</div>
 	</div>
 
 	{#if categories.length > 0 || statuses.length > 0}
@@ -503,6 +510,39 @@
 		font-size: 0.72rem;
 		color: var(--text-muted);
 		font-style: italic;
+	}
+
+	.legend-size-hint {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		margin-top: 0.1rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid var(--border-soft);
+	}
+
+	.size-hint-bubbles {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.size-bubble {
+		background: var(--text-muted);
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.size-bubble.small {
+		width: 6px;
+		height: 6px;
+	}
+
+	.size-bubble.large {
+		width: 11px;
+		height: 11px;
 	}
 
 	/* Edge drilldown panel — bottom-center */
