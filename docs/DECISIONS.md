@@ -254,3 +254,83 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 - Soft-delete + `deleted_at` column: supports only a single "prior version" and complicates note queries
 - JSON diff / patch column on the `notes` table: efficient storage but requires a patch-replay engine to render any revision
 - PostgreSQL audit trigger: keeps logic in the DB rather than the application, harder to maintain alongside Drizzle migrations
+
+---
+
+## ADR-011: Assistant-first note authoring over a dedicated `/notes/new` page
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The product direction is moving away from a separate new-note form and toward a single assistant surface that can both converse and drive note CRUD.
+
+**Decision:** `/chat` becomes the primary authoring surface. New note creation is initiated from chat with an explicit create-mode control, and assistant-generated create/update proposals are reviewed inline and confirmed before save. The dedicated `/notes/new` page is no longer part of the intended product direction.
+
+**Reasons:**
+- A single assistant surface reduces duplication between conversational help and AI note creation
+- Inline draft review keeps the user in one mental model instead of bouncing between chat and a separate authoring page
+- Explicit review-before-save keeps note mutations deliberate and auditable
+
+**Trade-offs:**
+- The chat surface becomes more complex and must handle both conversational and mutation states well
+- The product loses a simple form-first fallback for new notes unless a legacy route is intentionally retained during migration
+
+---
+
+## ADR-012: Live web research is required for assistant note creation and note comparison
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The assistant is expected to create and review notes against current information rather than relying only on model priors or the existing graph.
+
+**Decision:** Assistant-driven note creation and note-comparison flows always perform live web research. The assistant should reuse already-known topic context within the same conversation to avoid redundant research. Citations are shown during chat review but are not persisted in a dedicated citation schema in this phase.
+
+**Reasons:**
+- Notes should reflect current information, not only model memory
+- The same topic should not be researched repeatedly within a single chat session
+- Keeping citations in chat review avoids premature schema expansion
+
+**Trade-offs:**
+- Assistant flows depend on external provider/web-research capability
+- Some source provenance is not retained once the note is saved
+
+---
+
+## ADR-013: Assistant-created notes may patch existing note bodies to establish immediate reciprocal links
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** Creating a new note should make its graph relationships visible immediately, including cases where existing notes ought to link to the new note.
+
+**Decision:** When the assistant creates a new note and determines that one or more existing notes should reference it, the confirmed save flow may also update those existing note bodies to include the new `[[Title]]` link and then re-sync their `note_links` rows in the same mutation sequence.
+
+**Reasons:**
+- Graph relationships should be visible immediately after note creation
+- `[[wikilinks]]` remain the source of truth for graph edges
+- The assistant can make the knowledge graph feel less one-sided when a new concept clearly belongs inside existing note prose
+
+**Trade-offs:**
+- Assistant note creation can affect more than one saved note in a single confirmed action
+- Review UI must make linked-note patches visible before commit
+
+---
+
+## ADR-014: Tonal dark/light theme model over the previous three-theme system
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The current `night / paper / mist` theme model is broader than needed and does not align with the desired explicit dark/light theme behavior.
+
+**Decision:** Replace the previous three-theme model with a tonal `dark / light` theme model while keeping accent selection independent.
+
+**Reasons:**
+- A true dark/light model is easier to understand and easier to carry across all surfaces
+- Tonal dark/light modes better fit the desired observatory/editorial balance
+- Accent choice remains expressive without multiplying the core theme matrix
+
+**Trade-offs:**
+- Existing theme names and tokens need migration
+- Some visual variety from the previous three-theme system is intentionally reduced

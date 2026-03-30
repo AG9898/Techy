@@ -1,5 +1,7 @@
 # API Reference — Techy
 
+This document reflects the **target assistant-first API direction** agreed for the next work phase. Some endpoints described here replace current routes that still exist in code today; the workboard will track that migration explicitly.
+
 All routes are SvelteKit. Page routes return SSR HTML. Form actions use `application/x-www-form-urlencoded`. JSON API routes use `application/json`.
 
 Protected app routes are grouped under `src/routes/(app)` and enforced by `src/routes/(app)/+layout.server.ts`. Public auth routes remain outside that group at `/signin`, `/auth/*`, and `/debug/auth/*`.
@@ -28,9 +30,13 @@ Notes list with category filter chips and orphan detection.
 ```ts
 {
   notes: { id, title, slug, tags, category, status, createdAt }[],
-  orphanIds: string[]   // IDs of notes with no incoming or outgoing links
+  orphanIds: string[]
 }
 ```
+
+**Notes:**
+- `/notes` remains the browsing and management surface for existing notes.
+- New note creation is no longer expected to originate from a dedicated `/notes/new` page.
 
 ---
 
@@ -39,14 +45,9 @@ Download all notes as a zip archive of Markdown files.
 
 **Response:** `application/zip` binary with `Content-Disposition: attachment; filename="techy-notes-YYYY-MM-DD.zip"`
 
-Each note is serialised to `{slug}.md` with YAML frontmatter (`title`, `tags`, `aliases`, `category`, `status`) followed by the body. The format is compatible with `POST /notes?/import`.
+Each note is serialised to `{slug}.md` with YAML frontmatter (`title`, `tags`, `aliases`, `category`, `status`) followed by the body.
 
 **Errors:** `500` on DB or zip failure
-
----
-
-### `GET /notes/new`
-Create note form. No server load data.
 
 ---
 
@@ -58,10 +59,10 @@ Note detail page.
 **Server load returns:**
 ```ts
 {
-  note: Note,                          // full note row
-  htmlBody: string,                    // rendered HTML (wikilinks resolved + marked)
-  outgoing: { id, title, slug, status }[],  // notes this note links to
-  incoming: { id, title, slug, status }[]   // notes that link to this note
+  note: Note,
+  htmlBody: string,
+  outgoing: { id, title, slug, status }[],
+  incoming: { id, title, slug, status }[]
 }
 ```
 
@@ -70,7 +71,7 @@ Note detail page.
 ---
 
 ### `GET /notes/[slug]/edit`
-Edit note form. Pre-populated with existing note data.
+Legacy direct edit route for an existing note. The assistant-first direction shifts primary authoring into `/chat`, but direct edit may remain temporarily during migration.
 
 **Server load returns:** `{ note: Note }`
 
@@ -85,7 +86,7 @@ Revision history list for a note, ordered most-recent first.
 ```ts
 {
   note: { id, title, slug },
-  revisions: NoteRevision[]  // ordered by revisedAt DESC
+  revisions: NoteRevision[]
 }
 ```
 
@@ -101,11 +102,11 @@ Full content of a specific revision, rendered as HTML.
 {
   note: { id, title, slug },
   revision: NoteRevision,
-  htmlBody: string           // rendered Markdown with wikilinks resolved
+  htmlBody: string
 }
 ```
 
-**Errors:** `404` if slug or revisionId not found, or revision does not belong to this note
+**Errors:** `404` if slug or revisionId not found, or revisionId does not belong to this note
 
 ---
 
@@ -129,48 +130,38 @@ Search results page.
 }
 ```
 
-Empty query (all params absent or blank) returns `results: []`.
+Empty query returns `results: []`.
 
 ---
 
 ### `GET /chat`
-Dedicated assistant chat page. Auth-protected via the `(app)` layout guard.
+Primary assistant surface for conversation and note authoring.
 
-**Server load returns:** `{}` (no SSR data required — the page calls `POST /api/assistant/query` client-side on each submission)
+**Server load returns:**
+```ts
+{
+  providers: {
+    id: 'anthropic' | 'openai',
+    label: string,
+    models: { id: string, label: string }[]
+  }[],
+  defaultProvider: 'anthropic' | 'openai',
+  defaultModel: string
+}
+```
 
 **Page behaviour:**
-- On submit, POSTs `{ query }` to `POST /api/assistant/query` and renders the structured response
-- User messages: right-aligned bubbles
-- Assistant responses: grounded note link (clickable, routes to `/notes/[slug]`), summary, "Possible additions" list, "Explore next" topic chips
-- Empty state shown when no messages; centred loading dots shown during first query; inline loading dots at bottom of messages list during subsequent queries
-- `Enter` submits; `Shift+Enter` inserts newline; Send button disabled when textarea is empty or loading
-- Conversation column capped at 720px width, centred; shell fills `calc(100vh - 60px - 4rem)`
-- All styling uses design-token variables; no hardcoded hex values
+- Standard conversation stays available at all times.
+- The composer includes an explicit create-mode toggle.
+- The page submits full conversation state to `POST /api/assistant/respond`.
+- Assistant responses may include a structured proposal for `create_note`, `update_note`, or `delete_note`.
+- Create/update proposals render as editable draft panels in chat before save.
+- Delete proposals render as explicit confirmation UI.
+- Live web citations may be shown in chat review, but are not persisted as dedicated source metadata.
 
 ---
 
 ## Form Actions
-
-### `POST /notes/new`
-Create a new note.
-
-**Form fields:**
-| Field | Required | Description |
-|-------|----------|-------------|
-| `title` | yes | Note title. Drives the slug. Must be unique. |
-| `body` | no | Markdown body. `[[wikilinks]]` are parsed on save. |
-| `category` | no | One of the hub categories. |
-| `status` | no | `stub` \| `growing` \| `mature`. Default: `stub`. |
-| `tags` | no | Comma-separated string (e.g. `svelte, javascript`). |
-| `aliases` | no | Comma-separated string of alternate names. |
-
-**Success:** Redirects `303` to `/notes/[slug]`
-
-**Errors:**
-- `400` — title missing
-- `400` — slug derived from title already exists
-
----
 
 ### `POST /notes?/import`
 Batch-import notes from uploaded Markdown files. Files must have a YAML frontmatter block at the top.
@@ -180,53 +171,30 @@ Batch-import notes from uploaded Markdown files. Files must have a YAML frontmat
 **Form fields:**
 | Field | Required | Description |
 |-------|----------|-------------|
-| `files` | yes | One or more `.md` files (multipart, `multiple`) |
+| `files` | yes | One or more `.md` files |
 
 **Behaviour:**
 - Parses `title`, `tags`, `aliases`, `category`, `status` from YAML frontmatter; falls back to first `# Heading` for title.
-- If a note with the same title already exists it is **updated** (body, tags, aliases, category, status). Otherwise a new note is **inserted**.
-- `[[wikilinks]]` in each imported note are synced to `note_links` after all upserts complete, so cross-file links resolve correctly.
-- Files that fail validation are collected as errors; they do not block the import of valid files.
+- If a note with the same title already exists it is **updated**. Otherwise a new note is **inserted**.
+- `[[wikilinks]]` in each imported note are synced to `note_links` after all upserts complete.
 
 **Success:** Returns `{ importResult: { imported: number, errors: { file: string, message: string }[] } }`
 
 **Errors:**
 - `400` — no files provided
-- Per-file validation errors: not `.md`, missing frontmatter block, missing title, slug collision with a different-titled note
-
----
-
-### `POST /notes?/delete`
-Delete a note by ID.
-
-**Form fields:**
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | yes | Note UUID |
-
-**Success:** Returns `{ success: true }` (stays on `/notes`)
-
-**Errors:** `400` — id missing or invalid
+- Per-file validation errors for malformed markdown/frontmatter or slug/title conflicts
 
 ---
 
 ### `POST /notes/[slug]/edit?/update`
-Update an existing note.
+Legacy direct update action for an existing note.
 
-**Form fields:** Same as `POST /notes/new` (title, body, category, status, tags, aliases)
-
-**Behaviour:** Re-syncs `note_links` — deletes old links for this note, re-inserts from current body's `[[wikilinks]]`.
-
-**Success:** Redirects `303` to `/notes/[slug]`
-
-**Errors:**
-- `400` — title missing
-- `404` — note not found
+**Behaviour:** Re-syncs `note_links` and preserves revision history.
 
 ---
 
 ### `POST /notes/[slug]/edit?/delete`
-Delete a note by slug.
+Legacy direct delete action for an existing note.
 
 **Success:** Redirects `303` to `/notes`
 
@@ -236,125 +204,159 @@ Delete a note by slug.
 
 ## JSON API Endpoints
 
-### `POST /api/ai/research`
-Research a topic using an AI provider and return a draft note body.
+### `POST /api/assistant/respond`
+Primary assistant endpoint for conversation, live research, and proposal generation.
 
 **Request body:**
 ```json
 {
-  "topic": "SvelteKit",
-  "provider": "claude"
+  "messages": [
+    { "role": "user", "content": "Create a note about SvelteKit adapters" }
+  ],
+  "mode": "create",
+  "provider": "anthropic",
+  "model": "claude-opus-4-6",
+  "topicCache": {
+    "sveltekit adapters": {
+      "summary": "...",
+      "citations": [
+        { "title": "SvelteKit docs", "url": "https://..." }
+      ]
+    }
+  }
 }
 ```
 
-| Field | Required | Values |
-|-------|----------|--------|
-| `topic` | yes | Any technology or concept name |
-| `provider` | no | `"claude"` (default) \| `"chatgpt"` |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `messages` | yes | Full conversation transcript for the current client-side session |
+| `mode` | yes | `"chat"` \| `"create"` |
+| `provider` | yes | `"anthropic"` \| `"openai"` |
+| `model` | yes | A server-approved model identifier for the chosen provider |
+| `topicCache` | no | Per-conversation research cache used to avoid re-researching the same topic repeatedly |
 
 **Response (200):**
 ```json
-{ "body": "# SvelteKit\n\n...", "model": "claude-opus-4-6" }
+{
+  "assistantMessage": {
+    "content": "SvelteKit adapters determine how the app is deployed...",
+    "citations": [
+      { "title": "SvelteKit docs", "url": "https://..." }
+    ]
+  },
+  "proposal": {
+    "type": "create_note",
+    "draft": {
+      "title": "SvelteKit Adapters",
+      "body": "# SvelteKit Adapters\n\n...",
+      "tags": ["framework"],
+      "aliases": [],
+      "category": "Web Frameworks",
+      "status": "growing",
+      "aiGenerated": true,
+      "aiModel": "claude-opus-4-6",
+      "aiPrompt": "Create a note about SvelteKit adapters"
+    },
+    "linkedNotePatches": [
+      {
+        "noteId": "existing-note-id",
+        "title": "SvelteKit",
+        "updatedBody": "... [[SvelteKit Adapters]] ..."
+      }
+    ]
+  },
+  "topicCache": {
+    "sveltekit adapters": {
+      "summary": "...",
+      "citations": [
+        { "title": "SvelteKit docs", "url": "https://..." }
+      ]
+    }
+  }
+}
 ```
 
-`model` is the identifier of the AI model that produced the body (`"claude-opus-4-6"` for Claude, `"gpt-4o"` for ChatGPT). The New Note page stores this value in the `ai_model` field when the user submits the form after researching.
+**Behaviour:**
+- In all modes, the assistant remains conversational.
+- In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
+- Live web research is required for note creation and for note-comparison work.
+- If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
+- For existing-note comparison, the assistant should only return an `update_note` proposal when the saved note appears materially incorrect, materially outdated, or substantially incomplete.
+- Citations are review-only and are not persisted as dedicated DB metadata in this phase.
+
+**Errors:**
+- `400` — invalid body, missing messages, invalid mode, or invalid provider/model combination
+- `401` — invalid or missing provider API key
+- `429` — provider rate limit exceeded
+- `500` — assistant orchestration or provider failure
+
+---
+
+### `POST /api/assistant/commit`
+Persist a confirmed assistant proposal.
+
+**Request body:**
+```json
+{
+  "proposal": {
+    "type": "create_note",
+    "draft": {
+      "title": "SvelteKit Adapters",
+      "body": "# SvelteKit Adapters\n\n...",
+      "tags": ["framework"],
+      "aliases": [],
+      "category": "Web Frameworks",
+      "status": "growing",
+      "aiGenerated": true,
+      "aiModel": "claude-opus-4-6",
+      "aiPrompt": "Create a note about SvelteKit adapters"
+    },
+    "linkedNotePatches": [
+      {
+        "noteId": "existing-note-id",
+        "updatedBody": "... [[SvelteKit Adapters]] ..."
+      }
+    ]
+  }
+}
+```
+
+**Proposal types:**
+- `create_note`
+- `update_note`
+- `delete_note`
+
+**Behaviour:**
+- `create_note` inserts the note, parses `[[wikilinks]]`, and syncs `note_links` immediately.
+- If `linkedNotePatches` are included, the commit also updates those existing note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows before returning.
+- `update_note` stores a revision snapshot before updating the note and re-syncs links.
+- `delete_note` removes the note after explicit UI confirmation.
+
+**Response (200/201):**
+```json
+{
+  "result": {
+    "type": "create_note",
+    "note": { "id": "...", "slug": "sveltekit-adapters", "title": "SvelteKit Adapters" }
+  }
+}
+```
+
+**Errors:**
+- `400` — invalid proposal shape
+- `404` — target note not found for update/delete
+- `409` — title/slug conflict on create
+- `500` — DB or sync failure
+
+---
+
+### `POST /api/ai/research`
+Legacy helper endpoint. No longer the intended product entry point once the assistant-first flow lands.
 
 ---
 
 ### `POST /api/ai/generate-note`
-Generate a complete note and insert it into the database.
-
-**Request body:**
-```json
-{
-  "topic": "SvelteKit",
-  "provider": "claude"
-}
-```
-
-| Field | Required | Values |
-|-------|----------|--------|
-| `topic` | yes | Any technology or concept name |
-| `provider` | no | `"claude"` (default) \| `"chatgpt"` |
-
-**Response (201):**
-```json
-{
-  "note": { "id": "...", "slug": "sveltekit", "title": "SvelteKit" },
-  "nextNoteIdeas": ["Topic A", "Topic B", "Topic C"]
-}
-```
-
-**Behaviour:**
-- Calls `generateNote(topic)` via `claude-opus-4-6` using `NOTE_GENERATION_SYSTEM_PROMPT`
-- Parses frontmatter (`title`, `category`, `tags`, `status`) from the generated Markdown
-- Derives slug with `slugify(title)`
-- Inserts the note with `ai_generated=true`, `ai_model='claude-opus-4-6'`, `ai_prompt=topic`
-- Parses `[[wikilinks]]` from the note body and syncs `note_links`
-- After insertion, calls `getNextNoteRecommendations(topic, existingTopics)` using `NOTE_RECOMMENDATIONS_SYSTEM_PROMPT` to return exactly 3 adjacent topic candidates not already present as note titles or aliases; failures are non-fatal (returns `[]`)
-
-**Errors:**
-- `400` — topic missing or empty
-- `401` — invalid or missing ANTHROPIC_API_KEY
-- `409` — slug or title already exists (body includes `conflictId`)
-- `429` — Claude rate limit exceeded
-- `500` — generation or DB failure
-
----
-
-### `POST /api/assistant/query`
-Look up an existing note from a natural-language request and return a note-grounded assistant response.
-
-**Request body:**
-```json
-{
-  "query": "tell me about SvelteKit"
-}
-```
-
-| Field | Required | Values |
-|-------|----------|--------|
-| `query` | yes | Natural-language request that should resolve to an existing note |
-
-**Response (200):**
-```json
-{
-  "matchedNote": {
-    "id": "...",
-    "title": "SvelteKit",
-    "slug": "sveltekit",
-    "url": "/notes/sveltekit"
-  },
-  "summary": "SvelteKit is ...",
-  "possibleGaps": [
-    "Deployment adapter tradeoffs",
-    "How form actions differ from API routes"
-  ],
-  "newTopicIdeas": [
-    "Vite",
-    "Svelte 5 runes",
-    "SvelteKit adapters"
-  ]
-}
-```
-
-**Behaviour:**
-- Note resolution uses a 5-tier matching cascade (most-to-least exact):
-  1. Exact title match (case-insensitive)
-  2. Exact alias match (case-insensitive)
-  3. Title appears anywhere in the query (handles "tell me about SvelteKit" → note titled "SvelteKit")
-  4. Any alias appears anywhere in the query
-  5. Partial title ilike match (fallback)
-- `summary` is grounded in the saved note content, produced by `claude-opus-4-6` via `ASSISTANT_QUERY_SYSTEM_PROMPT`
-- `possibleGaps` are phrased as suggested additions or underdeveloped areas, not guaranteed omissions; each suggestion is grounded in specific content already present in the note (not generic advice); may be `[]`
-- `newTopicIdeas` contains exactly 3 suggestions; topics already present as note titles or aliases are excluded before the AI call
-
-**Errors:**
-- `400` — query missing or empty
-- `401` — invalid or missing ANTHROPIC_API_KEY
-- `404` — no matching note found
-- `429` — Claude rate limit exceeded
-- `500` — AI call or JSON parsing failure
+Legacy helper endpoint. No longer the intended product entry point once the assistant-first flow lands.
 
 ---
 
@@ -366,21 +368,7 @@ Auth.js actions are handled by the catch-all at `src/routes/auth/[...auth]/+serv
 |--------|------|-------------|
 | `GET` | `/signin` | Custom sign-in page |
 | `GET` | `/auth/callback/github` | GitHub OAuth callback — do not call directly |
-| `POST` | `/auth/signout` | Sign out (form POST from Nav) |
-| `GET` | `/signin?error=...` | Sign-in page with auth error message (e.g. `?error=AccessDenied`) |
-| `GET` / `POST` | `/debug/auth/login` | Debug-only bypass login. Requires `DEBUG_AUTH_BYPASS_ENABLED=true` and the correct secret. |
+| `POST` | `/auth/signout` | Sign out |
+| `GET` | `/signin?error=...` | Sign-in page with auth error message |
+| `GET` / `POST` | `/debug/auth/login` | Debug-only bypass login |
 | `GET` / `POST` | `/debug/auth/logout` | Clears the debug bypass session cookie |
-
-**Sign-out usage** (from any Svelte component):
-```html
-<form method="POST" action="/auth/signout">
-  <button type="submit">Sign out</button>
-</form>
-```
-
-**Debug bypass usage**:
-```bash
-curl -i "http://localhost:5173/debug/auth/login?secret=<DEBUG_AUTH_BYPASS_SECRET>&redirectTo=/notes"
-```
-
-The debug bypass creates a signed app session without GitHub OAuth. It is intended for local testing and agent-driven Playwright runs against deployments where the same secret is configured.

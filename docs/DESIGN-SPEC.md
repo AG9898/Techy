@@ -1,123 +1,75 @@
 # Design Specification — Techy
 
+This document reflects the updated UI direction for the assistant-first phase. It supersedes assumptions that depend on a dedicated `/notes/new` page or the previous `night / paper / mist` theme model.
+
 ## Design Philosophy
 
-Techy should feel like a soft, graph-centered private knowledge tool rather than a generic SaaS dashboard. The graph remains the hero, while the rest of the product should feel like supporting layers around it: floating panels, rounded sheets, clean reading surfaces, and calm controls.
-
-High-level visual direction is defined in [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md). This design spec focuses on implementation detail, current tokens, and component guidance.
+Techy should feel like a soft, graph-centered private knowledge tool rather than a generic SaaS dashboard. The graph remains the hero, but assistant chat now becomes the primary authoring surface.
 
 Current implementation direction:
-- Tailwind CSS v4 is the styling foundation for layout, spacing, and utility-driven component work
-- Melt UI is the preferred primitive library for interactive components
-- GSAP is available for optional motion experiments where animation adds meaning
-- Visual styling remains custom to Techy; Melt is used for behavior and accessibility primitives, not for a canned theme
-- New UI should avoid a “wall of interchangeable cards” and prefer a few intentional page zones
+- Tailwind CSS v4 remains the styling foundation
+- Melt UI is the preferred primitive layer for interactive controls and review affordances
+- GSAP is available for selective motion where it improves continuity or focus
+- Visual styling remains custom to Techy
+- New UI should avoid a wall of interchangeable cards and instead prefer a few clear surfaces
 
 ---
 
 ## Token System
 
-Techy uses a two-axis token system applied via `data-theme` and `data-accent` attributes on `<html>`. Tokens cascade to all child elements including the D3 graph SVG. Theme and accent selections are persisted to `localStorage` and restored without flash via an inline script in `src/app.html`.
+Techy uses a two-axis token system applied via `data-theme` and `data-accent` attributes on `<html>`.
 
-All new components must use these tokens — no hardcoded hex values.
+Theme axis:
+- `dark` — tonal dark, not pure black
+- `light` — tonal light, not harsh white
 
-### Semantic Tokens (vary by theme and/or accent)
+Accent axis:
+- `sky`
+- `mint`
+- `amber`
+- `rose`
+
+All new components must use tokens. No hardcoded hex values should appear in component code.
+
+### Semantic Tokens
 
 | Token | Usage |
 |-------|-------|
-| `--bg-base` | Page background |
-| `--bg-surface` | Cards, nav, inputs, form elements |
-| `--bg-raised` | Hover states, tags, code blocks |
-| `--bg-overlay` | Overlays, modals |
+| `--bg-base` | App background |
+| `--bg-surface` | Primary surfaces |
+| `--bg-raised` | Secondary surfaces, chips, inputs |
+| `--bg-overlay` | Popovers, dialogs, floating overlays |
 | `--border-soft` | Default borders |
-| `--border-strong` | Hover borders, emphasis |
-| `--text-primary` | Headings, main content |
-| `--text-secondary` | Labels, form hints, secondary text |
-| `--text-muted` | Timestamps, empty states, back links |
-| `--text-subtle` | Dates, hint text |
-| `--accent-primary` | Logo, links, active controls (set by accent) |
-| `--accent-strong` | Primary buttons, focus borders (set by accent) |
-| `--accent-soft` | Tinted backgrounds for accent-coloured UI (set by accent) |
-| `--graph-node-stub` | Graph node colour — stub status |
-| `--graph-node-growing` | Graph node colour — growing status |
-| `--graph-node-mature` | Graph node colour — mature status |
-| `--graph-link` | Graph edge stroke |
-| `--graph-focus` | Graph focus/hover highlight |
-| `--accent-green` | Wikilink hover, mature status |
-| `--accent-green-muted` | Wikilink default colour |
-| `--accent-red` | Errors, broken wikilinks, delete actions |
-| `--accent-purple` | AI-generated badge |
-
-### Legacy Token Aliases (kept for backward compat)
-
-`--border` → `--border-soft` · `--border-hover` → `--border-strong` · `--accent-blue-light` → `--accent-primary` · `--accent-blue` → `--accent-strong` · `--accent-blue-hover` → accent hover value
-
-### Themes
-
-| Theme | Character | `--bg-base` |
-|-------|-----------|-------------|
-| `night` | Observatory, soft dark (default) | `#0a0f1e` |
-| `paper` | Warm light, editorial, archival | `#faf7f2` |
-| `mist` | Cool neutral, quiet, understated | `#f0f4f8` |
-
-### Accents
-
-| Accent | Character | `--accent-primary` |
-|--------|-----------|--------------------|
-| `sky` | Calm, clear, technical (default) | `#7dd3fc` |
-| `mint` | Fresh, research-oriented | `#86efac` |
-| `amber` | Warm, thoughtful | `#fcd34d` |
-| `rose` | Soft, personal | `#fda4af` |
-
-### Graph Node Status Colours (Night theme)
-
-| Status | Token | Value |
-|--------|-------|-------|
-| `stub` | `--graph-node-stub` | `#64748b` |
-| `growing` | `--graph-node-growing` | `#38bdf8` |
-| `mature` | `--graph-node-mature` | `#4ade80` |
-
-### Graph Node Category Colours (fixed palette, theme-agnostic)
-
-When the graph is in category colour mode, categories are assigned colours from this fixed palette in sorted order. The same set of categories always produces the same assignment.
-
-| Palette index | Colour | Hex |
-|---------------|--------|-----|
-| 0 | sky | `#7dd3fc` |
-| 1 | mint | `#86efac` |
-| 2 | amber | `#fcd34d` |
-| 3 | rose | `#fda4af` |
-| 4 | purple | `#c084fc` |
-| 5 | orange | `#fb923c` |
-| 6 | teal | `#2dd4bf` |
-| 7 | indigo | `#818cf8` |
-
-The palette loops if there are more than 8 categories. All values are tailwind-400 range, legible on the night theme and acceptable on paper/mist themes.
+| `--border-strong` | Active and hover borders |
+| `--text-primary` | Headings and main content |
+| `--text-secondary` | Secondary body text |
+| `--text-muted` | Metadata, empty-state copy |
+| `--text-subtle` | Low-priority helper text |
+| `--accent-primary` | Links and active emphasis |
+| `--accent-strong` | Primary actions and focus |
+| `--accent-soft` | Accent-tinted backgrounds |
+| `--graph-node-stub` | Graph stub color |
+| `--graph-node-growing` | Graph growing color |
+| `--graph-node-mature` | Graph mature color |
+| `--graph-link` | Graph edge color |
+| `--graph-focus` | Graph focus state |
+| `--accent-green` | Wikilinks / positive states |
+| `--accent-green-muted` | Default wikilink color |
+| `--accent-red` | Errors and delete actions |
+| `--accent-purple` | AI/proposal provenance |
 
 ---
 
 ## Typography
 
-No custom font loaded — uses system stack:
+Current implementation still uses:
+
 ```css
 font-family: 'Inter', system-ui, sans-serif;
-```
-
-Monospace (note editor, code blocks):
-```css
 font-family: 'Fira Code', 'Cascadia Code', monospace;
 ```
 
-Typography should still lean closer to polished docs pages than to a typical dashboard. Long-form reading surfaces should feel calm and editorial.
-
-| Usage | Size | Weight |
-|-------|------|--------|
-| Page headings (h1) | `1.5–1.75rem` | 700 |
-| Section headings (h2) | `1.1rem` | 600 |
-| Body text | `0.9–0.95rem` | 400 |
-| Labels / hints | `0.8–0.85rem` | 400 |
-| Badges / chips | `0.7–0.75rem` | 500 |
-| Note body prose | `0.9rem` | 400 |
+Typography should continue to feel closer to polished docs pages than to a dashboard.
 
 ---
 
@@ -127,7 +79,7 @@ Typography should still lean closer to polished docs pages than to a typical das
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  Nav: [Techy]  [Graph] [Notes] [+ New] [Search]  [Night▾] ●●●●  [😊] [Sign out] │  60px, sticky
+│ Nav: [Techy] [Graph] [Notes] [Search] [Chat] [Dark/Light] ●●●● [avatar] [Sign out] │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │  <main class="page-content">                               │
@@ -136,194 +88,143 @@ Typography should still lean closer to polished docs pages than to a typical das
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Nav positioning:** `position: sticky; top: 0; z-index: 50` — stays in view as bounded pages scroll.
+The `+ New` navigation item is removed. `/chat` becomes the primary authoring entry point.
 
-**Full-bleed exception:** The home (graph) page uses `position: fixed; top: 60px` to fill the viewport below the sticky nav, bypassing the `page-content` container. All controls, legends, and filters on that page appear as floating overlays.
+### Home (Graph)
 
-### Page Layouts
+- Full-viewport SVG below the sticky nav
+- Minimal chrome
+- Floating legend and filter controls
+- Graph should reflect new links immediately after assistant-confirmed note creation
 
-**Home (Graph):** Full-viewport SVG, no padding, dark background. Empty state centred.
-
-The home page should preserve the feeling of a full environment rather than a boxed canvas. Controls, legends, and future filters should appear as floating or docked overlays rather than heavy surrounding panels.
-
-**Notes List:**
-```
-[Page header: "Notes"   [↑ Import] [↓ Export] [+ New Note] ]
-[Category filter chips (pill row)                          ]
-[Grid: auto-fill minmax(280px, 1fr), gap 0.75rem           ]
-```
-Header actions: Import (toggle import panel) and Export are secondary buttons (`bg-surface + border-soft`); New Note is a primary button (`bg-raised + accent-primary text`). Category chips use `border-radius: 999px`; active chip gets accent tint via `color-mix`.
-
-**Note Detail:**
-```
-[← Notes                     [status badge] [History] [Edit] ]
-[h1: Title                                                   ]
-[category badge] [tag chips...] [ai badge?] [date            ]
-[─────────────────────────────────────────────────────────── ]
-[  Rendered Markdown body (max-width 720px, line-height 1.75)]
-[─────────────────────────────────────────────────────────── ]
-[Links to: ...    |   Linked from: ...                       ]
-```
-Meta row sits between title and body, separated from body by a `border-soft` bottom border. Category badge uses `color-mix(in srgb, accent-primary 12%, bg-surface)` background. AI badge uses `color-mix(in srgb, accent-purple 15%, transparent)`. Status badge in header uses `data-status` attribute + `color-mix` (same pattern as NoteCard). History and Edit are secondary buttons (`bg-surface + border-soft`). Body prose: `font-size: 0.92rem`, `line-height: 1.75`, `color: text-secondary`. Relations section has `border-top: border-soft` and sits below the body.
-
-**Create / Edit Note:** Authoring surface, max-width 720px at rest, expands to 1400px when the preview pane is open.
+### Notes List
 
 ```
-[← Back link                                    ]
-[h1: New Note / Edit Note                       ]
-[error-banner? (accent-red tint, border-soft)   ]
-┌─ authoring-form (bg-surface, border-soft, 12px radius) ──────────────┐
-│  fields-meta (padding 1.5rem, border-bottom: border-soft)             │
-│    [Title input (flex: 1)   ] [ ✦ Research with AI (btn-ai) ]         │
-│    [ai-error banner? (accent-red tint, border-soft)         ]         │
-│    [Category            ] [Status              ]                      │
-│    [Tags                ] [Aliases             ]                      │
-├───────────────────────────────────────────────────────────────────────┤
-│  fields-body (padding 1.5rem, border-bottom: border-soft)             │
-│    body-header: [Body label + hint]      [Preview / Hide Preview btn] │
-│    body-split (flex row when preview open):                           │
-│      [textarea (font-mono, rows 18)]  [preview-pane (bg-raised)]      │
-├───────────────────────────────────────────────────────────────────────┤
-│  form-actions (padding 1rem 1.5rem)  [Cancel]  [Save / Create]        │
-└───────────────────────────────────────────────────────────────────────┘
-[delete-section (separate <form>, border-top: border-soft) — edit only  ]
+[Page header: "Notes"   [↑ Import] [↓ Export] [Chat-first helper copy] ]
+[Category filter chips]
+[Grid: auto-fill minmax(280px, 1fr)]
 ```
 
-Inputs use `bg-raised`, `border-soft`, `border-radius: 8px`. Focus ring: `border-color → accent-strong` + `box-shadow: 0 0 0 3px color-mix(in srgb, accent-strong 18%, transparent)`. Field labels are `0.8rem / 500 / text-secondary`. Error banner: `color-mix(in srgb, accent-red 15%, bg-surface)` background with `accent-red` border. Save/Create button: `accent-strong` background, `#fff` text. Delete button: `color-mix(in srgb, accent-red 40%, transparent)` border, `accent-red` text — separate `<form>` element so it is never nested inside the edit form.
+The notes page remains for browsing, filtering, import, export, and opening existing notes. It is no longer the primary creation surface.
 
-**Markdown preview pane (`.preview-pane`):** Shown when the user toggles "Preview" / "Hide Preview" (`btn-preview`). Sits to the right of the textarea in a flex row (`.body-split`). Renders the textarea content via `marked.parse()` client-side. `[[wikilinks]]` are pre-processed before passing to marked: resolved titles (matched against `data.noteTitles` from the server) render as `<span class="wikilink">` (`accent-green-muted`); unresolved titles render as `<span class="wikilink-broken">` (`accent-red`, strikethrough). Preview background: `bg-raised`, `border-soft`, 8px radius, `font-size: 0.9rem`, `line-height: 1.75`. Toggle button (`btn-preview`): `bg-raised` background, `border-soft` border, `text-muted` label, 6px radius — a small secondary control in the body-header row.
+### Chat
 
-**Tag autocomplete (`<datalist>`):** The Tags input in both Create and Edit note forms is wired to a `<datalist id="tags-suggestions">`. Options are computed client-side from `data.existingTags` (all distinct tags loaded by the server) filtered against the token being typed (text after the last comma). The option values include the full prefix (previously typed tags) so that selecting a suggestion preserves earlier entries. New tags not in the list are accepted freely — no validation is applied on the client. No custom component is used.
+Chat is now both the conversation surface and the primary authoring surface.
 
-**AI research button (`btn-ai`):** Sits inline with the title input in a flex `.title-row`. Disabled until the title field has a non-empty value. On click, POSTs `{ topic: title }` to `/api/ai/research`, populates the body textarea with the returned Markdown, and sets hidden fields `ai_generated=true`, `ai_model`, `ai_prompt`. During the request, shows a CSS spinner and "Researching…" text. Errors appear as an `ai-error` banner (`accent-red` tint) directly below the title row. Button styling: `color-mix(in srgb, accent-purple 14%, bg-raised)` background, `accent-purple` text and border — uses `--accent-purple` to signal AI provenance consistently with the AI badge on note detail.
-
-**Search:**
 ```
-[ search-command surface (bg-surface, border-soft, border-radius 12px)  ]
-[   [ search input (bg-raised)              ] [ Search button ]          ]
-[   [ TAGS label / input ] [ CATEGORY label / input ]                    ]
-[ N results                                                              ]
-[ Grid: results (auto-fill minmax(280px, 1fr), gap 0.75rem)             ]
-```
-The search and filter controls are wrapped in a single rounded surface (`bg-surface`, `border-soft`, `border-radius: 12px`) to feel like a command area. Search input uses `bg-raised`, `font-size: 1rem`. Search button uses `accent-strong` background with `#fff` text. Filter labels use uppercase `text-muted` heading text (`font-size: 0.7rem`). No page `h1` heading — the command surface itself is the visual anchor.
-
-**Chat:**
-```
-[Conversation column (max-width 720px, centred).....................]
-[  conversation-area (bg-surface, 16px radius, flex: 1)          ]
-[    empty-state  ◈  "Ask about your notes"                      ]
-[    loading-state  • • •  "Thinking…"                           ]
-[composer-wrap (bg-surface, 14px radius, bottom of column).........]
-[  [textarea                              ] [ Send ]             ]
+[Conversation column........................................]
+[ assistant toolbar: create-mode toggle | provider | model ]
+[ conversation area ....................................... ]
+[ assistant proposal panel appears inline beneath message  ]
+[ composer ................................................ ]
 ```
 
-Chat uses familiar AI product conventions while remaining part of the same rounded, calm system. The shell fills `calc(100vh - 60px - 4rem)` so the composer is always visible without page scroll. All surfaces use `--bg-surface`, `--border-soft`, and `--border-strong`; the Send button uses `--accent-strong` with white text.
+The assistant must be able to:
+- converse normally
+- generate a new note draft
+- propose an update to an existing note
+- request confirmation for deletion
 
-**Conversation states:**
-- Empty state: centred glyph (`◈`), title, and hint text — shown when `messages` is empty and not loading
-- Centred loading state: animated three-dot pulse — shown on first query before any messages exist
-- Messages list: rendered when at least one exchange has occurred; inline loading dots appear at the bottom during subsequent queries
+### Assistant Proposal Panel
 
-**Message layout:**
-- User messages: right-aligned pill bubble (`bg-raised`, `border-soft`, `border-radius: 14px 14px 4px 14px`, max-width 80%)
-- Assistant responses: left-aligned, max-width 92%, structured into:
-  1. **Note link** (if matched) — inline `◈` glyph + note title as an anchor; background `accent-soft`, border `color-mix(in srgb, accent-primary 22%, transparent)`, radius 6px — links directly to `/notes/[slug]`
-  2. **Summary** — `font-size: 0.9rem`, `line-height: 1.75`, `text-secondary` — grounded in the matched note
-  3. **Possible additions** section — `border-top: border-soft` separator, `section-label` uppercase heading (`0.68rem / 500 / text-muted`), bullet list
-  4. **Explore next** section — same separator and label, 3 pill chips (`bg-raised`, `border-soft`, `border-radius: 999px`, `0.75rem`) for new topic ideas not already in the graph
+For `create_note` and `update_note` proposals, render an editable draft panel inline in chat.
 
-**Send behaviour:** `Enter` submits (Shift+Enter inserts newline). Send button disabled when textarea empty or loading. On submission, calls `POST /api/assistant/query` client-side; conversation area auto-scrolls to bottom after each exchange.
+Structure:
+```
+[ Proposal header: Create note / Update note ]
+[ title ]
+[ category | status ]
+[ tags | aliases ]
+[ body textarea / preview ]
+[ citations shown in review only ]
+[ Confirm ] [ Cancel ]
+```
+
+Rules:
+- The panel is editable before save.
+- Citations are visible in review, but not persisted as dedicated schema.
+- Links should be visible in the draft body using `[[wikilinks]]`.
+- If existing notes will be patched to link to the new note, that should be shown as a secondary review block in the same panel.
+
+### Delete Confirmation
+
+Delete proposals render a smaller inline confirmation card rather than a full edit panel.
+
+Rules:
+- Explicit confirmation is required before delete.
+- Confirmation is a clear UI action, but not a typed phrase.
 
 ---
 
 ## Components
 
 ### `Nav.svelte`
-- Position: `sticky; top: 0; z-index: 50`
-- Height: 60px, background: `bg-surface`, border-bottom: `border-soft`
-- Left: logo `Techy` (accent-primary, bold, `letter-spacing: -0.01em`)
-- Centre (pushed right with `margin-left: auto`): navigation links — pill hover states (`bg-raised` background, `border-radius: 9999px`, padding `0.35rem 0.75rem`), text-secondary at rest, text-primary on hover
-- Right controls: theme pill-group (theme buttons wrapped in a `bg-base + border-soft` pill container; active button gets `bg-surface + accent-primary` text) + accent dot row (12×12px circles, active shows text-primary border)
-- Far right user area: avatar (28×28px, `border-radius: 50%`, soft `border-soft` border) + pill sign-out button (`border-radius: 9999px`, border-soft border, text-muted at rest, text-secondary on hover)
-
-### `NoteCard.svelte`
-- Background: `bg-surface`, border: `border-soft`, `border-radius: 10px`
-- Hover: `border-color → border-strong`, `background → bg-raised`
-- Header row: title (`font-weight: 600`, `text-primary`, `font-size: 0.9rem`) + status badge (right-aligned, `flex-shrink: 0`)
-- Status badge: `border-radius: 999px`, color and background set via `data-status` CSS attribute selector + `color-mix(in srgb, var(--graph-node-*) 15%, transparent)` — themed correctly across all themes
-- Second row: category (`accent-primary`, `font-weight: 500`, `font-size: 0.75rem`) — no background
-- Tags row: tag chips (`bg-raised`, `text-muted`, `border-radius: 4px`)
-- Footer: date (`text-subtle`, `font-size: 0.68rem`)
-
-Note cards should be used where repetition is the honest content pattern. They should not become the default wrapper for every page section.
+- Remove the `+ New` link
+- Replace the 3-theme selector with a true dark/light toggle
+- Keep accent dots
+- Consider Melt primitives for toggle-group behavior and keyboard handling
 
 ### `ForceGraph.svelte`
-- Full-bleed SVG inside container `height: calc(100vh - 60px)`, `position: relative`
-- Nodes: circles with radius proportional to link degree — `max(6, min(20, 6 + sqrt(degree) * 2))`. Orphan nodes (degree 0) render at r=6. Stroke: bg-surface stroke-width: 2
-- Hover state: circle transitions to `nodeRadius + 3`, stroke → `--graph-focus`, stroke-width: 2.5 (150ms duration, reverts on mouseleave)
-- Labels: 11px, text-secondary, offset x=14 y=4 from node centre
-- Links: stroke `--graph-link`, stroke-width: 1.5, arrow marker
-- Tooltip: native SVG `<title>` (browser default tooltip)
-- **Filter panel overlay:** floating panel at bottom-right (`position: absolute; bottom: 1.5rem; right: 1.5rem`). Rendered as a "Filters" button (bg-overlay, border-soft, 0.75rem radius, backdrop-filter blur). Clicking the button toggles a panel with two sections — "Category" checkboxes and "Status" checkboxes (with coloured status dots). When active filters exist, the button shows a count badge ("Filters · N") and highlights with `accent-primary` colour. Filtering hides D3 nodes and their connected edges via `display: none` (no simulation restart). Filter state is local Svelte `$state<string[]>([])` — not persisted.
-- **Edge click drilldown:** clicking an edge opens a lightweight panel anchored bottom-centre (`position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%)`). Styled the same as the filter panel (bg-overlay, border-soft, 0.75rem radius, backdrop-filter blur). Shows a "CONNECTION" label row with a close button (×), and two note chips (bg-raised, border-soft, 0.4rem radius) with status-coloured dots and titles, separated by a `→` arrow. Each chip is an anchor linking to `/notes/[slug]`. Edges use a wider transparent hit zone (stroke-width 12, transparent) stacked above the visible link layer but below nodes, so clicks are easy to register. Clicking the SVG background clears the selection. Node clicks include `event.stopPropagation()` to prevent interfering with the background-click dismiss. Selected edge state is local `$state<{ source: GraphNode; target: GraphNode } | null>(null)` — not persisted.
-- **Colour-mode toggle + dynamic legend:** the legend (previously static in `+page.svelte`) now lives inside `ForceGraph.svelte` at bottom-left. It contains a two-button pill toggle ("Status" / "Category") that switches `colorMode` state (`'status' | 'category'`, defaults to `'status'`). In status mode the legend lists stub/growing/mature with their `--graph-node-*` tokens. In category mode it lists all present categories with their assigned palette colours. A `$effect` re-applies `circle.fill` to all D3 nodes whenever `colorMode` or `categoryColorMap` changes. Category→colour assignment is derived from the sorted category list mapped to the `CATEGORY_PALETTE` array (see Token System above) — same set of categories always produces the same colours.
+- Keep current graph legend/filter/edge drilldown work
+- Ensure graph colors remain legible in both tonal themes
+- Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
-### UI Primitive Strategy
-- Prefer Melt UI primitives for new interactive controls where accessibility or keyboard interaction matters
-- Prefer Tailwind utilities for spacing, layout, typography, borders, and responsive adjustments
-- Avoid importing a full pre-styled component theme; Techy should keep a distinct visual language
-- Prefer building pages from a few visual zones rather than many interchangeable boxed sections
+### `Chat` surface
+- Add an explicit create-mode toggle near the composer
+- Add provider/model selection controls
+- Render assistant citations and proposal panels inline
+- Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility
 
 ---
 
 ## Interaction Patterns
 
-### Form Validation
-- Required field errors returned as `ActionData.error` from server actions
-- Displayed as a red banner above the form (`background: #450a0a`)
-- No client-side validation — server is authoritative
-- See [`docs/API.md`](API.md) for form fields, validation rules, and redirect behaviour per route
+### Assistant Creation Flow
+1. User enables create mode and sends a prompt.
+2. Assistant performs live web research and reasons over the existing graph.
+3. Assistant responds conversationally and may return a structured draft proposal.
+4. User edits the draft inline if needed.
+5. User confirms save.
+6. The app persists the note, syncs `note_links`, and applies any confirmed linked-note patches so graph connections are visible immediately.
 
-### Wikilinks
-- In note body: `[[Note Title]]` renders as `.wikilink` anchor (accent-green-muted)
-- Unresolved links render as `.wikilink-broken` (accent-red, strikethrough)
-- Hover: accent-green
-- See [`docs/NOTES.md`](NOTES.md) for wikilink syntax, resolution pipeline, and authoring rules
+### Assistant Update Flow
+1. User asks about or asks to improve an existing note.
+2. Assistant compares the saved note against live web results.
+3. Only if the note appears materially incorrect, outdated, or substantially incomplete does the assistant return an update proposal.
+4. User reviews and confirms the update.
 
-### Delete Confirmation
-- Delete action triggered by a separate `<form>` (not nested inside update form)
-- `onsubmit` calls `confirm()` — if cancelled, `event.preventDefault()`
-
-### Search
-- Pure GET form — results appear on the same page, URL reflects query params
-- No JS required, works without hydration
+### Assistant Delete Flow
+1. User requests deletion.
+2. Assistant returns a confirmation card.
+3. User confirms.
+4. Note is deleted.
 
 ---
 
 ## Responsive Behaviour
 
-Currently desktop-first. No explicit breakpoints defined. Grid layouts use `auto-fill minmax(280px)` which naturally collapses on small screens. Not a current priority.
+Still desktop-first, but chat and proposal panels should collapse cleanly to a single-column layout on smaller screens.
 
 ---
 
-## Graph Visual Legend
+## Motion Guidance
 
-A floating legend overlay lives inside `ForceGraph.svelte` (`position: absolute; bottom: 1.5rem; left: 1.5rem`). It includes:
-- A two-button "Status / Category" toggle (pill buttons, `legend-mode-btn`, active button gets accent-primary tint)
-- In **status mode**: three items — stub, growing, mature — with `--graph-node-*` colour dots
-- In **category mode**: one item per category with its assigned palette colour dot; shows "No categories" italic hint if none exist
-- Styled with `bg-overlay`, `border-soft`, `border-radius: 0.75rem`, `backdrop-filter: blur(6px)`
-- The legend is interactive (toggle buttons); individual items are display-only
-- Node size → proportional to link count (degree = incoming + outgoing). Radius range: 6–20px via `max(6, min(20, 6 + sqrt(degree) * 2))`. Collision radius is also scaled.
+GSAP should be limited to a few meaningful transitions:
+- assistant message reveal
+- proposal panel reveal/collapse
+- confirmation-state transitions
+- subtle theme toggle choreography, if used
+
+Avoid decorative motion loops or broad page-wide animation.
 
 ---
 
-## Future Design Considerations
+## Melt UI Guidance
 
-- **Graph filter panel**: ✅ implemented — floating toggle button + overlay panel at bottom-right of ForceGraph.svelte (see component spec above)
-- **Graph colour-by-category toggle**: ✅ implemented — "Status / Category" toggle inside the legend at bottom-left; category colours use the fixed CATEGORY_PALETTE (see Token System above)
-- **Dedicated chat page**: ✅ implemented — natural-language prompt surface with user bubbles, grounded note link, summary, "Possible additions" and "Explore next" sections; calls `POST /api/assistant/query` client-side
-- **Next-topic actions**: ✅ implemented — "Explore next" pill chips visually separate new topic ideas from existing note links; chips do not link anywhere (they are candidates, not saved notes)
-- **GSAP experiments**: motion-heavy interactions can be explored later, but animation remains secondary to clarity and should not overpower the tool-like UI
-- **Motion rule**: if GSAP is used, prefer restrained, purposeful transitions over decorative animation loops
-- **Theme and accent expand**: additional themes or accents can be added by defining a new `[data-theme]` or `[data-accent]` block in `src/app.css` and adding it to the Nav toggle list
+Prefer Melt UI primitives where interaction quality matters:
+- create-mode toggle
+- provider/model selectors
+- confirmation/disclosure interactions
+- any compact popover or command-like control near the composer
+
+Do not use Melt as a pre-styled visual theme.

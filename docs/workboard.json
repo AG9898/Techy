@@ -1334,6 +1334,490 @@
       ],
       "commands": [],
       "estimate": "S"
+    },
+    {
+      "id": "ASSIST-005",
+      "group_id": "ASSIST",
+      "title": "Unified assistant respond endpoint with provider/model routing",
+      "status": "pending",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Replace the read-only assistant endpoint with a unified conversation endpoint that can return normal chat replies or structured mutation proposals.",
+      "description": "Implement `POST /api/assistant/respond` as the primary assistant API. The endpoint should accept conversation messages, explicit UI mode (`chat` or `create`), provider, model, and optional topic cache state. Validate provider/model combinations, route requests through Anthropic or OpenAI adapters, and return a conversational assistant message plus an optional proposal payload. The provider/model registry should be structured so OpenRouter can be added later without changing the request contract.",
+      "acceptance_criteria": [
+        "The chat UI can call `POST /api/assistant/respond` instead of `POST /api/assistant/query`",
+        "Invalid provider/model combinations return a clear 400 response",
+        "Anthropic and OpenAI are both supported through the same endpoint contract",
+        "The endpoint can return a plain conversational reply with no proposal",
+        "The endpoint can return a structured proposal payload when the assistant decides a note action is warranted"
+      ],
+      "depends_on": [
+        "AI-002",
+        "ASSIST-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/ai/claude.ts",
+        "src/lib/server/ai/chatgpt.ts",
+        "src/lib/server/ai/prompts.ts",
+        "src/routes/(app)/chat/+page.server.ts"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md",
+        "docs/SETUP.md"
+      ],
+      "notes": [
+        "The request contract should use provider/model pairs rather than hard-coding specific models into the chat UI.",
+        "Keep the interface compatible with a future OpenRouter adapter, but do not implement OpenRouter in this task."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "ASSIST-006",
+      "group_id": "ASSIST",
+      "title": "Live web research integration and per-conversation topic cache",
+      "status": "pending",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Require live web research for assistant note creation and note comparison, while caching topic context within a single conversation.",
+      "description": "Add a research layer to the unified assistant flow so create-note and compare/update work always uses live web research. Normalize source results into citation data for chat review, and reuse topic context already gathered in the active conversation so the same topic is not researched repeatedly in one session. Existing notes should still be loaded from the DB and compared against the newly researched context when relevant.",
+      "acceptance_criteria": [
+        "Assistant create-note flows always perform live web research before returning a proposal",
+        "Assistant compare/update flows always perform live web research before deciding whether to propose a change",
+        "If the same topic is discussed again in the same conversation, the assistant reuses cached research context instead of re-running the same research step",
+        "Research citations are returned in assistant responses for review in chat",
+        "Citation data is not persisted into a dedicated database schema in this phase"
+      ],
+      "depends_on": [
+        "ASSIST-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/assistant/research.ts",
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/ai/prompts.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "This task should not introduce a new citations table.",
+        "Cache scope is the active client-side chat session only."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "ASSIST-007",
+      "group_id": "ASSIST",
+      "title": "Assistant commit endpoint for confirmed create/update/delete proposals",
+      "status": "pending",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Persist assistant proposals only after explicit confirmation from the chat UI.",
+      "description": "Implement `POST /api/assistant/commit` to validate and apply confirmed assistant proposals for create, update, and delete operations. The endpoint should accept normalized proposal payloads from the chat UI, enforce proposal type validation, and delegate to the correct persistence flow. This becomes the mutation boundary for assistant-driven CRUD.",
+      "acceptance_criteria": [
+        "Create, update, and delete proposals each have a validated commit path",
+        "Invalid proposal shapes return a clear 400 response",
+        "Create conflicts return a clear 409 response",
+        "Update and delete flows return 404 when the target note no longer exists",
+        "No assistant-driven note mutation happens until the commit endpoint is called"
+      ],
+      "depends_on": [
+        "ASSIST-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/lib/server/assistant/commit.ts",
+        "src/lib/server/db/schema.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "This task establishes the mutation boundary; downstream tasks should plug their create/update/delete logic into this endpoint."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-007",
+      "group_id": "NOTES",
+      "title": "Assistant create-note persistence with immediate graph linking",
+      "status": "pending",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Persist confirmed assistant-created notes so graph connections appear immediately after save.",
+      "description": "Implement the `create_note` commit path so a confirmed assistant draft inserts a new note row, writes AI provenance metadata, parses `[[wikilinks]]`, and syncs `note_links` immediately. The saved note should be visible in the graph without any follow-up action.",
+      "acceptance_criteria": [
+        "Confirming a `create_note` proposal inserts a new note with title, body, tags, aliases, category, status, and AI metadata",
+        "The created note's `[[wikilinks]]` are parsed and synced to `note_links` during the same commit flow",
+        "The newly created note appears in the graph with its connections immediately after save",
+        "Duplicate title or slug conflicts return a clear error and do not create a partial note"
+      ],
+      "depends_on": [
+        "ASSIST-007",
+        "FOUND-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/assistant/commit.ts",
+        "src/lib/utils/slugify.ts",
+        "src/lib/utils/wikilinks.ts",
+        "src/lib/server/db/schema.ts",
+        "src/routes/api/assistant/commit/+server.ts"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/NOTES.md"
+      ],
+      "notes": [
+        "This task is only the created note itself; reciprocal patching of existing notes is tracked separately."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-008",
+      "group_id": "NOTES",
+      "title": "Reciprocal link propagation for assistant-created notes",
+      "status": "pending",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Allow assistant note creation to patch existing note bodies so new graph relationships are visible immediately in both directions where appropriate.",
+      "description": "Extend the confirmed `create_note` flow so assistant proposals may include linked-note patches for existing notes that should now reference the newly created note. On commit, update those note bodies to include the new `[[Title]]` link, then re-sync their `note_links` rows in the same mutation sequence.",
+      "acceptance_criteria": [
+        "Assistant create-note proposals can include one or more linked-note patches for existing notes",
+        "Confirming the create flow applies those body patches and re-syncs `note_links` for each affected note",
+        "The graph reflects both the new note's outgoing links and the patched existing notes' new links immediately after save",
+        "If any linked-note patch target is missing at commit time, the user receives a clear error and no partial patch set is applied"
+      ],
+      "depends_on": [
+        "NOTES-007",
+        "ASSIST-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/assistant/commit.ts",
+        "src/lib/utils/wikilinks.ts",
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "The linked-note patches should be visible in chat review before the user confirms the mutation."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "NOTES-009",
+      "group_id": "NOTES",
+      "title": "Assistant update proposals with materiality gate and revision-backed apply",
+      "status": "pending",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Only propose assistant-driven note updates for material issues, and preserve revision history when those updates are applied.",
+      "description": "Implement update proposal generation and commit behavior for existing notes. The assistant should compare saved note content against live web research and only return an `update_note` proposal when the note appears materially incorrect, materially outdated, or substantially incomplete. On commit, capture a revision snapshot before applying the update and re-sync links from the new body.",
+      "acceptance_criteria": [
+        "Minor or cosmetic differences do not trigger an `update_note` proposal",
+        "Materially wrong, outdated, or substantially incomplete notes can trigger an editable `update_note` proposal",
+        "Confirming an `update_note` proposal stores a revision snapshot before the note is updated",
+        "Updated note bodies re-sync `note_links` and preserve existing rename-propagation behavior"
+      ],
+      "depends_on": [
+        "ASSIST-006",
+        "ASSIST-007",
+        "NOTES-006"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/lib/server/assistant/commit.ts",
+        "src/lib/server/ai/prompts.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Materiality judgment belongs to the assistant proposal stage, but the commit path must remain generic and safe."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "NOTES-010",
+      "group_id": "NOTES",
+      "title": "Assistant delete confirmation and commit flow",
+      "status": "pending",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Support assistant-driven note deletion behind an explicit confirmation step in chat.",
+      "description": "Add `delete_note` proposal handling to the assistant and commit flow. The assistant should only return delete proposals for explicit delete intent, and the UI should require a confirmation action before calling the commit endpoint. Once confirmed, the note should be deleted using the same cascade behavior already relied on by manual delete flows.",
+      "acceptance_criteria": [
+        "Delete requests produce an explicit confirmation state in chat rather than deleting immediately",
+        "Confirming the delete removes the note and cascades its `note_links` rows",
+        "Cancelling the delete leaves the note untouched",
+        "Deleting a note through chat does not bypass existing not-found handling or safety checks"
+      ],
+      "depends_on": [
+        "ASSIST-007",
+        "FOUND-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/lib/server/assistant/commit.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "notes": [
+        "Delete confirmation is a one-click confirm in chat, not a typed phrase."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-007",
+      "group_id": "UI",
+      "title": "Unified chat authoring interface",
+      "status": "pending",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Turn `/chat` into the single assistant surface for conversation, note drafting, note review, and note mutations.",
+      "description": "Redesign the `/chat` page so it supports standard conversation, explicit create mode, provider/model selection, inline citations, editable draft panels for create/update proposals, and confirmation UI for delete proposals. Replace the current summary-only assistant rendering with proposal-aware UI that can review and commit note mutations.",
+      "acceptance_criteria": [
+        "The chat UI includes an explicit create-mode control near the composer",
+        "The chat UI includes provider and model selectors for supported providers",
+        "Create and update proposals render as editable inline draft panels before save",
+        "Delete proposals render as an explicit confirmation state",
+        "The assistant remains conversational even when create mode is enabled"
+      ],
+      "depends_on": [
+        "ASSIST-005",
+        "ASSIST-006",
+        "ASSIST-007",
+        "NOTES-007",
+        "NOTES-009",
+        "NOTES-010"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/routes/(app)/chat/+page.server.ts",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "This task replaces the current message shape built around `matchedNote`, `summary`, `possibleGaps`, and `newTopicIdeas`."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "UI-008",
+      "group_id": "UI",
+      "title": "Remove dedicated new-note route and legacy creation entry points",
+      "status": "pending",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Remove `/notes/new` and clean up all product entry points that still assume a separate new-note page.",
+      "description": "Delete the dedicated `/notes/new` route and remove `+ New` navigation, notes-page new-note buttons, and graph empty-state links that point to the legacy creation flow. Update copy and navigation so note authoring expectations point to `/chat` without introducing redirect-based create-mode routes.",
+      "acceptance_criteria": [
+        "The `/notes/new` route is removed from the app",
+        "Navigation no longer includes a `+ New` link",
+        "Notes-page and graph-page creation CTAs no longer point to `/notes/new`",
+        "Route cleanup includes running `npm run prepare` so generated route types stay current"
+      ],
+      "depends_on": [
+        "UI-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/Nav.svelte",
+        "src/routes/(app)/+page.svelte",
+        "src/routes/(app)/notes/+page.svelte",
+        "src/routes/(app)/notes/new/+page.svelte",
+        "src/routes/(app)/notes/new/+page.server.ts"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Do not add redirect-based create-mode routes; the user explicitly wants note creation unified on `/chat` only."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-009",
+      "group_id": "UI",
+      "title": "Tonal dark/light theme migration",
+      "status": "pending",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Replace the current three-theme model with a tonal dark/light system while keeping accent selection separate.",
+      "description": "Rework the theme token system so `night`, `paper`, and `mist` are replaced by a true tonal `dark` / `light` model. Update defaults, localStorage persistence, nav controls, and any theme-dependent graph or component styles so the app clearly supports dark and light modes without hard black or harsh white surfaces.",
+      "acceptance_criteria": [
+        "The app supports `dark` and `light` themes instead of `night`, `paper`, and `mist`",
+        "Accent selection remains independent and persists as before",
+        "The graph remains legible in both themes",
+        "No UI controls or persisted keys still depend on the removed three-theme naming"
+      ],
+      "depends_on": [
+        "UI-001",
+        "UI-002"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/app.css",
+        "src/app.html",
+        "src/lib/components/Nav.svelte",
+        "src/lib/components/ForceGraph.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Dark should remain tonal rather than pure black; light should remain tonal rather than stark white."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-010",
+      "group_id": "UI",
+      "title": "Melt UI primitives for assistant controls and review affordances",
+      "status": "pending",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Use Melt primitives where the new assistant interaction model benefits from better accessibility and keyboard behavior.",
+      "description": "Adopt Melt UI primitives for the assistant controls that benefit from headless accessibility behavior: provider/model selectors, create-mode toggles where appropriate, proposal disclosure/review affordances, and compact confirmation interactions. Preserve Techy's custom visual language while improving behavior and keyboard interaction.",
+      "acceptance_criteria": [
+        "Provider/model selectors use accessible Melt-backed behavior",
+        "Proposal review and confirmation affordances are keyboard-usable and accessible",
+        "The assistant UI keeps Techy's custom styling rather than inheriting a canned component theme",
+        "The migration is limited to assistant-related controls rather than broad repo-wide refactors"
+      ],
+      "depends_on": [
+        "UI-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Prefer Melt only where interaction quality matters; avoid unnecessary churn in stable browsing/detail screens."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-011",
+      "group_id": "UI",
+      "title": "GSAP motion polish for assistant workflow",
+      "status": "pending",
+      "priority": "low",
+      "type": "feature",
+      "summary": "Add restrained motion to the assistant experience where it improves continuity and focus.",
+      "description": "Use GSAP selectively to polish the assistant workflow: proposal panel reveal/collapse, message/proposal transitions, delete confirmation state changes, and any subtle theme transition choreography that supports clarity. Keep the motion system scoped and avoid decorative animation loops.",
+      "acceptance_criteria": [
+        "Assistant proposal panels and confirmation states animate in a restrained, readable way",
+        "Motion improves continuity without delaying core interactions",
+        "The implementation respects reduced-motion preferences",
+        "GSAP use stays scoped to meaningful assistant/theme transitions rather than broad page-wide animation"
+      ],
+      "depends_on": [
+        "UI-007",
+        "UI-009"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "This task should come after the structural chat UI and dark/light theme migration so the motion layer is polishing the intended final states."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }

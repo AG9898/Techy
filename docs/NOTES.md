@@ -1,6 +1,6 @@
 # Notes — Format, Schema & Authoring
 
-This document is the single source of truth for note content: what fields a note has, how to write one, how links work, and what categories/tags to use. Agents creating or editing notes should read this first.
+This document is the single source of truth for note content: what fields a note has, how to write one, how links work, and how assistant-driven note creation must behave.
 
 ---
 
@@ -18,13 +18,13 @@ Notes are stored in the `notes` table in Neon PostgreSQL. The schema source of t
 | `aliases` | text[] | no | Common alternate names for the topic. |
 | `category` | text | no | One of the Hub Categories below. |
 | `status` | enum | no | `stub` \| `growing` \| `mature`. Default: `stub`. |
-| `ai_generated` | boolean | no | `true` if created by an AI provider. Default: `false`. |
-| `ai_model` | text | no | Model name (e.g. `claude-opus-4-6`). Null if not AI. |
-| `ai_prompt` | text | no | The prompt used to generate the note. Null if not AI. |
+| `ai_generated` | boolean | no | `true` if created or materially revised by an AI provider. Default: `false`. |
+| `ai_model` | text | no | Model name (for example `claude-opus-4-6` or `gpt-4o`). Null if not AI. |
+| `ai_prompt` | text | no | The originating assistant request or topic prompt. Null if not AI. |
 | `created_at` | timestamp | auto | Set on insert. |
 | `updated_at` | timestamp | auto | Must be set manually on update: `updatedAt: new Date()`. |
 
-Graph edges are stored separately in `note_links` (source_note_id → target_note_id) and are synced from `[[wikilinks]]` in the body on every save.
+Graph edges are stored separately in `note_links` (source_note_id → target_note_id) and are synced from `[[wikilinks]]` in note bodies on save.
 
 ---
 
@@ -32,8 +32,8 @@ Graph edges are stored separately in `note_links` (source_note_id → target_not
 
 | Status | Meaning | When to set |
 |--------|---------|-------------|
-| `stub` | Placeholder — title and maybe a sentence | New notes, AI stubs |
-| `growing` | Partially filled — some sections complete | Actively being built out |
+| `stub` | Placeholder — title and maybe a sentence | New or lightly researched notes |
+| `growing` | Partially filled — some sections complete | Actively being expanded |
 | `mature` | Comprehensive — all sections substantive | Reviewed and complete |
 
 ---
@@ -57,7 +57,7 @@ Use one or more tags per note. Tags represent the broadest classification.
 
 ## Hub Categories
 
-Every note should belong to one category. Hub notes are index/connection points for each category — create the hub note if it doesn't exist.
+Every note should belong to one category. Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
 
 | Category | Hub note |
 |----------|----------|
@@ -80,17 +80,22 @@ Hub notes contain minimal prose and mostly `[[links]]` to topic notes within the
 Use `[[Note Title]]` anywhere in the body to link to another note. The title must match exactly (case-sensitive).
 
 **What happens on save:**
-1. `extractWikilinks(body)` parses all `[[...]]` patterns from the body
-2. Each title is looked up in the `notes` table
-3. Resolved matches are written to `note_links` (source → target)
-4. Old links from this note are deleted first, then re-inserted (full re-sync)
+1. `extractWikilinks(body)` parses all `[[...]]` patterns from the body.
+2. Each title is looked up in the `notes` table.
+3. Resolved matches are written to `note_links` (source → target).
+4. Old links from that note are deleted first, then re-inserted (full re-sync).
 
 **What happens on render:**
-1. `resolveWikilinks(body, slugMap)` replaces `[[Title]]` with `<a href="/notes/slug" class="wikilink">Title</a>`
-2. Unresolved titles (note doesn't exist) become `<span class="wikilink-broken">Title</span>` — styled red with strikethrough
-3. The resolved body is passed to `marked()` for Markdown rendering
+1. `resolveWikilinks(body, slugMap)` replaces `[[Title]]` with `<a href="/notes/slug" class="wikilink">Title</a>`.
+2. Unresolved titles (note doesn’t exist) become `<span class="wikilink-broken">Title</span>` — styled red with strikethrough.
+3. The resolved body is passed to `marked()` for Markdown rendering.
 
-**Known limitation:** Renaming a note title does not automatically update `[[wikilinks]]` in other notes. See NOTES-003 in `docs/workboard.json`.
+**Assistant-first linking rule:**
+- When the assistant creates a new note, the note body must already contain the `[[wikilinks]]` needed for immediate graph edges on save.
+- If the assistant determines that one or more existing notes should also link to the new note, it should propose or perform those body updates in the same confirmed save flow so the graph reflects the connection immediately in both directions where appropriate.
+
+**Rename propagation:**
+- Renaming a note title automatically propagates the title change to `[[wikilinks]]` in all other notes’ bodies before re-syncing `note_links`.
 
 ---
 
@@ -131,54 +136,27 @@ Comprehensive explanation — internals, tradeoffs, nuances, how it compares to 
 - [Official Docs]()
 ```
 
----
-
-## Example Note
-
-```markdown
----
-tags: [framework]
-aliases: [Next, Next.js]
-category: Web Frameworks
-status: growing
----
-
-# Next.js
-
-> [!summary]
-> A React framework for building full-stack web applications with server-side rendering and static site generation.
-
-## Overview
-Next.js is built on top of [[React]] and adds server-side rendering (SSR), static site generation (SSG), and API routes out of the box. It's maintained by [[Vercel]] and is one of the most widely adopted React frameworks in production use today.
-
-## Industry Usage
-Used extensively for production web apps where SEO, performance, and full-stack capability matter. Common in startups and enterprises alike. Competes with [[Remix]] and [[SvelteKit]] for the full-stack web framework space.
-
-## In Depth
-Next.js introduced the App Router in v13, shifting from page-based routing to a file-system router built on React Server Components (RSC). RSCs allow components to run on the server, reducing client-side JavaScript. The framework handles bundling via [[Turbopack]] (replacing [[Webpack]]), and deployment is optimized for [[Vercel]] but works on any Node.js host or as a static export.
-
-Key tradeoffs: tight Vercel integration can create lock-in, RSC mental model adds complexity, but the DX and ecosystem are hard to beat.
-
-## Connections
-### Broader Context
-[[Web Frameworks]] — [[React]] — [[JavaScript]]
-
-### Related Topics
-[[Vercel]] — [[Remix]] — [[SvelteKit]] — [[React Server Components]] — [[Turbopack]]
-
-## Resources
-- [Official Docs](https://nextjs.org/docs)
-- [App Router Migration Guide](https://nextjs.org/docs/app/building-your-application/upgrading/app-router-migration)
-```
+Assistant-generated notes should still conform to this structure, even when the draft is reviewed and saved entirely from chat.
 
 ---
 
-## Authoring Rules
+## Assistant Authoring Rules
+
+1. **Assistant-first creation** — new notes are expected to be proposed from chat rather than a dedicated `/notes/new` page.
+2. **Live research first** — assistant-created notes should be based on live web research plus the existing graph context.
+3. **Populate required fields** — the assistant must fill `title`, `body`, `tags`, `aliases`, `category`, and `status` before the note is confirmed for save.
+4. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
+5. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
+6. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
+7. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
+8. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
+
+---
+
+## Human Authoring Rules
 
 1. **Check before creating** — search for the topic name and common aliases. Expand an existing note rather than duplicate it.
-2. **Link inline** — use `[[wikilinks]]` within body prose, not only in the Connections section.
-3. **Create hub notes** — if a note's category has no hub note, create it.
-4. **Populate all frontmatter** — always set `tags`, `aliases`, and `category`, even on stubs.
-5. **Set status honestly** — `stub` for new/minimal notes, `growing` when partially filled, `mature` when comprehensive.
-6. **Expand before adding sections** — fill out the `In Depth` section before creating new sections.
-7. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.
+2. **Create hub notes** — if a note’s category has no hub note, create it.
+3. **Populate all frontmatter** — always set `tags`, `aliases`, and `category`, even on stubs.
+4. **Expand before adding sections** — fill out the `In Depth` section before adding extra structure.
+5. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.

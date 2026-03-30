@@ -81,7 +81,7 @@ DEBUG_AUTH_BYPASS_NAME=Agent
 # Neon pooled connection string from step 3
 DATABASE_URL=postgresql://...?sslmode=require
 
-# Leave empty — not implemented yet
+# Required for assistant/provider work once the assistant-first phase lands
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 ```
@@ -126,7 +126,7 @@ npm run check
 - Global Tailwind import and shared theme tokens live in `src/app.css`
 - Root layout imports `src/app.css` from `src/routes/+layout.svelte`
 - Melt UI is available for new interactive UI work; it does not provide Techy's final visual styling on its own
-- GSAP is installed and available for future animation work, but it is not wired into any component by default
+- GSAP is installed and available for selective motion work, but it is not wired into any component by default
 
 ---
 

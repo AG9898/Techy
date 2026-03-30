@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Techy** is a personal, single-user tech knowledge repository deployed as a private web app. It stores structured notes about software, tools, languages, AI models, services, and technical concepts, visualises their relationships as an interactive graph, and is intended to support AI-assisted synthesis over the notes already in the graph.
+**Techy** is a personal, single-user tech knowledge repository deployed as a private web app. It stores structured notes about software, tools, languages, AI models, services, and technical concepts, visualises their relationships as an interactive graph, and is increasingly centered around an assistant-first workflow for researching, creating, updating, and discussing notes.
 
 The primary value is building and maintaining a persistent, interconnected mental model of the tech landscape — something faster to search than bookmarks, more structured than a notes app, and more personal than a wiki.
 
@@ -13,9 +13,10 @@ The primary value is building and maintaining a persistent, interconnected menta
 1. Capture knowledge about tech topics in a structured, reusable format
 2. Visualise how topics relate to each other via a D3 force-directed graph
 3. Search notes quickly by title, tags, and category
-4. Create new notes manually or by directing an AI to research a topic
+4. Create, revise, and remove notes through a unified assistant chat flow rather than a separate new-note form
 5. Keep the app private (single-user, GitHub OAuth gate)
 6. Ask for a summary of an existing topic and get note-grounded suggestions for what to add next
+7. Use live web research during assistant-driven note creation and note comparison so saved notes reflect current information
 
 ---
 
@@ -23,9 +24,9 @@ The primary value is building and maintaining a persistent, interconnected menta
 
 - Multi-user / collaboration
 - Public sharing or publishing
-- Mobile-first design (desktop-primary, responsive is a nice-to-have)
 - Offline-first or PWA capabilities
 - Real-time sync
+- Separate citation storage schema for web sources in the next assistant-first phase
 
 ---
 
@@ -35,69 +36,72 @@ Single user — the owner/developer of this repository. No onboarding, no regist
 
 ---
 
-## Feature Requirements
+## Current Base
 
-### MVP (Scaffolded ✓)
+These capabilities already define the product baseline and remain part of Techy:
 
 | ID | Feature | Status |
 |----|---------|--------|
 | F-01 | GitHub OAuth login (single account gate) | Done |
-| F-02 | Create / edit / delete notes with Markdown body | Done |
-| F-03 | Note frontmatter: title, slug, tags, aliases, category, status | Done |
-| F-04 | `[[wikilink]]` syntax auto-creates graph edges on save | Done |
-| F-05 | D3 force-directed graph — nodes = notes, edges = links | Done |
-| F-06 | Click node → navigate to note detail | Done |
-| F-07 | Note detail: rendered Markdown, wikilinks resolved to anchors | Done |
-| F-08 | Search by title / category (`ilike`) and tags (`arrayOverlaps`) | Done |
-| F-09 | AI endpoint skeleton (Claude + ChatGPT) returning 501 | Done |
+| F-02 | Note CRUD and rendered Markdown note detail | Done |
+| F-03 | Note schema: title, slug, tags, aliases, category, status, AI metadata | Done |
+| F-04 | `[[wikilink]]` syntax syncs graph edges on save | Done |
+| F-05 | D3 force-directed graph with navigation to note detail | Done |
+| F-06 | Search by title, category, and tags | Done |
+| F-07 | Import/export and revision history | Done |
+| F-08 | Assistant summary, possible additions, and next-topic suggestions | Done |
 
-### Phase 2 — AI Integration
+---
 
-| ID | Feature | Priority |
-|----|---------|----------|
-| F-10 | AI research endpoint: given a topic, return a draft note body | High |
-| F-11 | AI generate-note: full note creation from a prompt, saved to DB | High |
-| F-12 | UI: "Research with AI" button on New Note page | Done |
-| F-13 | Provider selection: Claude vs ChatGPT per-request | Done |
-| F-14 | AI-generated notes tagged with `ai_generated=true`, model, prompt | High |
+## Product Direction Update — Assistant-First
 
-### Phase 3 — Graph & Discovery Enhancements
+The next phase of Techy consolidates assistant chat and AI note authoring into a single surface. The dedicated `/notes/new` page and the “Research with AI” button are no longer part of the intended product direction.
+
+### Assistant-First Authoring
 
 | ID | Feature | Priority |
 |----|---------|----------|
-| F-15 | Graph: filter nodes by category or status | Medium |
-| F-16 | Graph: colour by category (not just status) toggle | Low |
-| F-17 | Graph: node size proportional to link count | Low |
-| F-18 | Graph: click edge to view both connected notes | Done |
-| F-19 | Orphan note detection (notes with no links) | Medium |
+| F-09 | `/chat` becomes the sole note-authoring surface for new notes | High |
+| F-10 | Assistant supports normal conversation plus explicit create mode in one chat interface | High |
+| F-11 | Assistant-generated note drafts are structured, editable, and require confirmation before save | High |
+| F-12 | Assistant-driven note creation fills `title`, `body`, `tags`, `aliases`, `category`, `status`, AI metadata, and wikilinks | High |
+| F-13 | Assistant-driven updates compare existing notes against live web research and only propose changes when a note appears materially incorrect, outdated, or substantially incomplete | High |
+| F-14 | Assistant-driven delete remains available behind an explicit confirmation step | Medium |
 
-### Phase 4 — Content & UX
-
-| ID | Feature | Priority |
-|----|---------|----------|
-| F-20 | Markdown preview pane in the note editor | Medium |
-| F-21 | Import notes from `.md` files (batch) | Done |
-| F-22 | Export all notes as a zip of Markdown files | Low |
-| F-23 | Note history / versioning (soft delete or revision table) | Low |
-| F-24 | Tag autocomplete in the create/edit form | Medium |
-
-### Phase 5 — Assistant Over Existing Notes
+### Live Research and Linking
 
 | ID | Feature | Priority |
 |----|---------|----------|
-| F-25 | Note-grounded assistant summary: given a natural-language query like "tell me about SvelteKit", find the best matching note by title or alias, return a link to the note, and produce a concise summary grounded in the saved note | High |
-| F-26 | Assistant gap suggestions: after summarising a note, suggest areas that may be missing or underdeveloped in the current note, clearly labeled as suggestions rather than confirmed omissions | Medium |
-| F-27 | Next-note recommendations: after summarising or AI-generating a note, suggest exactly 3 relevant candidate topics that do not already exist as note titles or aliases | High |
-| F-28 | Dedicated chat page for the assistant experience, visually aligned with the graph and notes interfaces | Medium |
+| F-15 | Note creation always performs live web research before proposing a saved note | High |
+| F-16 | The assistant reuses already-known topic context within the same conversation to avoid re-researching the same topic repeatedly | Medium |
+| F-17 | Web citations are shown during chat review but are not persisted to a dedicated DB schema in this phase | Medium |
+| F-18 | New notes create graph links immediately from their `[[wikilinks]]` on save | High |
+| F-19 | If a newly created note should be linked from existing notes, the assistant also updates those note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows in the same save flow | High |
 
-See [`docs/API.md`](API.md) for the full route and endpoint reference for all implemented features.
-See [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) and [`docs/DESIGN-SPEC.md`](DESIGN-SPEC.md) for the intended UI direction.
+### UI Direction
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-20 | Replace the current multi-theme system with a tonal dark/light theme model while keeping accent options separate | High |
+| F-21 | Use Melt UI selectively for assistant controls, selectors, and confirmation affordances | Medium |
+| F-22 | Use GSAP selectively for assistant/draft transitions and other meaningful motion polish | Medium |
+
+---
+
+## Notes on Superseded Direction
+
+- The dedicated `/notes/new` page is being retired from the product direction.
+- The “Research with AI” button on a standalone note-authoring form is no longer the intended primary creation flow.
+- The previous three-theme model (`night`, `paper`, `mist`) is being replaced by a tonal `dark/light` theme model with accent selection preserved.
+
+See [`docs/API.md`](API.md) for the target assistant-first route and endpoint direction.
+See [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) and [`docs/DESIGN-SPEC.md`](DESIGN-SPEC.md) for the updated UI direction.
 
 ---
 
 ## Note Schema & Categories
 
-See [`docs/NOTES.md`](NOTES.md) for the full note schema, tag taxonomy, hub categories, template, and authoring rules.
+See [`docs/NOTES.md`](NOTES.md) for the full note schema, tag taxonomy, hub categories, template, link rules, and assistant-specific link propagation expectations.
 
 ---
 
@@ -106,4 +110,4 @@ See [`docs/NOTES.md`](NOTES.md) for the full note schema, tag taxonomy, hub cate
 - **Database:** Neon PostgreSQL free tier (0.5 GB storage, 191.9 compute hours/month)
 - **Auth:** GitHub OAuth, restricted to `ALLOWED_GITHUB_USERNAME`
 - **Deployment:** Serverless-compatible (Vercel / Cloudflare Pages)
-- **Cost:** $0/month target (all free-tier services)
+- **Cost:** $0/month target (all free-tier services where practical)
