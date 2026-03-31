@@ -366,7 +366,7 @@ Persist a confirmed assistant proposal.
 
 **Errors:**
 - `400` — invalid proposal shape
-- `404` — target note not found for update/delete
+- `404` — target note not found for update/delete, or a `linkedNotePatches` target ID does not exist at commit time
 - `409` — title/slug conflict on create
 - `500` — DB or sync failure
 

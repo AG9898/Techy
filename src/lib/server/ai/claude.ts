@@ -31,7 +31,7 @@ export interface NoteDraft {
 export interface NoteProposal {
 	type: 'create_note' | 'update_note' | 'delete_note';
 	draft?: NoteDraft;
-	linkedNotePatches?: { noteId: string; title: string; updatedBody: string }[];
+	linkedNotePatches?: { noteId?: string; title: string; updatedBody: string }[];
 }
 
 export interface AssistantRespondResult {
@@ -196,10 +196,11 @@ export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create',
 	model: string,
-	researchContext?: ResearchContext
+	researchContext?: ResearchContext,
+	noteTitles?: string[]
 ): Promise<AssistantRespondResult> {
 	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	const systemPrompt = buildRespondSystemPrompt(mode, researchContext);
+	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles);
 
 	const message = await client.messages.create({
 		model,

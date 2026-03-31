@@ -1503,7 +1503,7 @@
       "id": "NOTES-008",
       "group_id": "NOTES",
       "title": "Reciprocal link propagation for assistant-created notes",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Allow assistant note creation to patch existing note bodies so new graph relationships are visible immediately in both directions where appropriate.",

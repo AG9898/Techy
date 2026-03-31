@@ -6,6 +6,8 @@ import { respondConversation as respondWithOpenAI } from '$lib/server/ai/chatgpt
 import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
+import { db } from '$lib/server/db/index.js';
+import { notes } from '$lib/server/db/schema.js';
 
 /**
  * POST /api/assistant/respond
@@ -68,6 +70,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const typedMessages = messages as ConversationMessage[];
 
+	// Load existing notes for context injection and patch resolution
+	const allNotes = await db.select({ id: notes.id, title: notes.title }).from(notes);
+	const noteTitles = allNotes.map((n) => n.title);
+	const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
+
 	// Resolve the per-conversation topic cache from the client
 	const cache: TopicCache =
 		typeof topicCache === 'object' && topicCache !== null && !Array.isArray(topicCache)
@@ -95,9 +102,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		let result;
 		if (provider === 'anthropic') {
-			result = await respondWithClaude(typedMessages, mode, model, researchContext);
+			result = await respondWithClaude(typedMessages, mode, model, researchContext, noteTitles);
 		} else {
-			result = await respondWithOpenAI(typedMessages, mode, model, researchContext);
+			result = await respondWithOpenAI(typedMessages, mode, model, researchContext, noteTitles);
 		}
 
 		// Attach server-side metadata to any create_note proposal draft
@@ -106,6 +113,19 @@ export const POST: RequestHandler = async ({ request }) => {
 			result.proposal.draft.aiGenerated = true;
 			result.proposal.draft.aiModel = model;
 			result.proposal.draft.aiPrompt = lastMsg?.content ?? '';
+		}
+
+		// Resolve linkedNotePatches: LLM proposes by title — map to { noteId, title, updatedBody }
+		// Drop any patches whose title doesn't match an existing note (LLM may hallucinate titles)
+		if (result.proposal?.type === 'create_note' && result.proposal.linkedNotePatches?.length) {
+			result.proposal.linkedNotePatches = result.proposal.linkedNotePatches
+				.map((patch) => {
+					const noteId = titleToId.get(patch.title);
+					return noteId ? { noteId, title: patch.title, updatedBody: patch.updatedBody } : null;
+				})
+				.filter(
+					(p): p is { noteId: string; title: string; updatedBody: string } => p !== null
+				);
 		}
 
 		// Merge research citations into the assistant message (deduplicated by URL)

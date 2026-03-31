@@ -21,6 +21,7 @@
 
 	interface LinkedNotePatch {
 		noteId: string;
+		title?: string;
 		updatedBody: string;
 	}
 
@@ -277,6 +278,16 @@
 													{#each msg.proposal.draft.tags as tag}
 														<span class="proposal-tag">{tag}</span>
 													{/each}
+												</div>
+											{/if}
+											{#if msg.proposal.linkedNotePatches?.length}
+												<div class="linked-patches">
+													<p class="linked-patches-label">Also updates:</p>
+													<ul class="linked-patches-list">
+														{#each msg.proposal.linkedNotePatches as patch}
+															<li>{patch.title ?? patch.noteId}</li>
+														{/each}
+													</ul>
 												</div>
 											{/if}
 											{#if cs?.status === 'done' && cs.note}
@@ -628,6 +639,38 @@
 		padding: 0.15rem 0.55rem;
 		font-size: 0.72rem;
 		color: var(--accent-primary);
+	}
+
+	/* ── Linked-note patch preview ──────────────────────────────────── */
+	.linked-patches {
+		margin-top: 0.1rem;
+	}
+
+	.linked-patches-label {
+		font-size: 0.68rem;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		margin: 0 0 0.2rem;
+	}
+
+	.linked-patches-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+
+	.linked-patches-list li {
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 6px;
+		padding: 0.1rem 0.45rem;
+		font-size: 0.72rem;
+		color: var(--text-secondary);
 	}
 
 	/* ── Loading states ──────────────────────────────────────────────── */

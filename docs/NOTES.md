@@ -118,7 +118,9 @@ Use `[[Note Title]]` anywhere in the body to link to another note. The title mus
 
 **Assistant-first linking rule:**
 - When the assistant creates a new note, the note body must already contain the `[[wikilinks]]` needed for immediate graph edges on save.
-- If the assistant determines that one or more existing notes should also link to the new note, it should propose or perform those body updates in the same confirmed save flow so the graph reflects the connection immediately in both directions where appropriate.
+- If the assistant determines that one or more existing notes should also link to the new note, it includes those as `linkedNotePatches` in the proposal. Each patch carries the target note's title, its full updated body (with the new `[[Title]]` added naturally in prose), and the resolved `noteId`.
+- Patches are shown in the proposal card in chat before the user confirms, so the user can see which existing notes will be modified.
+- On commit, all patch targets are verified to exist before any writes. If any target is missing, the entire commit is rejected with an error and no changes are applied (no new note, no patches).
 
 **Rename propagation:**
 - Renaming a note title automatically propagates the title change to `[[wikilinks]]` in all other notes’ bodies before re-syncing `note_links`.

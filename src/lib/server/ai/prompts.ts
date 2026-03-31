@@ -85,9 +85,19 @@ Rules:
  */
 export function buildRespondSystemPrompt(
 	mode: 'chat' | 'create',
-	researchContext?: ResearchContext
+	researchContext?: ResearchContext,
+	noteTitles?: string[]
 ): string {
-	const base = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+	let base = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+
+	if (noteTitles && noteTitles.length > 0) {
+		base = `${base}
+
+---
+Existing notes in the knowledge graph (use exact titles for linkedNotePatches):
+${noteTitles.join('\n')}`;
+	}
+
 	if (!researchContext?.summary) return base;
 
 	return `${base}
@@ -115,7 +125,13 @@ When the user is clearly requesting a note about a specific technology or concep
       "aliases": [],
       "category": "<one of: Programming Languages, Web Frameworks, AI & Machine Learning, Cloud & Infrastructure, Databases, DevOps & CI/CD, APIs & Services, Developer Tools, Protocols & Standards>",
       "status": "growing"
-    }
+    },
+    "linkedNotePatches": [
+      {
+        "title": "<exact title of an existing note that should reference this new note>",
+        "updatedBody": "<full updated body for that note, with [[New Note Title]] added naturally in the prose>"
+      }
+    ]
   }
 }
 
@@ -130,5 +146,6 @@ Rules:
 - Do not include "aiGenerated", "aiModel", or "aiPrompt" in the draft — the server adds those.
 - The body must be a proper knowledge note: factual, structured with markdown headings, and comprehensive.
 - Use [[Note Title]] syntax to reference related tech topics by their exact names.
+- For linkedNotePatches: only include entries for notes listed in the existing notes context below. Use the exact title as shown. Only patch a note if the new note genuinely belongs in that note's prose — not just thematically related. Provide the complete updated body, not a diff. Omit linkedNotePatches or set it to [] if no existing notes should reference the new note.
 - Do not invent citations — citations array stays empty.
 `.trim();

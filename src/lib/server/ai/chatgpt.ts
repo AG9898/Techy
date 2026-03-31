@@ -111,10 +111,11 @@ export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create',
 	model: string,
-	researchContext?: ResearchContext
+	researchContext?: ResearchContext,
+	noteTitles?: string[]
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const systemPrompt = buildRespondSystemPrompt(mode, researchContext);
+	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles);
 
 	const response = await client.chat.completions.create({
 		model,

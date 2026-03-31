@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks, noteRevisions } from '$lib/server/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
 
@@ -89,6 +89,20 @@ export async function commitCreate(
 	const existing = await db.select({ id: notes.id }).from(notes).where(eq(notes.slug, slug));
 	if (existing.length > 0) {
 		throw new CommitError(`A note with slug "${slug}" already exists`, 'CONFLICT');
+	}
+
+	// Pre-validate all patch targets exist before any writes
+	if (linkedNotePatches.length > 0) {
+		const patchIds = linkedNotePatches.map((p) => p.noteId);
+		const found = await db.select({ id: notes.id }).from(notes).where(inArray(notes.id, patchIds));
+		const foundIds = new Set(found.map((n) => n.id));
+		const missing = patchIds.filter((id) => !foundIds.has(id));
+		if (missing.length > 0) {
+			throw new CommitError(
+				`Linked-note patch target${missing.length > 1 ? 's' : ''} not found: ${missing.join(', ')}`,
+				'NOT_FOUND'
+			);
+		}
 	}
 
 	const [inserted] = await db
