@@ -1,11 +1,15 @@
 <!doctype html>
-<html lang="en" data-theme="night" data-accent="sky">
+<html lang="en" data-theme="dark" data-accent="sky">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script>
 			try {
-				var t = localStorage.getItem('techy-theme') || 'night';
+				var t = localStorage.getItem('techy-theme');
+				// Migrate old three-theme names to the new dark/light model
+				if (t === 'night') t = 'dark';
+				else if (t === 'paper' || t === 'mist') t = 'light';
+				else if (t !== 'dark' && t !== 'light') t = 'dark';
 				var a = localStorage.getItem('techy-accent') || 'sky';
 				document.documentElement.setAttribute('data-theme', t);
 				document.documentElement.setAttribute('data-accent', a);

@@ -204,7 +204,29 @@ Legacy direct delete action for an existing note.
 
 ## JSON API Endpoints
 
-### `POST /api/assistant/respond`
+### `POST /api/assistant/query` *(current active endpoint)*
+Legacy assistant endpoint. This is the only assistant route currently live in code. It will be replaced by `/api/assistant/respond` and `/api/assistant/commit` once ASSIST-005 and ASSIST-007 land.
+
+**Request body:**
+```json
+{ "query": "string" }
+```
+
+**Response (200):**
+```json
+{
+  "matchedNote": { "id": "...", "title": "...", "slug": "...", "url": "..." },
+  "summary": "string",
+  "possibleGaps": ["string"],
+  "newTopicIdeas": ["string"]
+}
+```
+
+`matchedNote` is `null` when no note closely matches the query. `possibleGaps` and `newTopicIdeas` are assistant-generated suggestions for expanding the graph.
+
+---
+
+### `POST /api/assistant/respond` *(planned — ASSIST-005)*
 Primary assistant endpoint for conversation, live research, and proposal generation.
 
 **Request body:**

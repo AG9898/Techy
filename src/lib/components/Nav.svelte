@@ -3,14 +3,14 @@
 
 	let { session }: { session: DefaultSession | null } = $props();
 
-	type Theme = 'night' | 'paper' | 'mist';
+	type Theme = 'dark' | 'light';
 	type Accent = 'sky' | 'mint' | 'amber' | 'rose';
 
 	// Initialize from DOM attributes set by app.html inline script (client-side only)
 	let theme = $state<Theme>(
 		(typeof document !== 'undefined'
 			? (document.documentElement.getAttribute('data-theme') as Theme)
-			: null) ?? 'night'
+			: null) ?? 'dark'
 	);
 	let accent = $state<Accent>(
 		(typeof document !== 'undefined'
@@ -26,9 +26,8 @@
 	});
 
 	const themes: { id: Theme; label: string }[] = [
-		{ id: 'night', label: 'Night' },
-		{ id: 'paper', label: 'Paper' },
-		{ id: 'mist', label: 'Mist' }
+		{ id: 'dark', label: 'Dark' },
+		{ id: 'light', label: 'Light' }
 	];
 
 	const accents: { id: Accent; color: string }[] = [
@@ -45,7 +44,6 @@
 	<div class="nav-links">
 		<a href="/">Graph</a>
 		<a href="/notes">Notes</a>
-		<a href="/notes/new">+ New</a>
 		<a href="/search">Search</a>
 		<a href="/chat">Chat</a>
 	</div>

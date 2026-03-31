@@ -38,6 +38,32 @@ Graph edges are stored separately in `note_links` (source_note_id → target_not
 
 ---
 
+## Revision History
+
+Every note update creates a snapshot of the previous state in the `note_revisions` table before the `UPDATE` query fires. Snapshots are immutable — they are never modified after insert.
+
+**What is captured per revision:**
+
+| Field | Captured |
+|-------|---------|
+| `title` | yes |
+| `body` | yes |
+| `tags` | yes |
+| `aliases` | yes |
+| `category` | yes |
+| `status` | yes |
+| `revised_at` | auto — timestamp of the save that replaced it |
+
+`ON DELETE CASCADE` ties each revision's lifetime to its parent note — deleting a note removes all its revisions automatically.
+
+**When revisions are created:**
+- Every manual save from `/notes/[slug]/edit`
+- Every confirmed assistant `update_note` commit (NOTES-009)
+
+Revisions are read-only snapshots — the history UI at `/notes/[slug]/history` lets you inspect them but does not yet support restore/rollback.
+
+---
+
 ## Tag Taxonomy
 
 Use one or more tags per note. Tags represent the broadest classification.
@@ -144,7 +170,7 @@ Assistant-generated notes should still conform to this structure, even when the 
 
 1. **Assistant-first creation** — new notes are expected to be proposed from chat rather than a dedicated `/notes/new` page.
 2. **Live research first** — assistant-created notes should be based on live web research plus the existing graph context.
-3. **Populate required fields** — the assistant must fill `title`, `body`, `tags`, `aliases`, `category`, and `status` before the note is confirmed for save.
+3. **Populate required fields** — the assistant must fill `title`, `body`, `tags`, `aliases`, `category`, `status`, `aiGenerated` (`true`), `aiModel`, and `aiPrompt` before the note is confirmed for save.
 4. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
 5. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
 6. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.

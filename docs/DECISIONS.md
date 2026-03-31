@@ -203,7 +203,7 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 ## ADR-009: Tailwind CSS v4 + Melt UI for the frontend primitive layer
 
 **Date:** 2026-03-29
-**Status:** Accepted
+**Status:** Accepted (Tailwind CSS v4 live; Melt UI pending — tracked as UI-010)
 
 **Context:** The project needs a stronger UI foundation for iterative design work, improved UI literacy, and experimentation with more advanced interactive patterns without giving up custom visual direction.
 
@@ -334,3 +334,68 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 **Trade-offs:**
 - Existing theme names and tokens need migration
 - Some visual variety from the previous three-theme system is intentionally reduced
+
+---
+
+## ADR-015: Two-step `/respond` + `/commit` endpoint split over a single mutation endpoint
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The assistant-first authoring flow requires the user to review and optionally edit a proposal before any note is created, updated, or deleted. There are two viable shapes: a single endpoint that proposes and persists in one call, or two endpoints where one generates a proposal and the other commits it.
+
+**Decision:** Split the assistant API into `POST /api/assistant/respond` (generates a conversational reply and optional proposal payload) and `POST /api/assistant/commit` (persists a confirmed proposal). No note mutation happens until the commit endpoint is explicitly called.
+
+**Reasons:**
+- Proposal review and editing must happen client-side before any DB write — a single endpoint cannot cleanly separate the review from the persist step
+- The commit boundary makes it unambiguous when a note mutation is happening; it also makes the flow testable in isolation
+- Separating generation from persistence preserves a clean audit path: the proposal payload that the user reviewed is exactly what gets committed
+
+**Trade-offs:**
+- Two round-trips instead of one for confirmed proposals
+- The client must hold proposal state between the respond and commit calls
+
+---
+
+## ADR-016: Unified provider/model routing through a single assistant endpoint contract
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The assistant-first flow should support at least Anthropic and OpenAI, with future providers (e.g. OpenRouter) possible. The question is whether to expose separate endpoints per provider or a single endpoint that routes internally.
+
+**Decision:** A single `POST /api/assistant/respond` endpoint accepts `provider` and `model` fields and routes internally through provider adapters (`src/lib/server/ai/`). The request and response contract does not change as providers are added or removed. A server-side provider/model registry (`models.ts`) governs which combinations are valid.
+
+**Reasons:**
+- The client does not need to know about provider routing logic — it sends a provider/model pair and receives a standardised response
+- Adding a new provider (e.g. OpenRouter) requires only a new adapter and a registry entry, not a new endpoint or client change
+- Centralising provider validation on the server avoids invalid combinations reaching third-party APIs
+
+**Trade-offs:**
+- Provider-specific error shapes must be normalised at the adapter layer to keep the endpoint contract clean
+- The registry must be kept up to date as models are released or deprecated
+
+---
+
+## ADR-017: Materiality gate heuristics for assistant update proposals
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The assistant compares saved note content against live web research when a user discusses an existing note. A naïve comparison would produce update proposals for trivial differences (rephrasing, formatting, minor additions), creating noise. The decision is what bar to set.
+
+**Decision:** The assistant should only return an `update_note` proposal when the saved note meets at least one of the following conditions:
+1. **Factually incorrect** — the note contains a claim that live research clearly contradicts
+2. **Materially outdated** — the topic has changed significantly since the note was written and the existing content no longer reflects current reality
+3. **Substantially incomplete** — the note is missing a major section or perspective that would be expected for a note of its category and status
+
+Minor differences — rephrasing, supplementary examples, small additions that do not change the note's accuracy — should not trigger a proposal. The assistant should instead mention the note is broadly accurate in the conversational reply.
+
+**Reasons:**
+- Frequent update proposals for cosmetic differences create noise and erode trust in the assistant's judgement
+- The materiality bar keeps assistant-driven mutations deliberate and meaningful
+- Users can always manually edit notes for minor improvements via `/notes/[slug]/edit`
+
+**Trade-offs:**
+- The gate is a prompt-level heuristic, not a deterministic rule — the assistant may occasionally miss a material issue or over-trigger on a borderline case
+- The bar may need tuning once real usage patterns emerge

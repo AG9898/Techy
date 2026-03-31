@@ -5,8 +5,8 @@
 	--font-mono: 'Fira Code', 'Cascadia Code', monospace;
 }
 
-/* ─── Night theme (default) ─────────────────────────────── */
-[data-theme='night'] {
+/* ─── Dark theme (tonal dark, not pure black) ───────────── */
+[data-theme='dark'] {
 	--bg-base:    #0a0f1e;
 	--bg-surface: #0f172a;
 	--bg-raised:  #1e293b;
@@ -22,7 +22,6 @@
 	--graph-node-mature:  #4ade80;
 	--graph-link:  #334155;
 	--graph-focus: var(--accent-primary);
-	/* Legacy aliases kept for backward compat */
 	--border:       var(--border-soft);
 	--border-hover: var(--border-strong);
 	--accent-green:       #4ade80;
@@ -31,8 +30,8 @@
 	--accent-purple:      #a78bfa;
 }
 
-/* ─── Paper theme (warm light, editorial) ───────────────── */
-[data-theme='paper'] {
+/* ─── Light theme (tonal warm, not stark white) ─────────── */
+[data-theme='light'] {
 	--bg-base:    #faf7f2;
 	--bg-surface: #f2ede3;
 	--bg-raised:  #e8dfd0;
@@ -47,31 +46,6 @@
 	--graph-node-growing: #0369a1;
 	--graph-node-mature:  #15803d;
 	--graph-link:  #ddd4c2;
-	--graph-focus: var(--accent-primary);
-	--border:       var(--border-soft);
-	--border-hover: var(--border-strong);
-	--accent-green:       #15803d;
-	--accent-green-muted: #22c55e;
-	--accent-red:         #dc2626;
-	--accent-purple:      #7c3aed;
-}
-
-/* ─── Mist theme (cool neutral, quiet) ──────────────────── */
-[data-theme='mist'] {
-	--bg-base:    #f0f4f8;
-	--bg-surface: #e2e8f0;
-	--bg-raised:  #d1d9e3;
-	--bg-overlay: #c4cdd9;
-	--border-soft:   #c8d0db;
-	--border-strong: #8fa0b4;
-	--text-primary:   #0f172a;
-	--text-secondary: #334155;
-	--text-muted:     #64748b;
-	--text-subtle:    #94a3b8;
-	--graph-node-stub:    #94a3b8;
-	--graph-node-growing: #0369a1;
-	--graph-node-mature:  #15803d;
-	--graph-link:  #c8d0db;
 	--graph-focus: var(--accent-primary);
 	--border:       var(--border-soft);
 	--border-hover: var(--border-strong);
