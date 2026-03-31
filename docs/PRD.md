@@ -130,7 +130,7 @@ See [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) and [`docs/DESIGN-SPEC.md`](DESIGN-S
 
 ## Note Schema & Categories
 
-See [`docs/NOTES.md`](NOTES.md) for the full note schema, canonical category taxonomy, tag reuse policy, hub categories, template, link rules, and assistant-specific link propagation expectations. Assistant-created drafts are expected to use only canonical category labels and to prefer already-established tags when they fit.
+See [`docs/NOTES.md`](NOTES.md) for the full note schema, canonical category taxonomy, tag reuse policy, hub categories, template, link rules, and assistant-specific link propagation expectations. Assistant-created drafts are expected to use only canonical category labels, to prefer already-established tags when they fit, and to follow the standardized note section skeleton with controlled optional sections.
 
 ---
 

@@ -1,0 +1,52 @@
+GeoPandas
+Programming
+python
+geospatial
+pandas
+geopandas
+AI Generated
+3/31/2026
+GeoPandas
+Overview
+GeoPandas adds geospatial data support to the pandas data model by providing GeoSeries and GeoDataFrame types (subclasses of pandas.Series and pandas.DataFrame). GeoPandas integrates pandas with the Shapely geometry library to provide high-level geospatial operations in Python, making many tasks that would otherwise need a spatial database (e.g., PostGIS) possible directly in-memory.
+
+GeoPandas is typically used alongside the broader PyData stack — see Python for general Python tooling and ecosystem notes.
+
+Key capabilities
+Geometric operations: spatial joins (sjoin), overlays, buffer, intersection, union, dissolve, clipping, etc.
+Coordinate Reference System (CRS) handling: a CRS is stored on GeoSeries/GeoDataFrame and objects can be reprojected with to_crs().
+Plotting: GeoPandas objects can plot themselves using Matplotlib (convenient choropleths and quick maps).
+File I/O: read/write common geospatial formats such as Shapefile, GeoJSON, GeoPackage, Parquet, and PostGIS.
+Integration: works with Shapely geometries and integrates with other geospatial Python packages for classification, mapping, and spatial analysis.
+Current status (as of March 2026)
+Latest release: GeoPandas 1.1.3 (released March 10, 2026). Requires Python >= 3.10.
+Geometry engine: GeoPandas 1.0 and later require Shapely >= 2 as the sole supported geometry engine. Support for Shapely < 2 and the PyGEOS package was dropped.
+Spatial indexing: the rtree-based spatial indexing usage was removed (spatial indexing behavior changed in recent major versions).
+Default I/O engine: Pyogrio is the default I/O engine (installed with GeoPandas) instead of Fiona.
+Minimum dependency baseline (v1.1): Python 3.10+, pandas 2.0, NumPy 1.24, pyproj 3.5. Optional dependencies commonly used include Fiona, SciPy, Matplotlib, mapclassify, Folium, and SQLAlchemy (check specific version compatibility for your environment).
+Datasets: the built-in geopandas.datasets module was deprecated/removed around v1.0; the separate geodatasets package is the recommended replacement for example datasets.
+Notable features added in 1.0 / 1.1
+New methods (exposed from Shapely): count_geometries, count_interior_rings, relate_pattern, intersection_all, line_merge, set_precision / get_precision, and count_coordinates.
+Improvements to union/dissolve algorithms (including grid_size parameter and a disjoint-subset union algorithm) and better plotting support (e.g., pd.Index support in the column argument).
+Quick examples
+Read a file:
+
+gdf = geopandas.read_file("file.geojson")
+
+Reproject:
+
+gdf = gdf.to_crs("EPSG:3857")
+
+Spatial join:
+
+joined = geopandas.sjoin(gdf_points, gdf_polygons, how="left", predicate="within")
+
+Plot:
+
+gdf.plot(column="population", cmap="viridis", legend=True)
+
+Notes & migration tips
+When upgrading to GeoPandas >= 1.0, verify that your environment uses Shapely >= 2 and update any code that depended on PyGEOS semantics or rtree-based indexing.
+If your code relied on example datasets from geopandas.datasets, migrate to the geodatasets package or manage example/demo data separately.
+See also
+Python

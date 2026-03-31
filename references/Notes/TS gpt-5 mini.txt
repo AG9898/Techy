@@ -1,0 +1,55 @@
+TypeScript
+Programming Languages
+typescript
+javascript
+static-typing
+compilers
+AI Generated
+3/31/2026
+TypeScript — Overview
+What it is
+TypeScript is a high-level programming language that adds static typing with optional type annotations to JavaScript. It is a superset of JavaScript (every valid JavaScript program is valid TypeScript), developed and maintained by Microsoft, released under the Apache License 2.0. TypeScript code is transpiled to JavaScript so it can run anywhere JavaScript runs, including browsers and server runtimes.
+
+TypeScript is commonly used with client-side frameworks and server runtimes (examples: React, Angular, Vue, Node.js, Deno, Bun).
+
+See also: JavaScript for core language concepts and runtime behavior.
+
+Key features
+Static typing via optional annotations, enabling earlier error detection at compile time.
+Backwards-compatible superset of JavaScript: existing JS codebases can be adopted incrementally.
+Strong tooling and editor integration (autocomplete, intelligent navigation, refactoring) thanks to the language service.
+Works with mainstream frameworks and runtimes.
+Brief history
+First publicly released in October 2012 (initial 0.8 release after internal development at Microsoft).
+Generics were added early (0.9 in 2013). TypeScript 1.0 released in 2014.
+Current status (as of March 2026)
+TypeScript 6.0
+Latest release: TypeScript 6.0 (announced March 23, 2026).
+6.0 is presented as the last release on the current TypeScript codebase and a bridge toward the next major change.
+The big shift: TypeScript 7.0 (Go-based compiler)
+The TypeScript team is transitioning the compiler and language service to a new codebase written in Go.
+Goals: take advantage of native-code performance and shared-memory multi-threading.
+Planned for mid-2026, TypeScript 7.0 will introduce the new Go-based compiler and language service and will include breaking changes intended to align the language for the new implementation (examples called out by the maintainers include stricter defaults and removal of some older module targets/resolutions).
+Reported performance improvements are dramatic: language-service operations and project load times are expected to be much faster (teams reported ~8× decrease in project load time in early previews).
+Node.js native support
+Node.js added native TypeScript execution support for Node versions after 22.18.0 (released July 31, 2025).
+Native TypeScript execution in Node uses a "type-stripping" mechanism by default (enabled in Node 23.6 and 22.18 and later), allowing running TypeScript files without an explicit build step in many cases.
+Popularity & adoption
+TypeScript grew rapidly and, by August 2025, surpassed Python and JavaScript by GitHub contributor count — a notable milestone for a typed superset.
+Broad adoption across frontend and backend projects, driven by improved maintainability for large codebases and strong editor/tooling experiences.
+Practical notes / Getting started (high level)
+TypeScript is typically added to a project via a package manager and used with a compiler (the official compiler tsc) or integrated build tools.
+It can be adopted incrementally in existing JavaScript codebases because typing is optional; you can add types gradually.
+Common usage patterns include using TypeScript with framework toolchains (React, Angular, Vue) and with server runtimes (Node.js, Deno, Bun).
+When to choose TypeScript
+Large codebases or multi-developer projects where static typing reduces runtime surprises and improves IDE support.
+Libraries and public APIs where explicit types improve consumer experience.
+Teams that want stronger tooling (refactoring, navigation) tied to static types.
+Relationship to other languages and tools
+TypeScript is directly related to and builds on top of JavaScript — it is a syntactic and typing layer above JS.
+The compiler rewrite to Go aligns the project operationally with languages like Go Language for native performance in compiler tooling.
+TypeScript's rise changed language popularity dynamics compared to languages like Python and influenced how large JS ecosystems manage types and tooling.
+Further learning
+Start with small examples and add types incrementally to an existing JavaScript project.
+Try TypeScript in newer Node.js releases that provide native TypeScript support for a low-friction trial.
+Track the TypeScript 7.0 transition (Go-based compiler) if you maintain large projects — performance and some defaults will change.

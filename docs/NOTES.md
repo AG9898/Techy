@@ -190,13 +190,28 @@ status: stub
 > One sentence description.
 
 ## Overview
-2-4 sentences. What it is, why it matters right now.
+2-4 sentences. Brief, general, high-signal summary of the topic.
 
-## Industry Usage
-How it's used in modern development. What problems it solves. Current adoption and relevance.
+## Description
+Primary deep-explanation section. What it is, how it works at a high level, why it exists, and the right mental model.
 
-## In Depth
-Comprehensive explanation — internals, tradeoffs, nuances, how it compares to alternatives.
+## Key Concepts
+Core primitives, terms, components, or ideas with short explanations.
+
+## Use Cases
+Optional. Add only when practical applications materially help understanding.
+
+## Tradeoffs
+Optional. Add only when the topic has meaningful strengths, weaknesses, limitations, or decision criteria.
+
+## Ecosystem
+Optional. Add for languages, frameworks, libraries, platforms, or tools where surrounding tooling and related projects matter.
+
+## Version Notes
+Optional. Add only when recent version changes materially affect how the topic should be understood today. Keep brief and clearly time-bound.
+
+## Example
+Optional. Add only when a compact example explains the concept better than prose.
 
 ## Connections
 ### Broader Context
@@ -211,6 +226,35 @@ Comprehensive explanation — internals, tradeoffs, nuances, how it compares to 
 
 Assistant-generated notes should still conform to this structure, even when the draft is reviewed and saved entirely from chat.
 
+### Core Required Sections
+
+All notes must include these sections in this order:
+
+1. `Overview`
+2. `Description`
+3. `Key Concepts`
+4. `Connections`
+5. `Resources`
+
+### Approved Optional Sections
+
+Optional sections may appear only between `Key Concepts` and `Connections`, in this order when present:
+
+1. `Use Cases`
+2. `Tradeoffs`
+3. `Ecosystem`
+4. `Version Notes`
+5. `Example`
+
+### Default Section Bans
+
+Do not use these as standard headings in assistant- or human-authored notes:
+
+- `Current Status`
+- `Notable Features`
+- `Quick Examples`
+- `Industry Usage`
+
 ---
 
 ## Assistant Authoring Rules
@@ -220,11 +264,16 @@ Assistant-generated notes should still conform to this structure, even when the 
 3. **Populate required fields** — the assistant must fill `title`, `body`, `tags`, `aliases`, `category`, `status`, `aiGenerated` (`true`), `aiModel`, and `aiPrompt` before the note is confirmed for save.
 4. **Use canonical categories only** — choose exactly one category from the Canonical Categories list above. Never invent or paraphrase category names.
 5. **Reuse tags first** — prefer existing tags already used elsewhere in the graph when they fit. Only create a new tag when no current tag expresses the idea cleanly.
-6. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
-7. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
-8. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
-9. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
-10. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
+6. **Use the standard section skeleton** — every note must include `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources` in that order.
+7. **Keep Overview short** — use it for a brief general summary, not the full explanation.
+8. **Put the real explanation in Description** — use `Description` as the primary section for deeper conceptual coverage.
+9. **Use only approved optional sections** — add `Use Cases`, `Tradeoffs`, `Ecosystem`, `Version Notes`, or `Example` only when they materially improve the note.
+10. **Prefer evergreen content** — prioritize durable explanation over release-churn or transient ecosystem updates unless `Version Notes` is warranted.
+11. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
+12. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
+13. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
+14. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
+15. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
 
 ---
 
@@ -235,5 +284,6 @@ Assistant-generated notes should still conform to this structure, even when the 
 3. **Use a canonical category** — choose one category from the Canonical Categories list above, even on stubs.
 4. **Populate all frontmatter** — always set `tags`, `aliases`, and `category`, even on stubs.
 5. **Reuse tags where possible** — prefer existing lower-case tags before introducing new ones.
-6. **Expand before adding sections** — fill out the `In Depth` section before adding extra structure.
-7. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.
+6. **Use the standard section skeleton** — include the five required sections and keep optional sections within the approved list.
+7. **Expand Description before adding extras** — fill out the `Description` section before adding optional structure.
+8. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.

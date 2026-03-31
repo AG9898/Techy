@@ -1,0 +1,65 @@
+Go Language
+AI Generated
+3/30/2026
+Go Language
+Overview
+Go (often referred to as Golang) is a statically typed, compiled programming language designed at Google by Robert Griesemer, Rob Pike, and Ken Thompson. First released in 2009 and reaching version 1.0 in 2012, Go was created to address challenges with software development at scale — particularly slow compilation times, complexity in dependency management, and difficulty writing concurrent programs.
+
+Key Features
+Simplicity by design — Deliberately small language specification with minimal keywords (~25), no inheritance, no generics (until Go 1.18), and an opinionated formatting tool (gofmt)
+Fast compilation — Compiles directly to machine code with extremely fast build times, even for large codebases
+Built-in concurrency — Goroutines (lightweight threads) and channels provide first-class concurrency primitives based on Communicating Sequential Processes (CSP)
+Garbage collection — Automatic memory management with a low-latency garbage collector
+Static linking — Produces single, self-contained binaries with no external dependencies
+Standard library — Rich standard library covering networking, HTTP, cryptography, encoding, and more
+Cross-compilation — Simple cross-platform compilation via GOOS and GOARCH environment variables
+Interfaces — Structural (implicit) typing system where types satisfy interfaces without explicit declarations
+Error handling — Explicit error return values rather than exceptions
+Generics — Added in Go 1.18 (2022) via type parameters
+Core Concepts
+Goroutines and Channels
+func main() {
+    ch := make(chan string)
+    go func() {
+        ch <- "hello from goroutine"
+    }()
+    msg := <-ch
+    fmt.Println(msg)
+}
+Goroutines are multiplexed onto OS threads by the Go runtime scheduler, allowing millions of concurrent goroutines with minimal overhead.
+
+Interfaces
+Go uses duck typing at compile time — if a type implements all methods of an interface, it satisfies that interface implicitly without an implements keyword.
+
+Module System
+Go modules (go.mod) were introduced in Go 1.11 as the official dependency management system, replacing the earlier GOPATH-based workspace model.
+
+Error Handling Pattern
+result, err := someFunction()
+if err != nil {
+    return fmt.Errorf("context: %w", err)
+}
+Ecosystem and Tooling
+Tool	Purpose
+go build	Compile packages and dependencies
+go test	Built-in testing framework
+go vet	Static analysis for common errors
+gofmt	Canonical code formatting
+go mod	Dependency management
+go generate	Code generation
+gopls	Official language server (LSP)
+delve	Debugger for Go
+Relationship to Other Technologies
+Docker — Docker was originally written in Go; Go remains the dominant language in the container ecosystem
+Kubernetes — Written in Go, solidifying Go's role in cloud-native infrastructure
+gRPC — Go is a first-class supported language for gRPC
+Rust — Often compared for systems-level work; Rust offers more memory safety guarantees without GC, while Go prioritizes simplicity and developer productivity
+C — Go was partly designed as a modern alternative to C for systems programming, with cgo providing C interoperability
+Protocol Buffers — Widely used with Go for serialization, especially in microservices
+WebAssembly — Go supports compilation to WASM targets
+Practical Use Cases
+Cloud infrastructure and DevOps tooling — Terraform, Prometheus, Consul, Vault, Helm
+Microservices and APIs — High-performance HTTP/gRPC servers
+CLI tools — Single-binary distribution makes Go ideal (e.g., gh, cobra-based tools)
+Networking and distributed systems — Proxies, load balancers, service meshes (Istio, Linkerd v2)
+Site Reliability Engineering — Monitoring

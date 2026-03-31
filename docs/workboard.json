@@ -2327,6 +2327,46 @@
       "estimate": "M"
     },
     {
+      "id": "ASSIST-011",
+      "group_id": "ASSIST",
+      "title": "Standardized note-section prompt contract",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Require assistant-generated note drafts to follow the approved note section skeleton and optional-section rules from docs/NOTES.md.",
+      "description": "Extend the unified assistant create/update prompt contract so generated note drafts follow the standardized note section skeleton from `docs/NOTES.md`. The prompt should require `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources` in that order, allow only the approved optional sections in the documented order, keep `Overview` brief, treat `Description` as the primary deep-explanation section, and discourage deprecated default headings such as `Current Status`, `Notable Features`, `Quick Examples`, and `Industry Usage`.",
+      "acceptance_criteria": [
+        "Create-note prompts explicitly require the standardized note section skeleton",
+        "Update-note prompts normalize replacement drafts toward the same structure",
+        "Prompt instructions ban the deprecated default headings",
+        "Prompt guidance prefers evergreen explanation over release-churn unless `Version Notes` is warranted"
+      ],
+      "depends_on": [
+        "ASSIST-010",
+        "ASSIST-008"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/ai/prompts.ts",
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/ai/claude.ts",
+        "src/lib/server/ai/chatgpt.ts"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Keep the note-shape rules in one shared prompt contract so create and update behavior do not drift.",
+        "Do not force topic-specific optional sections when they do not materially improve the note."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
       "id": "NOTES-012",
       "group_id": "NOTES",
       "title": "Backfill existing note categories to the canonical taxonomy",
@@ -2363,6 +2403,44 @@
         "npm run check"
       ],
       "estimate": "S"
+    },
+    {
+      "id": "NOTES-013",
+      "group_id": "NOTES",
+      "title": "Assistant note-body structure enforcement",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Validate assistant create/update note bodies against the standardized section skeleton before persistence.",
+      "description": "Add shared server-side note-body structure validation for assistant-driven create and update commits so malformed or deprecated note section layouts are rejected or normalized before persistence. The enforcement should verify the required section order, allow only the approved optional sections between `Key Concepts` and `Connections`, and prevent assistant proposals from persisting banned default headings while leaving manual note editing behavior unchanged unless explicitly routed through assistant commit.",
+      "acceptance_criteria": [
+        "Assistant `create_note` commits enforce the required note section skeleton",
+        "Assistant `update_note` commits enforce the same section rules on replacement drafts",
+        "Deprecated headings are rejected or normalized before persistence",
+        "Manual note CRUD routes remain unchanged unless they use the assistant commit boundary"
+      ],
+      "depends_on": [
+        "ASSIST-011",
+        "NOTES-011",
+        "ASSIST-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/lib/server/assistant/commit.ts"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Enforce structure at the assistant mutation boundary first; do not broaden manual note-edit validation in this pass."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }
