@@ -19,9 +19,30 @@
 		aiPrompt?: string;
 	}
 
+	interface LinkedNotePatch {
+		noteId: string;
+		updatedBody: string;
+	}
+
 	interface NoteProposal {
 		type: 'create_note' | 'update_note' | 'delete_note';
 		draft?: NoteDraft;
+		noteId?: string;
+		noteTitle?: string;
+		linkedNotePatches?: LinkedNotePatch[];
+	}
+
+	interface CommitResultNote {
+		id: string;
+		slug: string;
+		title: string;
+	}
+
+	interface CommitState {
+		status: 'pending' | 'done' | 'error';
+		note?: CommitResultNote;
+		noteId?: string;
+		error?: string;
 	}
 
 	interface UserDisplayMessage {
@@ -49,6 +70,7 @@
 	let conversationHistory = $state<{ role: 'user' | 'assistant'; content: string }[]>([]);
 	let topicCache = $state<Record<string, unknown>>({});
 	let conversationEl: HTMLDivElement | undefined;
+	let commitStates = $state<Record<number, CommitState>>({});
 
 	let selectedProvider = $state(initProvider);
 	let selectedModel = $state(initModel);
@@ -61,6 +83,30 @@
 	async function scrollToBottom() {
 		await tick();
 		if (conversationEl) conversationEl.scrollTop = conversationEl.scrollHeight;
+	}
+
+	async function commitProposal(msgIndex: number, proposal: NoteProposal) {
+		commitStates = { ...commitStates, [msgIndex]: { status: 'pending' } };
+		try {
+			const res = await fetch('/api/assistant/commit', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ proposal })
+			});
+			const data = await res.json();
+			if (res.ok) {
+				const result = (data as { result: { type: string; note?: CommitResultNote; noteId?: string } }).result;
+				commitStates = {
+					...commitStates,
+					[msgIndex]: { status: 'done', note: result.note, noteId: result.noteId }
+				};
+			} else {
+				const errMsg = (data as { error?: string }).error ?? 'Commit failed';
+				commitStates = { ...commitStates, [msgIndex]: { status: 'error', error: errMsg } };
+			}
+		} catch {
+			commitStates = { ...commitStates, [msgIndex]: { status: 'error', error: 'Network error' } };
+		}
 	}
 
 	async function sendMessage() {
@@ -216,21 +262,84 @@
 										{/each}
 									</div>
 								{/if}
-								{#if msg.proposal?.type === 'create_note' && msg.proposal.draft}
-									<div class="proposal-card">
-										<div class="proposal-header">
-											<span class="proposal-glyph">◈</span>
-											<span class="proposal-label">Note draft</span>
-										</div>
-										<p class="proposal-title">{msg.proposal.draft.title}</p>
-										{#if msg.proposal.draft.tags?.length}
-											<div class="proposal-tags">
-												{#each msg.proposal.draft.tags as tag}
-													<span class="proposal-tag">{tag}</span>
-												{/each}
+								{#if msg.proposal}
+									{@const msgIdx = displayMessages.indexOf(msg)}
+									{@const cs = commitStates[msgIdx]}
+									{#if msg.proposal.type === 'create_note' && msg.proposal.draft}
+										<div class="proposal-card">
+											<div class="proposal-header">
+												<span class="proposal-glyph">◈</span>
+												<span class="proposal-label">Note draft</span>
 											</div>
-										{/if}
-									</div>
+											<p class="proposal-title">{msg.proposal.draft.title}</p>
+											{#if msg.proposal.draft.tags?.length}
+												<div class="proposal-tags">
+													{#each msg.proposal.draft.tags as tag}
+														<span class="proposal-tag">{tag}</span>
+													{/each}
+												</div>
+											{/if}
+											{#if cs?.status === 'done' && cs.note}
+												<p class="commit-success">
+													Saved — <a href="/notes/{cs.note.slug}">{cs.note.title}</a>
+												</p>
+											{:else if cs?.status === 'error'}
+												<p class="commit-error">{cs.error}</p>
+											{:else}
+												<button
+													class="commit-btn"
+													disabled={cs?.status === 'pending'}
+													onclick={() => commitProposal(msgIdx, msg.proposal!)}
+												>
+													{cs?.status === 'pending' ? 'Saving…' : 'Save note'}
+												</button>
+											{/if}
+										</div>
+									{:else if msg.proposal.type === 'update_note' && msg.proposal.draft}
+										<div class="proposal-card proposal-card--update">
+											<div class="proposal-header">
+												<span class="proposal-glyph">↑</span>
+												<span class="proposal-label">Update proposal</span>
+											</div>
+											<p class="proposal-title">{msg.proposal.draft.title}</p>
+											{#if cs?.status === 'done' && cs.note}
+												<p class="commit-success">
+													Updated — <a href="/notes/{cs.note.slug}">{cs.note.title}</a>
+												</p>
+											{:else if cs?.status === 'error'}
+												<p class="commit-error">{cs.error}</p>
+											{:else}
+												<button
+													class="commit-btn"
+													disabled={cs?.status === 'pending'}
+													onclick={() => commitProposal(msgIdx, msg.proposal!)}
+												>
+													{cs?.status === 'pending' ? 'Applying…' : 'Apply update'}
+												</button>
+											{/if}
+										</div>
+									{:else if msg.proposal.type === 'delete_note'}
+										<div class="proposal-card proposal-card--delete">
+											<div class="proposal-header">
+												<span class="proposal-glyph">✕</span>
+												<span class="proposal-label">Delete note</span>
+											</div>
+											<p class="proposal-title">{msg.proposal.noteTitle ?? msg.proposal.noteId ?? 'Unknown note'}</p>
+											{#if cs?.status === 'done'}
+												<p class="commit-success">Note deleted.</p>
+											{:else if cs?.status === 'error'}
+												<p class="commit-error">{cs.error}</p>
+											{:else}
+												<button
+													class="commit-btn commit-btn--danger"
+													disabled={cs?.status === 'pending'}
+													onclick={() => commitProposal(msgIdx, msg.proposal!)}
+												>
+													{cs?.status === 'pending' ? 'Deleting…' : 'Confirm delete'}
+												</button>
+											{/if}
+										</div>
+									{/if}
 								{/if}
 							</div>
 						{/if}
@@ -627,5 +736,65 @@
 
 	.send-btn:not(:disabled):hover {
 		opacity: 0.85;
+	}
+
+	/* ── Proposal card variants ─────────────────────────────────────────── */
+	.proposal-card--update {
+		border-color: color-mix(in srgb, var(--color-sky-500, #0ea5e9) 30%, transparent);
+	}
+
+	.proposal-card--delete {
+		border-color: color-mix(in srgb, var(--color-red-500, #ef4444) 30%, transparent);
+	}
+
+	/* ── Commit action button ────────────────────────────────────────────── */
+	.commit-btn {
+		align-self: flex-start;
+		background: var(--accent-strong);
+		color: #fff;
+		border: none;
+		border-radius: 9999px;
+		padding: 0.3rem 0.8rem;
+		font-family: inherit;
+		font-size: 0.75rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: opacity 0.15s ease;
+		margin-top: 0.25rem;
+	}
+
+	.commit-btn:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.commit-btn:not(:disabled):hover {
+		opacity: 0.85;
+	}
+
+	.commit-btn--danger {
+		background: color-mix(in srgb, var(--color-red-600, #dc2626) 80%, transparent);
+	}
+
+	/* ── Commit feedback ────────────────────────────────────────────────── */
+	.commit-success {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+		margin: 0.25rem 0 0;
+	}
+
+	.commit-success a {
+		color: var(--accent-primary);
+		text-decoration: none;
+	}
+
+	.commit-success a:hover {
+		text-decoration: underline;
+	}
+
+	.commit-error {
+		font-size: 0.78rem;
+		color: color-mix(in srgb, var(--color-red-500, #ef4444) 80%, var(--text-muted));
+		margin: 0.25rem 0 0;
 	}
 </style>

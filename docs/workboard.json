@@ -1423,7 +1423,7 @@
       "id": "ASSIST-007",
       "group_id": "ASSIST",
       "title": "Assistant commit endpoint for confirmed create/update/delete proposals",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Persist assistant proposals only after explicit confirmation from the chat UI.",

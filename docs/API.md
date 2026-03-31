@@ -206,7 +206,7 @@ Legacy direct delete action for an existing note.
 ## JSON API Endpoints
 
 ### `POST /api/assistant/query` *(legacy endpoint)*
-Legacy assistant endpoint. Superseded by `/api/assistant/respond` (now live). Will be removed once `/api/assistant/commit` (ASSIST-007) lands and the migration is complete.
+Legacy assistant endpoint. Superseded by `/api/assistant/respond` (now live). Can be removed now that `/api/assistant/commit` (ASSIST-007) has landed and the mutation boundary is established.
 
 **Request body:**
 ```json
