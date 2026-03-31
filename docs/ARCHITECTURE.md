@@ -211,6 +211,7 @@ The assistant becomes the primary authoring layer on top of the existing notes t
 - validating provider/model choice
 - performing live web research for create and compare flows
 - resolving the selected note title/body from `noteId` in update mode and injecting that note context into the prompt, even when the saved body is empty
+- normalizing `update_note` proposals against the selected note before returning them, including attaching the target `noteId`
 - reusing topic context already known in the current conversation cache
 - resolving whether the assistant should stay conversational or return a structured proposal
 

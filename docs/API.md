@@ -367,6 +367,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
 - In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - In update mode, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
+- Update proposals are server-normalized before being returned to the client: the selected `noteId` is attached to the proposal payload and the canonical saved note title remains the update target.
 - Live web research is performed for all modes including update, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.

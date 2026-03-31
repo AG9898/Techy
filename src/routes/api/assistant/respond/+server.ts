@@ -155,6 +155,16 @@ export const POST: RequestHandler = async ({ request }) => {
 			result.proposal.draft.aiPrompt = lastMsg?.content ?? '';
 		}
 
+		// Normalize update proposals against the selected note so commit always has the DB target.
+		// Keep the canonical saved title stable even if the model drifts on casing or wording.
+		if (result.proposal?.type === 'update_note' && currentNoteTitle && typeof noteId === 'string') {
+			result.proposal.noteId = noteId;
+			result.proposal.noteTitle = currentNoteTitle;
+			if (result.proposal.draft) {
+				result.proposal.draft.title = currentNoteTitle;
+			}
+		}
+
 		// Resolve linkedNotePatches: LLM proposes by title — map to { noteId, title, updatedBody }
 		// Drop any patches whose title doesn't match an existing note (LLM may hallucinate titles)
 		if (result.proposal?.type === 'create_note' && result.proposal.linkedNotePatches?.length) {

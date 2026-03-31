@@ -30,6 +30,8 @@ export interface NoteDraft {
 
 export interface NoteProposal {
 	type: 'create_note' | 'update_note' | 'delete_note';
+	noteId?: string;
+	noteTitle?: string;
 	draft?: NoteDraft;
 	linkedNotePatches?: { noteId?: string; title: string; updatedBody: string }[];
 }
