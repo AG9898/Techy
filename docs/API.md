@@ -147,18 +147,78 @@ Primary assistant surface for conversation and note authoring.
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string,
-  notes: { id: string, title: string, slug: string }[]
+  notes: { id: string, title: string, slug: string }[],
+  conversations?: { id: string, title: string | null, updatedAt: string, lastMessagePreview?: string }[],
+  activeConversation?: {
+    id: string,
+    title: string | null,
+    messages: {
+      id: string,
+      role: 'user' | 'assistant',
+      content: string,
+      citations?: { title: string, url: string }[],
+      proposal?: unknown | null,
+      createdAt: string
+    }[]
+  } | null
 }
 ```
 
 **Page behaviour:**
 - Standard conversation stays available at all times.
+- The page may show a persisted conversation list so an older chat can be resumed without leaving `/chat`.
+- Starting a new chat does not require deleting older conversations.
 - The composer includes an explicit create-mode toggle.
 - The page submits full conversation state to `POST /api/assistant/respond`.
+- Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
+- The current OpenAI chat allowlist includes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`. The current OpenAI default is `gpt-5-mini`.
 - Assistant responses may include a structured proposal for `create_note`, `update_note`, or `delete_note`.
 - Create/update proposals render as editable draft panels in chat before save.
 - Delete proposals render as explicit confirmation UI.
 - Live web citations may be shown in chat review, but are not persisted as dedicated source metadata.
+- Persisted chat history stores the app-owned transcript, not provider-managed hidden conversation state.
+- Resuming a conversation reconstructs the `messages` payload from saved chat history before calling the assistant again.
+
+---
+
+### `GET /chat/[conversationId]`
+Resume a previously saved assistant conversation.
+
+**Path param:** `conversationId` — UUID of the saved chat conversation
+
+**Server load returns:**
+```ts
+{
+  conversation: {
+    id: string,
+    title: string | null,
+    createdAt: string,
+    updatedAt: string
+  },
+  messages: {
+    id: string,
+    role: 'user' | 'assistant',
+    content: string,
+    citations?: { title: string, url: string }[],
+    proposal?: unknown | null,
+    createdAt: string
+  }[],
+  providers: {
+    id: 'anthropic' | 'openai',
+    label: string,
+    models: { id: string, label: string }[],
+    defaultModel: string
+  }[],
+  defaultProvider: 'anthropic' | 'openai',
+  defaultModel: string,
+  notes: { id: string, title: string, slug: string }[]
+}
+```
+
+**Notes:**
+- The saved transcript is the canonical source of resumed chat state.
+- Provider-specific conversation IDs or hidden memory are not part of the route contract.
+- Older messages may later be truncated or summarized when rebuilding model context, but the saved transcript remains the product source of truth.
 
 ---
 
@@ -252,11 +312,11 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `messages` | yes | Full conversation transcript for the current client-side session |
+| `messages` | yes | Full conversation transcript for the active chat runtime; may be rebuilt from saved history when resuming |
 | `mode` | yes | `"chat"` \| `"create"` \| `"update"` |
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
-| `topicCache` | no | Per-conversation research cache used to avoid re-researching the same topic repeatedly |
+| `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
 | `noteId` | conditional | UUID of the note to compare; required when `mode` is `"update"` |
 
 **Response (200):**
@@ -302,11 +362,16 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 
 **Behaviour:**
 - In all modes, the assistant remains conversational.
+- The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
 - In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - In update mode, the server looks up the saved note body by `noteId` and injects it into the system prompt alongside live research context. The assistant compares the two and only returns an `update_note` proposal when the note is materially wrong, materially outdated, or substantially incomplete. Minor or cosmetic differences do not trigger a proposal.
 - Live web research is performed for all modes including update, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
+- OpenAI GPT-5-family requests may include adapter-level reasoning configuration without changing this endpoint contract.
+- No provider-side conversation identifier is part of this endpoint contract.
+- When chat history is resumed, the caller rebuilds the `messages` array from the saved transcript and sends that reconstructed conversation back through this same endpoint.
+- `topicCache` is an ephemeral optimization and is not intended to be the persisted source of truth for chat history.
 
 **Errors:**
 - `400` — invalid body, missing messages, invalid mode, invalid provider/model combination, or missing/invalid `noteId` for update mode
@@ -377,10 +442,31 @@ Persist a confirmed assistant proposal.
 ### `POST /api/ai/research`
 Legacy helper endpoint. No longer the intended product entry point once the assistant-first flow lands.
 
+**Request body:**
+```json
+{ "topic": "string", "provider": "claude" }
+```
+
+**Behaviour:**
+- Accepts `provider: "claude" | "chatgpt"`; defaults to `"claude"`.
+- Returns `{ body, model }`, where `model` reflects the current provider default.
+- The current defaults are `claude-opus-4-6` for Anthropic and `gpt-5-mini` for OpenAI.
+
 ---
 
 ### `POST /api/ai/generate-note`
 Legacy helper endpoint. No longer the intended product entry point once the assistant-first flow lands.
+
+**Request body:**
+```json
+{ "topic": "string", "provider": "claude" }
+```
+
+**Behaviour:**
+- Accepts `provider: "claude" | "chatgpt"`; defaults to `"claude"`.
+- Generates and immediately persists a note, then syncs `note_links` and returns note metadata plus `nextNoteIdeas`.
+- The saved note writes `ai_model` using the current provider default.
+- The current defaults are `claude-opus-4-6` for Anthropic and `gpt-5-mini` for OpenAI.
 
 ---
 

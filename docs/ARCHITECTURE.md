@@ -17,6 +17,7 @@ Browser
   ├─ GET /notes/[slug]/history/[id]     → +page.server.ts (single revision)
   ├─ POST /notes?/import      → +page.server.ts action (batch import + wikilink sync)
   ├─ GET /chat                → (app)/chat/+page.server.ts + +page.svelte (assistant chat + proposal UI)
+  ├─ GET /chat/[conversationId] → (app)/chat/[conversationId]/+page.server.ts + +page.svelte (resume saved chat transcript)
   ├─ POST /api/assistant/respond → +server.ts → assistant orchestrator → live web research + provider model
   ├─ POST /api/assistant/commit  → +server.ts → DB mutation + link sync + revision snapshot
   ├─ POST /api/ai/research    → legacy helper endpoint
@@ -98,8 +99,10 @@ src/
     │   │   ├── export/+server.ts
     │   │   └── [slug]/...
     │   └── chat/
-    │       ├── +page.server.ts    # provider/model options
-    │       └── +page.svelte        # conversation + editable proposal UI
+    │       ├── +page.server.ts    # provider/model options + conversation index
+    │       ├── +page.svelte       # conversation + editable proposal UI
+    │       └── [conversationId]/
+    │           └── +page.server.ts # saved transcript load for resume
     ├── api/
     │   ├── assistant/
     │   │   ├── respond/+server.ts
@@ -152,11 +155,31 @@ note_revisions (
   status      text CHECK(status IN ('stub','growing','mature')) NOT NULL default 'stub',
   revised_at  timestamp NOT NULL default now()
 )
+
+chat_conversations (
+  id               uuid PK,
+  title            text,
+  created_at       timestamp NOT NULL default now(),
+  updated_at       timestamp NOT NULL default now(),
+  last_message_at  timestamp NOT NULL default now()
+)
+
+chat_messages (
+  id               uuid PK,
+  conversation_id  uuid NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  role             text CHECK(role IN ('user','assistant')) NOT NULL,
+  content          text NOT NULL,
+  citations        jsonb,
+  proposal         jsonb,
+  created_at       timestamp NOT NULL default now()
+)
 ```
 
 **Schema note:**
 - The assistant-first phase does **not** introduce a dedicated citation table.
 - Live-web citations remain chat-review data, not persisted note metadata.
+- Planned chat history should persist canonical transcript data only: message text, lightweight citations, and proposal snapshots when present.
+- Planned chat history should not persist provider-managed conversation IDs, raw live-research summaries, or the ephemeral topic-cache object as durable state.
 
 Schema source of truth: `src/lib/server/db/schema.ts`
 
@@ -190,6 +213,11 @@ The assistant becomes the primary authoring layer on top of the existing notes t
 - reusing topic context already known in the current conversation cache
 - resolving whether the assistant should stay conversational or return a structured proposal
 
+Planned chat-history note:
+- the respond endpoint remains stateless with respect to provider-side conversation memory
+- when a saved conversation is resumed, the app rebuilds the transcript from `chat_messages` and sends it back through `/api/assistant/respond`
+- the persisted transcript is the product source of truth; provider-managed hidden memory is not relied upon
+
 ### Proposal types
 
 The assistant may return:
@@ -215,6 +243,23 @@ Live web research is mandatory for:
 
 If the same topic has already been researched in the current chat session, the assistant should reuse the cached research context instead of re-running the same research request.
 
+Planned persistence note:
+- the topic cache remains an ephemeral optimization for the active runtime
+- resumed chat history does not depend on a persisted raw topic cache
+- when necessary, live research may be rerun after a conversation is resumed from saved transcript state
+
+### Chat history
+
+Planned chat history should be implemented as app-owned transcript storage rather than provider-owned session state.
+
+Rules:
+- save conversation/message records in Postgres so a user can reopen prior chats
+- store user/assistant message content, normalized citations, and proposal snapshots when present
+- do not store provider conversation IDs or raw hidden context state
+- do not treat raw research payloads as durable history data
+- rebuild provider input from saved messages whenever a conversation is resumed
+- keep storage lean enough for Neon free-tier usage; later retention or summarization can be added if needed
+
 ### Provider/model abstraction
 
 The assistant API should accept provider/model pairs rather than hard-coding a single model.
@@ -222,6 +267,16 @@ The assistant API should accept provider/model pairs rather than hard-coding a s
 V1 target support:
 - Anthropic
 - OpenAI
+
+Current registry notes:
+- The approved provider/model combinations live in `src/lib/server/ai/models.ts`.
+- Anthropic currently defaults to `claude-opus-4-6`.
+- OpenAI currently defaults to `gpt-5-mini` and exposes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`.
+
+Adapter notes:
+- Anthropic is currently integrated through the Messages API and prompt-enforced JSON output parsing.
+- OpenAI is currently integrated through the Responses API while preserving the same external `provider` / `model` request contract.
+- GPT-5-family OpenAI requests may include adapter-level reasoning configuration, but that remains an implementation detail behind the unified endpoint.
 
 The interface should remain compatible with a future OpenRouter adapter, but OpenRouter itself is not part of the immediate phase.
 

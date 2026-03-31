@@ -125,8 +125,10 @@ Rules:
 - show assistant proposals as review surfaces, not separate dashboards
 - keep citations assistive and low-noise
 - create mode must not break normal conversation
+- persisted chat history should feel like a quiet notebook index, not a busy support inbox
 
 Recommended desktop arrangement:
+- a restrained history rail or drawer for recent chats
 - centered conversation column
 - assistant controls near the composer
 - inline editable proposal panel for create/update
@@ -134,6 +136,7 @@ Recommended desktop arrangement:
 
 Recommended mobile arrangement:
 - single-column conversation
+- chat history collapses into a compact drawer or sheet rather than permanently consuming vertical space
 - proposal panel collapses under the triggering assistant message
 
 ---
@@ -176,14 +179,17 @@ Rules:
 - keep the composer persistent and obvious
 - make create mode explicit
 - show provider/model controls without turning the toolbar into a cockpit
+- let users resume prior conversations without making chat history the dominant visual element
 - render note proposals inline as editable review surfaces
 - show citations during review without overwhelming the draft itself
 - keep delete confirmation compact and deliberate
+- store and present the app-owned transcript as the canonical history view; do not expose provider-specific hidden memory concepts in the UI
 
 Avoid:
 - making the chat UI look like a separate product
 - hiding note-creation state behind ambiguous affordances
 - turning assistant proposals into a wall of utility panels
+- turning saved conversation history into a dense email-style list that competes with the current conversation
 
 ---
 

@@ -128,12 +128,12 @@ Rules:
 Chat is now both the conversation surface and the primary authoring surface.
 
 ```
-[Conversation column........................................]
-[ assistant toolbar: mode toggle (Chat|Create|Update) | provider | model ]
-[ note picker row: visible only in Update mode            ]
-[ conversation area ....................................... ]
-[ assistant proposal panel appears inline beneath message  ]
-[ composer ................................................ ]
+[ history list / drawer ........ ][Conversation column.....]
+[ recent chats / new chat ...... ][ assistant toolbar: mode toggle (Chat|Create|Update) | provider | model ]
+[ low-noise resume affordance ...][ note picker row: visible only in Update mode            ]
+[ compact metadata ..............][ conversation area ....................................... ]
+[ ................................][ assistant proposal panel appears inline beneath message  ]
+[ ................................][ composer ................................................ ]
 ```
 
 The assistant must be able to:
@@ -141,6 +141,7 @@ The assistant must be able to:
 - generate a new note draft
 - propose an update to an existing note
 - request confirmation for deletion
+- reopen a saved conversation transcript
 
 ### Assistant Proposal Panel
 
@@ -188,11 +189,13 @@ Rules:
 
 ### `Chat` surface
 - Three-mode toggle: Chat | Create | Update (segmented button group in toolbar)
+- A recent-conversations list or drawer allows the user to resume an older chat without leaving the chat surface
 - In Update mode, a full-width note-picker `<select>` appears below the toolbar for choosing the note to review
 - Send is disabled in Update mode until a note is selected
 - Add provider/model selection controls
 - Render assistant citations and proposal panels inline
 - Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility
+- Selecting a saved conversation restores its transcript; resuming it should not depend on provider-side hidden memory
 
 ---
 
@@ -205,6 +208,13 @@ Rules:
 4. User edits the draft inline if needed.
 5. User confirms save.
 6. The app persists the note, syncs `note_links`, and applies any confirmed linked-note patches so graph connections are visible immediately.
+
+### Chat Resume Flow
+1. User opens `/chat` and selects a saved conversation.
+2. The app loads the saved transcript from DB-backed chat history.
+3. The UI restores prior messages, citations, and proposal review state as history.
+4. When the user sends a new message, the app rebuilds the assistant input from the saved transcript rather than resuming provider-side hidden state.
+5. Live research may run again if the resumed turn requires fresh grounding.
 
 ### Assistant Update Flow
 1. User asks about or asks to improve an existing note.

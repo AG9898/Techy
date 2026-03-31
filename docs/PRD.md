@@ -78,6 +78,16 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-18 | New notes create graph links immediately from their `[[wikilinks]]` on save | High |
 | F-19 | If a newly created note should be linked from existing notes, the assistant also updates those note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows in the same save flow | High |
 
+### Chat Continuity
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-26 | Chat history is persisted so past assistant conversations can be reopened from `/chat` | Medium |
+| F-27 | Persisted chat history stores app-owned conversation/message records rather than provider-managed hidden conversation state | High |
+| F-28 | Resuming a conversation rebuilds model context from saved messages instead of relying on provider-side memory | High |
+| F-29 | Raw live-research payloads and ephemeral topic-cache state are not persisted as part of chat history | Medium |
+| F-30 | Chat history storage stays lean enough for Neon free-tier usage by storing canonical transcript data, proposal snapshots, and lightweight citation records only | Medium |
+
 ### UI Direction
 
 | ID | Feature | Priority |
@@ -115,3 +125,4 @@ See [`docs/NOTES.md`](NOTES.md) for the full note schema, tag taxonomy, hub cate
 - **Auth:** GitHub OAuth, restricted to `ALLOWED_GITHUB_USERNAME`
 - **Deployment:** Serverless-compatible (Vercel / Cloudflare Pages)
 - **Cost:** $0/month target (all free-tier services where practical)
+- **Chat history storage:** Persist only lean transcript data in DB; avoid storing provider-side context state or full raw research payloads

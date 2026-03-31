@@ -418,4 +418,46 @@ Minor differences — rephrasing, supplementary examples, small additions that d
 
 **Trade-offs:**
 - Some older slate-based assumptions in component styling need cleanup to stay aligned with the shared tokens
+
+---
+
+## ADR-019: OpenAI adapter uses the Responses API while preserving the unified provider/model contract
+
+**Date:** 2026-03-31
+**Status:** Accepted
+
+**Context:** Techy now exposes OpenAI model selection through the shared `provider` / `model` contract on `/chat` and `/api/assistant/respond`. Supporting the newer GPT-5 family raised a design choice: keep the OpenAI adapter on Chat Completions for parity with Anthropic's adapter shape, or move the OpenAI side to the Responses API while preserving the app's external contract.
+
+**Decision:** Keep the external assistant API contract unchanged, but implement the OpenAI adapter with the Responses API. The approved OpenAI model registry is still defined centrally in `src/lib/server/ai/models.ts`, and the current OpenAI default is `gpt-5-mini`. Anthropic continues to use its existing Messages API integration.
+
+**Reasons:**
+- The app contract stays stable: the client still sends `provider`, `model`, `messages`, and `mode` without caring about provider-specific transport details
+- The Responses API is the better fit for current GPT-5-family support, so using it avoids pinning the OpenAI adapter to an older integration shape
+- Centralising model defaults and allowlists in `models.ts` keeps `/chat`, `/api/assistant/respond`, and the legacy helper endpoints consistent about which model is being used and recorded in `ai_model`
+
+**Trade-offs:**
+- The provider adapters now differ more internally, so the normalization layer must keep output and error handling aligned
+- Reasoning settings for GPT-5-family models become an adapter concern that needs maintenance as OpenAI guidance evolves
 - Sky accent remains visibly blue by design, so dark mode still includes blue highlights when that accent is selected
+
+---
+
+## ADR-020: Persist chat history as app-owned transcript data, not provider-side conversation state
+
+**Date:** 2026-03-31
+**Status:** Accepted
+
+**Context:** Techy now treats `/chat` as a primary product surface rather than a disposable helper. Adding resumable chat history raises a design choice: either persist provider-managed conversation/session state, or store Techy's own conversation transcript and rebuild model context from that transcript whenever a chat is resumed.
+
+**Decision:** Persist chat history as DB-backed conversation/message records owned by the app. A resumed chat rebuilds the `messages` payload from saved transcript data before calling `/api/assistant/respond`. Provider-specific conversation IDs, hidden memory state, and raw live-research payloads are not treated as durable product state.
+
+**Reasons:**
+- The transcript the user sees is the same transcript the app owns, which keeps behavior auditable and debuggable
+- The design stays provider-agnostic across Anthropic, OpenAI, and future adapters
+- Avoiding provider-owned hidden state prevents product behavior from depending on opaque memory that Techy cannot inspect or migrate
+- Lean transcript storage is a better fit for Neon free-tier limits than persisting raw research artifacts or provider session blobs
+
+**Trade-offs:**
+- Resuming a conversation may require replaying prior messages into the model context, increasing token usage on longer chats
+- Older conversations may eventually need truncation, summarization, or retention rules to control context size and storage growth
+- Reopened conversations may rerun live research for fresh turns because the ephemeral topic cache is not persisted as durable history
