@@ -1,5 +1,25 @@
 import type { ResearchContext } from '$lib/server/assistant/research.js';
 
+const CANONICAL_CATEGORIES = [
+	'Programming Languages',
+	'Frameworks & Libraries',
+	'Developer Tools',
+	'Platforms & Operating Systems',
+	'Cloud & Infrastructure',
+	'Databases & Storage',
+	'Networking & Protocols',
+	'Security & Identity',
+	'APIs & Integration',
+	'DevOps & Delivery',
+	'AI & Machine Learning',
+	'Data & Analytics',
+	'Hardware & Devices',
+	'Software Architecture',
+	'Concepts & Methodologies'
+] as const;
+
+const CANONICAL_CATEGORIES_TEXT = CANONICAL_CATEGORIES.join(', ');
+
 /**
  * System prompts for AI-generated notes.
  * These are placeholders — fill in with your actual prompts when implementing AI features.
@@ -25,7 +45,7 @@ You are a technical knowledge assistant that generates structured notes about so
 Output format (Markdown with frontmatter):
 ---
 title: <topic name>
-category: <one of: Programming Languages, Web Frameworks, AI & Machine Learning, Cloud & Infrastructure, Databases, DevOps & CI/CD, APIs & Services, Developer Tools, Protocols & Standards>
+category: <one of: ${CANONICAL_CATEGORIES_TEXT}>
 tags: [tag1, tag2, tag3]
 status: stub
 ---
@@ -114,7 +134,7 @@ When the note DOES need a material update:
       "body": "<complete updated note body in markdown>",
       "tags": ["<tag1>", "<tag2>"],
       "aliases": [],
-      "category": "<same category as before unless genuinely wrong>",
+      "category": "<same category as before unless genuinely wrong; if changed, use one of: ${CANONICAL_CATEGORIES_TEXT}>",
       "status": "growing"
     },
     "linkedNotePatches": []
@@ -124,6 +144,8 @@ When the note DOES need a material update:
 Rules:
 - The draft body must be a complete replacement of the saved note body — not a diff.
 - Use [[Note Title]] syntax for related tech topics by their exact names.
+- Keep the existing category unless it is clearly wrong; when changing it, use exactly one canonical category from this list: ${CANONICAL_CATEGORIES_TEXT}.
+- Prefer existing lower-case tags already used in the graph when they fit; only create a new tag if no current tag is a clean match.
 - Do not add "aiGenerated", "aiModel", or "aiPrompt" — the server adds those.
 - linkedNotePatches must always be [] for update_note proposals.
 `.trim();
@@ -196,7 +218,7 @@ When the user is clearly requesting a note about a specific technology or concep
       "body": "<comprehensive markdown note body; use [[Note Title]] syntax for related topics>",
       "tags": ["<tag1>", "<tag2>"],
       "aliases": [],
-      "category": "<one of: Programming Languages, Web Frameworks, AI & Machine Learning, Cloud & Infrastructure, Databases, DevOps & CI/CD, APIs & Services, Developer Tools, Protocols & Standards>",
+      "category": "<one of: ${CANONICAL_CATEGORIES_TEXT}>",
       "status": "growing"
     },
     "linkedNotePatches": [
@@ -218,6 +240,9 @@ When the user is not clearly asking to create a note (e.g. asking a question), r
 Rules:
 - Do not include "aiGenerated", "aiModel", or "aiPrompt" in the draft — the server adds those.
 - The body must be a proper knowledge note: factual, structured with markdown headings, and comprehensive.
+- Choose exactly one canonical category from this list: ${CANONICAL_CATEGORIES_TEXT}. Do not invent, paraphrase, lowercase, or pluralize category names.
+- Prefer existing lower-case tags already used in the graph when they fit the topic. Only create a new tag when no current tag is a clean match.
+- Do not use tags as substitute categories.
 - Use [[Note Title]] syntax to reference related tech topics by their exact names.
 - For linkedNotePatches: only include entries for notes listed in the existing notes context below. Use the exact title as shown. Only patch a note if the new note genuinely belongs in that note's prose — not just thematically related. Provide the complete updated body, not a diff. Omit linkedNotePatches or set it to [] if no existing notes should reference the new note.
 - Do not invent citations — citations array stays empty.

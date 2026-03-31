@@ -1625,7 +1625,7 @@
       "priority": "medium",
       "type": "feature",
       "summary": "Support assistant-driven note deletion behind an explicit confirmation step in chat.",
-      "description": "Add `delete_note` proposal handling to the assistant and commit flow. The assistant should only return delete proposals for explicit delete intent, and the UI should require a confirmation action before calling the commit endpoint. Once confirmed, the note should be deleted using the same cascade behavior already relied on by manual delete flows.",
+      "description": "Add `delete_note` proposal handling to the unified assistant routing and commit flow. Delete proposals should only appear for explicit delete intent, whether that intent comes from inference or an explicit override, and the UI should require a confirmation action before calling the commit endpoint. Once confirmed, the note should be deleted using the same cascade behavior already relied on by manual delete flows.",
       "acceptance_criteria": [
         "Delete requests produce an explicit confirmation state in chat rather than deleting immediately",
         "Confirming the delete removes the note and cascades its `note_links` rows",
@@ -1633,6 +1633,7 @@
         "Deleting a note through chat does not bypass existing not-found handling or safety checks"
       ],
       "depends_on": [
+        "ASSIST-010",
         "ASSIST-007",
         "FOUND-005"
       ],
@@ -1650,7 +1651,8 @@
         "docs/DESIGN-SPEC.md"
       ],
       "notes": [
-        "Delete confirmation is a one-click confirm in chat, not a typed phrase."
+        "Delete confirmation is a one-click confirm in chat, not a typed phrase.",
+        "Do not infer delete intent from ambiguous cleanup or edit requests."
       ],
       "commands": [
         "npm run check"
@@ -1660,25 +1662,25 @@
     {
       "id": "UI-007",
       "group_id": "UI",
-      "title": "Unified chat authoring interface",
+      "title": "Inference-first unified chat interface",
       "status": "todo",
       "priority": "high",
       "type": "feature",
-      "summary": "Turn `/chat` into the single assistant surface for conversation, note drafting, note review, and note mutations.",
-      "description": "Redesign the `/chat` page so it supports standard conversation, explicit create mode, provider/model selection, inline citations, editable draft panels for create/update proposals, and confirmation UI for delete proposals. Replace the current summary-only assistant rendering with proposal-aware UI that can review and commit note mutations.",
+      "summary": "Turn `/chat` into the single assistant surface for conversation, note-aware routing, proposal review, and note mutations.",
+      "description": "Redesign the `/chat` page so it supports standard conversation, provider/model selection, inline citations, matched-note context, compact create/update override controls, editable draft panels for create/update proposals, and confirmation UI for delete proposals. Replace the current summary-only assistant rendering with proposal-aware UI that can show resolved routing state, surface a related saved note without forcing mutation, and review or commit note changes inline.",
       "acceptance_criteria": [
-        "The chat UI includes an explicit create-mode control near the composer",
-        "The chat UI includes provider and model selectors for supported providers",
+        "The chat UI remains one persistent composer and conversation surface rather than separate primary modes",
+        "The chat UI includes provider and model selectors plus compact create/update override controls near the composer",
+        "Strong existing-note matches render as inline context with follow-up research or review affordances without forcing an edit state",
         "Create and update proposals render as editable inline draft panels before save",
-        "Delete proposals render as an explicit confirmation state",
-        "The assistant remains conversational even when create mode is enabled"
+        "Delete proposals render as an explicit confirmation state"
       ],
       "depends_on": [
-        "ASSIST-005",
-        "ASSIST-006",
+        "ASSIST-009",
+        "ASSIST-010",
         "ASSIST-007",
         "NOTES-007",
-        "NOTES-009",
+        "NOTES-009b",
         "NOTES-010"
       ],
       "blocked_by": [],
@@ -1694,7 +1696,8 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "This task replaces the current message shape built around `matchedNote`, `summary`, `possibleGaps`, and `newTopicIdeas`."
+        "This task replaces the legacy summary-oriented assistant message shape and should consume the new routing metadata returned by `/api/assistant/respond`.",
+        "Avoid separate mode tabs or a prominent create-mode switch as the primary mental model."
       ],
       "commands": [
         "npm run check"
@@ -1709,7 +1712,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Remove `/notes/new` and clean up all product entry points that still assume a separate new-note page.",
-      "description": "Delete the dedicated `/notes/new` route and remove `+ New` navigation, notes-page new-note buttons, and graph empty-state links that point to the legacy creation flow. Update copy and navigation so note authoring expectations point to `/chat` without introducing redirect-based create-mode routes.",
+      "description": "Delete the dedicated `/notes/new` route and remove `+ New` navigation, notes-page new-note buttons, and graph empty-state links that point to the legacy creation flow. Update copy and navigation so note authoring expectations point to `/chat` without introducing redirect-based create or update mode routes.",
       "acceptance_criteria": [
         "The `/notes/new` route is removed from the app",
         "Navigation no longer includes a `+ New` link",
@@ -1735,7 +1738,7 @@
         "docs/STYLE-GUIDE.md"
       ],
       "notes": [
-        "Do not add redirect-based create-mode routes; the user explicitly wants note creation unified on `/chat` only."
+        "Do not add redirect-based create or update routes; note authoring should stay unified on `/chat`."
       ],
       "commands": [
         "npm run prepare",
@@ -1791,9 +1794,10 @@
       "priority": "medium",
       "type": "feature",
       "summary": "Use Melt primitives where the new assistant interaction model benefits from better accessibility and keyboard behavior.",
-      "description": "Adopt Melt UI primitives for the assistant controls that benefit from headless accessibility behavior: provider/model selectors, create-mode toggles where appropriate, proposal disclosure/review affordances, and compact confirmation interactions. Preserve Techy's custom visual language while improving behavior and keyboard interaction.",
+      "description": "Adopt Melt UI primitives for the assistant controls that benefit from headless accessibility behavior: provider/model selectors, compact create/update override controls, matched-note disclosure affordances, proposal review surfaces, and compact confirmation interactions. Preserve Techy's custom visual language while improving behavior and keyboard interaction.",
       "acceptance_criteria": [
         "Provider/model selectors use accessible Melt-backed behavior",
+        "Override controls and matched-note disclosure affordances are keyboard-usable and accessible",
         "Proposal review and confirmation affordances are keyboard-usable and accessible",
         "The assistant UI keeps Techy's custom styling rather than inheriting a canned component theme",
         "The migration is limited to assistant-related controls rather than broad repo-wide refactors"
@@ -2119,6 +2123,246 @@
         "npm run check"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "NOTES-011",
+      "group_id": "NOTES",
+      "title": "Canonical note taxonomy enforcement across server write paths",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Centralize the canonical category list and enforce it consistently for assistant commit, manual note create/edit, and Markdown import flows.",
+      "description": "Add a shared note-taxonomy module that exposes the canonical category list and category normalization/validation helpers described in `docs/NOTES.md`. Use that shared taxonomy at every server-side note write boundary: assistant commit, manual create/edit actions, and Markdown import. Write paths should reject or clearly surface invalid categories instead of persisting ad hoc labels, while still allowing tags to remain open-vocabulary. Keep the persistence shape unchanged for now (`category` stays `text`), but make the application contract strict and consistent everywhere note data enters the system.",
+      "acceptance_criteria": [
+        "There is one shared source of truth for canonical note categories used by application code",
+        "Assistant commit rejects non-canonical categories instead of persisting them",
+        "Manual create/edit and import flows no longer accept arbitrary category strings silently",
+        "Tags remain flexible and are not converted into a fixed enum or fixed taxonomy",
+        "npm run check passes with 0 errors"
+      ],
+      "depends_on": [
+        "FOUND-005",
+        "ASSIST-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/assistant/commit.ts",
+        "src/routes/api/assistant/commit/+server.ts",
+        "src/routes/(app)/notes/new/+page.server.ts",
+        "src/routes/(app)/notes/[slug]/edit/+page.server.ts",
+        "src/routes/(app)/notes/+page.server.ts",
+        "src/lib/utils/frontmatter.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Prefer a shared helper or constants module over duplicating the category list inside multiple route files.",
+        "This task is enforcement only; do not mix in UI selector redesign or historical data cleanup."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-016",
+      "group_id": "UI",
+      "title": "Controlled category selection in note authoring surfaces",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Replace free-text category entry in manual note authoring with a controlled selector backed by the canonical taxonomy.",
+      "description": "Update the manual note create and edit surfaces so category selection is driven by the canonical category list rather than a free-text text input. The UI should make the primary-category choice explicit, preserve the existing lightweight form feel, and avoid turning tags into a second category mechanism. Reuse the shared taxonomy introduced by the enforcement task rather than duplicating options in the Svelte components.",
+      "acceptance_criteria": [
+        "The create and edit note forms use a controlled category selector instead of free-text category inputs",
+        "The selector options match the canonical categories exactly",
+        "Submitting the form preserves the selected canonical category without UI-only remapping logic",
+        "The form still allows flexible tag entry and existing tag suggestions"
+      ],
+      "depends_on": [
+        "NOTES-011"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/notes/new/+page.svelte",
+        "src/routes/(app)/notes/new/+page.server.ts",
+        "src/routes/(app)/notes/[slug]/edit/+page.svelte",
+        "src/routes/(app)/notes/[slug]/edit/+page.server.ts"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/NOTES.md"
+      ],
+      "notes": [
+        "A native <select> is acceptable for the first pass; do not overbuild a searchable combobox unless the current form density truly requires it."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "ASSIST-008",
+      "group_id": "ASSIST",
+      "title": "Assistant taxonomy context and tag-reuse grounding",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Ground assistant note proposals in the canonical category list and the graph's current tag vocabulary so the model reuses tags instead of inventing near-duplicates.",
+      "description": "Extend the assistant create/update prompt pipeline so it is not limited to static instructions alone. The respond flow should provide the LLM with the canonical category list and a compact view of already-used tags from the graph, then instruct the model to prefer existing lower-case tags when they fit and only mint a new tag when no current tag is a clean match. Keep the context lightweight and deterministic so prompt size does not grow unbounded as the graph expands.",
+      "acceptance_criteria": [
+        "Assistant create and update flows receive the canonical category list from shared application state rather than hard-coded prompt duplicates",
+        "Assistant prompts receive a bounded list of existing graph tags for reuse guidance",
+        "Prompt instructions explicitly prefer existing lower-case tags before creating new ones",
+        "The added grounding does not change the external respond endpoint contract"
+      ],
+      "depends_on": [
+        "ASSIST-010",
+        "NOTES-011"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/ai/prompts.ts",
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/ai/claude.ts",
+        "src/lib/server/ai/chatgpt.ts",
+        "src/lib/server/assistant/research.ts"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Do not dump every tag in the database into the prompt if the list becomes large; bound or summarize it deterministically."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "ASSIST-009",
+      "group_id": "ASSIST",
+      "title": "Inference-first assistant intent routing and note matching",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Resolve conversational, create, and review/update behavior on the server from the transcript and optional overrides instead of requiring the client to choose a mode on every turn.",
+      "description": "Extend the assistant respond flow so the server resolves whether a turn is conversational, create-oriented, or review/update-oriented from the transcript and optional UI overrides rather than requiring the client to choose a mode for every turn. Add a shared routing layer that keeps legacy `mode` support during migration, inspects the latest user turn, performs conservative exact-title and alias matching against existing notes, and returns normalized routing metadata for the UI. Pure learning prompts about an existing note topic should stay conversational first, while explicit create or update overrides continue to force the intended branch.",
+      "acceptance_criteria": [
+        "Server-side routing resolves intent when no explicit override is provided",
+        "Legacy `mode` input remains supported as a temporary compatibility alias for the override contract",
+        "Conservative note matching only auto-targets strong exact title or alias matches; weaker matches do not silently become updates",
+        "The response payload includes routing metadata the UI can use to show matched-note context and override state"
+      ],
+      "depends_on": [
+        "ASSIST-005",
+        "ASSIST-006"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/assistant/routing.ts",
+        "src/routes/(app)/chat/+page.server.ts"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Prefer exact title and alias matching over fuzzy semantic search for the first pass.",
+        "Keep routing deterministic and debuggable; do not hide the resolved routing state from the client."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "ASSIST-010",
+      "group_id": "ASSIST",
+      "title": "Unified prompt assembly and note-aware conversational behavior",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refactor assistant prompt construction so one shared assistant identity can converse, create, review, and delete through internal skills without exposing separate primary modes.",
+      "description": "Refactor the assistant prompt pipeline so chat, create, update, and delete are treated as internal skills on top of one shared assistant identity. Introduce note-aware conversational behavior for strong existing-note matches so the assistant can summarize what is already saved and offer further research or review without forcing an update proposal. Preserve the materiality gate for update proposals, keep delete proposals limited to explicit delete intent, and ensure proposal-first behavior remains intact across providers.",
+      "acceptance_criteria": [
+        "Prompt assembly starts from one shared assistant identity with routed skill-specific instructions layered on top",
+        "A prompt like `teach me about Django` stays conversational even when a `Django` note exists, while surfacing a related-note affordance or follow-up offer",
+        "Update proposals remain materiality-gated and proposal-first, and delete proposals require explicit delete intent",
+        "Anthropic and OpenAI adapters continue to return the same normalized assistant message and proposal shape after the prompt refactor"
+      ],
+      "depends_on": [
+        "ASSIST-009",
+        "ASSIST-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/ai/prompts.ts",
+        "src/lib/server/ai/claude.ts",
+        "src/lib/server/ai/chatgpt.ts",
+        "src/routes/api/assistant/respond/+server.ts"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Do not remove explicit override support in this task; the prompt layer consumes routed intent rather than replacing the UI control contract.",
+        "Delete intent stays explicit even under inference-first routing."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-012",
+      "group_id": "NOTES",
+      "title": "Backfill existing note categories to the canonical taxonomy",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Normalize already-saved note categories to the new canonical list and surface any rows that still need manual review.",
+      "description": "Add a one-off normalization path for existing note rows so category drift already in the database is corrected, not just future writes. The backfill should map obvious legacy values such as `Web Frameworks`, `Databases`, `DevOps & CI/CD`, and similar near-duplicates to the canonical replacements from `docs/NOTES.md`, apply safe updates in the database, and report any ambiguous or unmapped categories for manual cleanup rather than guessing silently. Keep this as an explicit operator-run cleanup step, not an automatic runtime mutation.",
+      "acceptance_criteria": [
+        "There is a documented repo-local way to run the category backfill intentionally",
+        "Obvious legacy categories are updated to their canonical replacements",
+        "Ambiguous or unknown categories are reported for manual review rather than silently rewritten",
+        "The backfill does not change tags or note bodies as part of category cleanup"
+      ],
+      "depends_on": [
+        "NOTES-011"
+      ],
+      "blocked_by": [],
+      "files": [
+        "package.json",
+        "scripts/normalize-note-categories.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "docs": [
+        "docs/NOTES.md",
+        "docs/SETUP.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Prefer an explicit script or command over embedding one-off cleanup logic into normal request handlers."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
     }
   ]
 }

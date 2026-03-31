@@ -264,7 +264,7 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 
 **Context:** The product direction is moving away from a separate new-note form and toward a single assistant surface that can both converse and drive note CRUD.
 
-**Decision:** `/chat` becomes the primary authoring surface. New note creation is initiated from chat with an explicit create-mode control, and assistant-generated create/update proposals are reviewed inline and confirmed before save. The dedicated `/notes/new` page is no longer part of the intended product direction.
+**Decision:** `/chat` becomes the primary authoring surface. The assistant uses one shared chat surface for conversation, note creation, and note review/update, with intent inferred from the conversation by default and explicit overrides available when needed. Assistant-generated create/update proposals are reviewed inline and confirmed before save. The dedicated `/notes/new` page is no longer part of the intended product direction.
 
 **Reasons:**
 - A single assistant surface reduces duplication between conversational help and AI note creation
@@ -273,6 +273,7 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 
 **Trade-offs:**
 - The chat surface becomes more complex and must handle both conversational and mutation states well
+- Intent inference introduces ambiguity that must be managed with conservative matching and clear override affordances
 - The product loses a simple form-first fallback for new notes unless a legacy route is intentionally retained during migration
 
 ---
@@ -459,5 +460,29 @@ Minor differences — rephrasing, supplementary examples, small additions that d
 
 **Trade-offs:**
 - Resuming a conversation may require replaying prior messages into the model context, increasing token usage on longer chats
+
+---
+
+## ADR-021: Unified assistant routing uses inferred skills first and explicit overrides second
+
+**Date:** 2026-03-31
+**Status:** Accepted
+
+**Context:** Techy already treats `/chat` as the primary assistant surface, but the runtime still frames assistant behavior around explicit `chat`, `create`, and `update` modes. The product question is whether those branches should remain the main user-facing model or become internal skills inferred from the conversation.
+
+**Decision:** Keep a single assistant identity and shared chat surface. The assistant should infer whether a turn is conversational, create-oriented, or review/update-oriented from the transcript by default. The UI may still expose explicit create/update overrides as hard controls, but those controls are fallbacks rather than the primary mental model. Existing-note detection should be conservative: strong title or alias matches may activate note-review behavior, while weak matches stay conversational and ask or suggest instead of silently targeting a note.
+
+Pure learning prompts about an existing topic, such as "teach me about Django", remain conversational first. When a matching note already exists, the assistant may mention what is already saved and offer to research more or review that note for updates, but it should not force the turn into mutation mode.
+
+**Reasons:**
+- One assistant model is easier to understand than three user-facing modes
+- Inference-first routing makes the chat feel more natural for mixed-purpose requests
+- Conservative matching preserves trust by avoiding accidental updates on approximate topic overlap
+- Keeping explicit overrides preserves control when the inference is wrong or the user wants a deliberate branch
+
+**Trade-offs:**
+- Routing logic becomes more complex and needs visible fallback behavior when confidence is low
+- Compatibility with the existing explicit mode contract requires a migration period
+- Conservative matching may occasionally miss an update opportunity unless the user opts into review explicitly
 - Older conversations may eventually need truncation, summarization, or retention rules to control context size and storage growth
 - Reopened conversations may rerun live research for fresh turns because the ephemeral topic cache is not persisted as durable history

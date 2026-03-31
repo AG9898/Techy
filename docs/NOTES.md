@@ -66,40 +66,83 @@ Revisions are read-only snapshots — the history UI at `/notes/[slug]/history` 
 
 ---
 
-## Tag Taxonomy
+## Tag Policy
 
-Use one or more tags per note. Tags represent the broadest classification.
+Use one or more tags per note. Tags are flexible, secondary descriptors that capture facets of a topic. Categories define the note's primary home in the graph; tags add detail.
+
+**Tag rules:**
+- Tags are open vocabulary — they are not a fixed master list.
+- Reuse existing tags whenever a current tag already fits the topic.
+- Create a new tag only when no existing tag expresses the concept cleanly.
+- Keep tags lower-case and concise.
+- Prefer singular tags unless plural is the established term.
+- Do not use tags as substitute categories.
+- Avoid category-shaped tags such as `programming languages` when the category already carries that meaning.
+
+**Typical tag examples:**
 
 | Tag | Use for |
 |-----|---------|
-| `language` | Programming languages |
-| `framework` | Frameworks and libraries |
-| `service` | APIs, SaaS, cloud services |
-| `tool` | CLIs, editors, dev tools, utilities |
-| `concept` | Abstract ideas (RAG, microservices, CI/CD) |
+| `language` | Language-level notes and language ecosystems |
+| `framework` | Frameworks and major libraries |
+| `tool` | CLIs, editors, build tools, utilities |
+| `platform` | Broad platforms or vendor ecosystems |
+| `service` | Hosted APIs, SaaS products, managed services |
+| `protocol` | Protocols and standards |
+| `concept` | Cross-cutting concepts and design ideas |
 | `model` | Specific AI/LLM models |
-| `platform` | Broad platforms (AWS, GCP, Vercel, GitHub) |
-| `protocol` | Standards and protocols (REST, gRPC, OAuth) |
 
 ---
 
-## Hub Categories
+## Canonical Categories
 
-Every note should belong to one category. Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
+Every note must belong to exactly one category from the canonical list below. Categories are strict labels, not free-form text. Do not invent new category names, casing variants, or singular/plural variants.
+
+Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
 
 | Category | Hub note |
 |----------|----------|
 | Programming Languages | `[[Programming Languages]]` |
-| Web Frameworks | `[[Web Frameworks]]` |
-| AI & Machine Learning | `[[AI & Machine Learning]]` |
-| Cloud & Infrastructure | `[[Cloud & Infrastructure]]` |
-| Databases | `[[Databases]]` |
-| DevOps & CI/CD | `[[DevOps & CI/CD]]` |
-| APIs & Services | `[[APIs & Services]]` |
+| Frameworks & Libraries | `[[Frameworks & Libraries]]` |
 | Developer Tools | `[[Developer Tools]]` |
-| Protocols & Standards | `[[Protocols & Standards]]` |
+| Platforms & Operating Systems | `[[Platforms & Operating Systems]]` |
+| Cloud & Infrastructure | `[[Cloud & Infrastructure]]` |
+| Databases & Storage | `[[Databases & Storage]]` |
+| Networking & Protocols | `[[Networking & Protocols]]` |
+| Security & Identity | `[[Security & Identity]]` |
+| APIs & Integration | `[[APIs & Integration]]` |
+| DevOps & Delivery | `[[DevOps & Delivery]]` |
+| AI & Machine Learning | `[[AI & Machine Learning]]` |
+| Data & Analytics | `[[Data & Analytics]]` |
+| Hardware & Devices | `[[Hardware & Devices]]` |
+| Software Architecture | `[[Software Architecture]]` |
+| Concepts & Methodologies | `[[Concepts & Methodologies]]` |
 
 Hub notes contain minimal prose and mostly `[[links]]` to topic notes within their category.
+
+**Category selection rules:**
+- Pick the category that best matches the note's primary identity, not one of many possible use cases.
+- Prefer the most specific canonical category available.
+- If a topic spans multiple areas, keep one primary category and express the rest through tags and `[[wikilinks]]`.
+- Never collapse categories into generic buckets such as `Programming` or `Software`.
+
+**Migration guidance from the old list:**
+
+| Old category | Canonical replacement |
+|--------------|-----------------------|
+| Web Frameworks | Frameworks & Libraries |
+| Databases | Databases & Storage |
+| DevOps & CI/CD | DevOps & Delivery |
+| APIs & Services | APIs & Integration, Cloud & Infrastructure, or Platforms & Operating Systems depending on the note's primary identity |
+| Protocols & Standards | Networking & Protocols or Security & Identity depending on the subject |
+
+**Examples:**
+- `Python` → category `Programming Languages`; tags like `language`, `interpreted`
+- `SvelteKit` → category `Frameworks & Libraries`; tags like `framework`, `frontend`, `full-stack`
+- `OAuth 2.0` → category `Security & Identity`; tags like `protocol`, `authentication`, `authorization`
+- `PostgreSQL` → category `Databases & Storage`; tags like `database`, `sql`, `relational`
+- `GPU` → category `Hardware & Devices`; tags like `hardware`, `accelerator`, `parallel-computing`
+- `Event-Driven Architecture` → category `Software Architecture`; tags like `architecture`, `messaging`, `distributed-systems`
 
 ---
 
@@ -175,11 +218,13 @@ Assistant-generated notes should still conform to this structure, even when the 
 1. **Assistant-first creation** — new notes are expected to be proposed from chat rather than a dedicated `/notes/new` page.
 2. **Live research first** — assistant-created notes should be based on live web research plus the existing graph context.
 3. **Populate required fields** — the assistant must fill `title`, `body`, `tags`, `aliases`, `category`, `status`, `aiGenerated` (`true`), `aiModel`, and `aiPrompt` before the note is confirmed for save.
-4. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
-5. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
-6. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
-7. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
-8. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
+4. **Use canonical categories only** — choose exactly one category from the Canonical Categories list above. Never invent or paraphrase category names.
+5. **Reuse tags first** — prefer existing tags already used elsewhere in the graph when they fit. Only create a new tag when no current tag expresses the idea cleanly.
+6. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
+7. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
+8. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
+9. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
+10. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
 
 ---
 
@@ -187,6 +232,8 @@ Assistant-generated notes should still conform to this structure, even when the 
 
 1. **Check before creating** — search for the topic name and common aliases. Expand an existing note rather than duplicate it.
 2. **Create hub notes** — if a note’s category has no hub note, create it.
-3. **Populate all frontmatter** — always set `tags`, `aliases`, and `category`, even on stubs.
-4. **Expand before adding sections** — fill out the `In Depth` section before adding extra structure.
-5. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.
+3. **Use a canonical category** — choose one category from the Canonical Categories list above, even on stubs.
+4. **Populate all frontmatter** — always set `tags`, `aliases`, and `category`, even on stubs.
+5. **Reuse tags where possible** — prefer existing lower-case tags before introducing new ones.
+6. **Expand before adding sections** — fill out the `In Depth` section before adding extra structure.
+7. **Update aliases** — add alternate names to frontmatter if the topic has common synonyms.

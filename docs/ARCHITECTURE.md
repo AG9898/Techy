@@ -127,10 +127,20 @@ The assistant is the primary authoring layer over the notes system. The architec
 
 `POST /api/assistant/respond` is the runtime boundary for:
 - validating the provider/model pair against the server allowlist
-- grounding the request with live web research when the mode requires it
+- resolving the user's intent from the conversation and any explicit UI override
+- conservatively matching the turn to an existing note when update/review behavior is plausible
+- grounding the request with live web research when the resolved intent requires it
 - resolving current note context for update flows before prompting the model
 - deciding whether the assistant should answer conversationally only or also return a structured proposal
 - normalizing proposal payloads before they return to the UI
+
+Target request-time sequence:
+1. validate provider/model
+2. inspect the transcript and optional override to resolve intent
+3. attempt conservative existing-note matching when update/review behavior is plausible
+4. gather live research for create/update-style turns
+5. assemble the shared system prompt plus the skill-specific routing context
+6. normalize the assistant response and any proposal metadata for the UI
 
 The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint.
 
@@ -145,7 +155,7 @@ The commit path is responsible for persisting confirmed changes, taking revision
 
 ### Live Research
 
-Live research is part of assistant orchestration for creation and comparison/update flows. Topic reuse is treated as a runtime optimization inside the current conversation, not a durable persisted store.
+Live research is part of assistant orchestration for creation and comparison/update flows. Purely conversational turns may remain chat-only even when a related note exists, while still offering follow-up research or review actions. Topic reuse is treated as a runtime optimization inside the current conversation, not a durable persisted store.
 
 ### Chat History
 

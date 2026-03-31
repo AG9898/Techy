@@ -130,7 +130,7 @@ Rules:
 - keep the conversation surface clean and spacious
 - show assistant proposals as review surfaces, not separate dashboards
 - keep citations assistive and low-noise
-- create mode must not break normal conversation
+- inferred create/update behavior must not break normal conversation
 - persisted chat history should feel like a quiet notebook index, not a busy support inbox
 
 Recommended desktop arrangement:
@@ -183,17 +183,19 @@ The chat page should follow familiar AI product conventions while remaining clea
 
 Rules:
 - keep the composer persistent and obvious
-- make create mode explicit
+- keep the chat surface unified and inference-first
+- expose create/update as compact override controls rather than the primary mental model
 - show provider/model controls without turning the toolbar into a cockpit
 - let users resume prior conversations without making chat history the dominant visual element
 - render note proposals inline as editable review surfaces
+- when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
 - show citations during review without overwhelming the draft itself
 - keep delete confirmation compact and deliberate
 - store and present the app-owned transcript as the canonical history view; do not expose provider-specific hidden memory concepts in the UI
 
 Avoid:
 - making the chat UI look like a separate product
-- hiding note-creation state behind ambiguous affordances
+- forcing ambiguous prompts into create/update behavior without a clear signal or fallback
 - turning assistant proposals into a wall of utility panels
 - turning saved conversation history into a dense email-style list that competes with the current conversation
 
@@ -234,7 +236,7 @@ Avoid:
 ## Melt Guidance
 
 Use Melt for behavior and accessibility primitives where the assistant flow benefits from them:
-- create-mode toggle
+- compact create/update override controls
 - provider/model selectors
 - disclosure and confirmation UI
 - compact command-like controls

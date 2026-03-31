@@ -171,7 +171,9 @@ Primary assistant surface for conversation and note authoring.
 - Standard conversation stays available at all times.
 - The page may show a persisted conversation list so an older chat can be resumed without leaving `/chat`.
 - Starting a new chat does not require deleting older conversations.
-- The composer includes an explicit create-mode toggle.
+- The composer remains a single unified entry point rather than a primary mode switcher.
+- The UI may expose compact create/update override controls near the composer, but inference is the default routing path.
+- If the assistant detects a strong match to an existing note, the page may surface that note inline and offer research or review actions without forcing an immediate update flow.
 - The page submits full conversation state to `POST /api/assistant/respond`.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
 - The initial `/chat` selection defaults to OpenAI with `gpt-5-mini`.
@@ -295,13 +297,15 @@ Legacy assistant endpoint. Superseded by `/api/assistant/respond` (now live). Ca
 ### `POST /api/assistant/respond`
 Primary assistant endpoint for conversation, live research, and proposal generation.
 
+Target direction: the assistant resolves intent server-side from the conversation and optional UI overrides. The current runtime still accepts the legacy explicit `mode` contract during migration, but the intended steady state is intent inference first, override second.
+
 **Request body:**
 ```json
 {
   "messages": [
     { "role": "user", "content": "Create a note about SvelteKit adapters" }
   ],
-  "mode": "create",
+  "intentOverride": "create",
   "provider": "anthropic",
   "model": "claude-opus-4-6",
   "topicCache": {
@@ -318,11 +322,12 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 | Field | Required | Description |
 |-------|----------|-------------|
 | `messages` | yes | Full conversation transcript for the active chat runtime; may be rebuilt from saved history when resuming |
-| `mode` | yes | `"chat"` \| `"create"` \| `"update"` |
+| `intentOverride` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
 | `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
-| `noteId` | conditional | UUID of the note to compare; required when `mode` is `"update"`. The server resolves the selected note title/body from this ID and uses that note as the grounding target for research and comparison. |
+| `noteId` | conditional | UUID of the note to compare; required when the resolved intent is `"update"`. The server resolves the selected note title/body from this ID and uses that note as the grounding target for research and comparison. |
+| `mode` | temporary | Legacy compatibility field during migration. Its semantics match `intentOverride` and it should be retired once the unified chat router ships. |
 
 **Response (200):**
 ```json
@@ -333,6 +338,11 @@ Primary assistant endpoint for conversation, live research, and proposal generat
       { "title": "SvelteKit docs", "url": "https://..." }
     ]
   },
+  "routing": {
+    "resolvedIntent": "create",
+    "intentSource": "override",
+    "matchedNote": null
+  },
   "proposal": {
     "type": "create_note",
     "draft": {
@@ -340,7 +350,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
       "body": "# SvelteKit Adapters\n\n...",
       "tags": ["framework"],
       "aliases": [],
-      "category": "Web Frameworks",
+      "category": "Frameworks & Libraries",
       "status": "growing",
       "aiGenerated": true,
       "aiModel": "claude-opus-4-6",
@@ -366,13 +376,19 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 ```
 
 **Behaviour:**
-- In all modes, the assistant remains conversational.
+- The assistant remains conversational regardless of the resolved intent.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
-- In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
-- In update mode, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
+- The router resolves whether the turn is best treated as chat, create, or update based on the conversation plus any explicit override.
+- Intent inference is conservative. Strong exact-title or alias matches may route into note-review behavior; weaker similarity should stay conversational and ask or suggest instead of silently picking a note target.
+- A prompt like "teach me about Django" should remain conversational even if a `Django` note exists. The assistant may mention the saved note and offer to research more or review it for updates.
+- When the resolved intent is create, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
+- For note proposals, `draft.category` is expected to be one of the canonical categories documented in [`docs/NOTES.md`](NOTES.md). The DB still stores `category` as `text`, but the product contract treats it as a controlled vocabulary.
+- For note proposals, `draft.tags` remain flexible `text[]` values, but the assistant should prefer already-established tags from the graph when they fit rather than inventing near-duplicates.
+- When the resolved intent is update, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
 - Update proposals are server-normalized before being returned to the client: the selected `noteId` is attached to the proposal payload and the canonical saved note title remains the update target.
-- Live web research is performed for all modes including update, so the comparison is always grounded in current information.
+- Existing-note detection is proposal-first, not mutation-first. Finding a related note may change the assistant's response framing, but it never commits changes without the explicit commit step.
+- Live web research is performed for create and update-style turns, including update review flows, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
 - OpenAI GPT-5-family requests may include adapter-level reasoning configuration without changing this endpoint contract.
@@ -381,7 +397,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 - `topicCache` is an ephemeral optimization and is not intended to be the persisted source of truth for chat history.
 
 **Errors:**
-- `400` — invalid body, missing messages, invalid mode, invalid provider/model combination, or missing/invalid `noteId` for update mode
+- `400` — invalid body, missing messages, invalid resolved intent / override, invalid provider/model combination, or missing/invalid `noteId` for update mode
 - `401` — invalid or missing provider API key
 - `429` — provider rate limit exceeded
 - `500` — assistant orchestration or provider failure

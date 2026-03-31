@@ -62,11 +62,14 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | ID | Feature | Priority |
 |----|---------|----------|
 | F-09 | `/chat` becomes the sole note-authoring surface for new notes | High |
-| F-10 | Assistant supports normal conversation plus explicit create mode in one chat interface | High |
+| F-10 | Assistant supports conversation, note creation, and note review/update in one chat interface through inferred skills with explicit overrides available when needed | High |
 | F-11 | Assistant-generated note drafts are structured, editable, and require confirmation before save | High |
 | F-12 | Assistant-driven note creation fills `title`, `body`, `tags`, `aliases`, `category`, `status`, AI metadata, and wikilinks | High |
 | F-13 | Assistant-driven updates compare existing notes against live web research and only propose changes when a note appears materially incorrect, outdated, or substantially incomplete | High |
 | F-14 | Assistant-driven delete remains available behind an explicit confirmation step | Medium |
+| F-37 | Intent routing defaults to inference from the conversation, but the UI may still expose explicit create/update override controls as hard user overrides | High |
+| F-38 | Existing-note detection is conservative: strong title or alias matches may route into note-review behavior, while weak matches stay conversational and ask or suggest rather than auto-targeting a note | High |
+| F-39 | Pure learning prompts about an existing note topic remain conversational first; the assistant may mention the saved note and offer to research more or review it for updates without forcing an update flow | High |
 
 ### Live Research and Linking
 
@@ -87,6 +90,7 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-28 | Resuming a conversation rebuilds model context from saved messages instead of relying on provider-side memory | High |
 | F-29 | Raw live-research payloads and ephemeral topic-cache state are not persisted as part of chat history | Medium |
 | F-30 | Chat history storage stays lean enough for Neon free-tier usage by storing canonical transcript data, proposal snapshots, and lightweight citation records only | Medium |
+| F-40 | Assistant responses may surface that a related note already exists and invite further research or review without automatically shifting the conversation into mutation mode | Medium |
 
 ### UI Direction
 
@@ -126,7 +130,7 @@ See [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) and [`docs/DESIGN-SPEC.md`](DESIGN-S
 
 ## Note Schema & Categories
 
-See [`docs/NOTES.md`](NOTES.md) for the full note schema, tag taxonomy, hub categories, template, link rules, and assistant-specific link propagation expectations.
+See [`docs/NOTES.md`](NOTES.md) for the full note schema, canonical category taxonomy, tag reuse policy, hub categories, template, link rules, and assistant-specific link propagation expectations. Assistant-created drafts are expected to use only canonical category labels and to prefer already-established tags when they fit.
 
 ---
 
