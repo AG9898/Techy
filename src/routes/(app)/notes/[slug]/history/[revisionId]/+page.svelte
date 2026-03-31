@@ -4,9 +4,9 @@
 	let { data }: { data: PageData } = $props();
 
 	const statusColor: Record<string, string> = {
-		stub: '#64748b',
-		growing: '#38bdf8',
-		mature: '#4ade80'
+		stub: 'var(--graph-node-stub)',
+		growing: 'var(--graph-node-growing)',
+		mature: 'var(--graph-node-mature)'
 	};
 </script>
 
@@ -16,7 +16,7 @@
 		<div class="header-actions">
 			<span
 				class="status-badge"
-				style="background: {statusColor[data.revision.status]}20; color: {statusColor[data.revision.status]}"
+				style="--status-color: {statusColor[data.revision.status]}"
 			>
 				{data.revision.status}
 			</span>
@@ -61,11 +61,11 @@
 	}
 	.back-link {
 		font-size: 0.85rem;
-		color: #64748b;
+		color: var(--text-muted);
 		text-decoration: none;
 	}
 	.back-link:hover {
-		color: #94a3b8;
+		color: var(--text-secondary);
 	}
 	.header-actions {
 		display: flex;
@@ -73,6 +73,8 @@
 		gap: 0.75rem;
 	}
 	.status-badge {
+		background: color-mix(in srgb, var(--status-color) 18%, transparent);
+		color: var(--status-color);
 		font-size: 0.75rem;
 		padding: 0.2rem 0.6rem;
 		border-radius: 999px;
@@ -80,24 +82,24 @@
 	}
 	.current-link a {
 		font-size: 0.85rem;
-		color: #7dd3fc;
+		color: var(--accent-primary);
 		text-decoration: none;
 	}
 	.current-link a:hover {
 		text-decoration: underline;
 	}
 	.revision-banner {
-		background: #1e293b;
-		border: 1px solid #334155;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
 		border-radius: 6px;
 		padding: 0.5rem 0.85rem;
 		font-size: 0.8rem;
-		color: #94a3b8;
+		color: var(--text-secondary);
 	}
 	h1 {
 		font-size: 1.75rem;
 		font-weight: 700;
-		color: #e2e8f0;
+		color: var(--text-primary);
 		line-height: 1.3;
 	}
 	.note-meta {
@@ -112,35 +114,35 @@
 		border-radius: 4px;
 	}
 	.category {
-		background: #1e3a5f;
-		color: #7dd3fc;
+		background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-raised));
+		color: var(--accent-primary);
 	}
 	.tag {
-		background: #1e293b;
-		color: #64748b;
+		background: var(--bg-raised);
+		color: var(--text-muted);
 	}
 	.note-body {
 		line-height: 1.7;
-		color: #cbd5e1;
+		color: var(--text-secondary);
 	}
 	.note-body :global(h1),
 	.note-body :global(h2),
 	.note-body :global(h3) {
-		color: #e2e8f0;
+		color: var(--text-primary);
 		margin: 1.5rem 0 0.5rem;
 	}
 	.note-body :global(p) {
 		margin-bottom: 1rem;
 	}
 	.note-body :global(code) {
-		background: #1e293b;
+		background: var(--bg-raised);
 		padding: 0.1rem 0.35rem;
 		border-radius: 3px;
 		font-size: 0.85em;
 	}
 	.note-body :global(pre) {
-		background: #0f172a;
-		border: 1px solid #1e293b;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
 		border-radius: 6px;
 		padding: 1rem;
 		overflow-x: auto;

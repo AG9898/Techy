@@ -399,3 +399,23 @@ Minor differences — rephrasing, supplementary examples, small additions that d
 **Trade-offs:**
 - The gate is a prompt-level heuristic, not a deterministic rule — the assistant may occasionally miss a material issue or over-trigger on a borderline case
 - The bar may need tuning once real usage patterns emerge
+
+---
+
+## ADR-018: Neutral charcoal dark palette over the inherited blue-slate dark palette
+
+**Date:** 2026-03-30
+**Status:** Accepted
+
+**Context:** The `dark` theme migration removed the old `night / paper / mist` names, but the underlying dark tokens still largely matched the old cool slate palette. That made the product read as navy/blue in dark mode instead of the intended darker charcoal environment.
+
+**Decision:** Retune the shared dark tokens to a neutral charcoal, near-black palette while keeping accent colors independent and expressive. The dark theme should avoid flat pure-black fills, but it should no longer read as blue by default.
+
+**Reasons:**
+- A charcoal base better matches the intended “private knowledge atlas” feel than the inherited navy slate
+- Neutral dark surfaces let the accent family and graph colors carry the expressive hue instead of tinting the entire shell blue
+- Near-black surfaces improve perceived contrast without forcing harsh pure-black panels
+
+**Trade-offs:**
+- Some older slate-based assumptions in component styling need cleanup to stay aligned with the shared tokens
+- Sky accent remains visibly blue by design, so dark mode still includes blue highlights when that accent is selected

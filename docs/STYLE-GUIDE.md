@@ -42,7 +42,7 @@ The app should still be composed as an **environment**, not as a page full of is
 
 - Prefer generous radius
 - Prefer tonal layering over harsh borders
-- Keep dark mode dark but not pure black
+- Keep dark mode charcoal-toned and near-black rather than navy
 - Keep light mode light but not stark white
 
 ### 3. Zones Over Components
@@ -132,7 +132,7 @@ Techy should support two independent controls:
 ### Dark
 
 Dark should be tonal and atmospheric:
-- not pure black
+- charcoal and near-black rather than blue-slate
 - still readable for long sessions
 - graph remains the strongest visual expression
 

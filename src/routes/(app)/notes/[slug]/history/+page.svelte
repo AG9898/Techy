@@ -46,19 +46,19 @@
 	}
 	.back-link {
 		font-size: 0.85rem;
-		color: #64748b;
+		color: var(--text-muted);
 		text-decoration: none;
 	}
 	.back-link:hover {
-		color: #94a3b8;
+		color: var(--text-secondary);
 	}
 	h1 {
 		font-size: 1.4rem;
 		font-weight: 700;
-		color: #e2e8f0;
+		color: var(--text-primary);
 	}
 	.empty {
-		color: #64748b;
+		color: var(--text-muted);
 		font-size: 0.9rem;
 	}
 	.revision-list {
@@ -68,7 +68,7 @@
 		gap: 0.5rem;
 	}
 	.revision-item {
-		border: 1px solid #1e293b;
+		border: 1px solid var(--border-soft);
 		border-radius: 6px;
 	}
 	.revision-link {
@@ -81,11 +81,11 @@
 		border-radius: 6px;
 	}
 	.revision-link:hover {
-		background: #0f172a;
+		background: var(--bg-surface);
 	}
 	.revision-title {
 		font-size: 0.95rem;
-		color: #cbd5e1;
+		color: var(--text-primary);
 		font-weight: 500;
 	}
 	.revision-meta {
@@ -93,10 +93,10 @@
 		align-items: center;
 		gap: 0.4rem;
 		font-size: 0.8rem;
-		color: #64748b;
+		color: var(--text-muted);
 	}
 	.sep {
-		color: #334155;
+		color: var(--text-subtle);
 	}
 	.status-dot {
 		display: inline-block;
@@ -104,7 +104,7 @@
 		height: 7px;
 		border-radius: 50%;
 	}
-	.status-dot[data-status='stub'] { background: #64748b; }
-	.status-dot[data-status='growing'] { background: #38bdf8; }
-	.status-dot[data-status='mature'] { background: #4ade80; }
+	.status-dot[data-status='stub'] { background: var(--graph-node-stub); }
+	.status-dot[data-status='growing'] { background: var(--graph-node-growing); }
+	.status-dot[data-status='mature'] { background: var(--graph-node-mature); }
 </style>

@@ -20,7 +20,7 @@ Current implementation direction:
 Techy uses a two-axis token system applied via `data-theme` and `data-accent` attributes on `<html>`.
 
 Theme axis:
-- `dark` — tonal dark, not pure black
+- `dark` — charcoal dark, near-black without going flat pure black
 - `light` — tonal light, not harsh white
 
 Accent axis:

@@ -5,22 +5,22 @@
 	--font-mono: 'Fira Code', 'Cascadia Code', monospace;
 }
 
-/* ─── Dark theme (tonal dark, not pure black) ───────────── */
+/* ─── Dark theme (charcoal dark, near-black) ────────────── */
 [data-theme='dark'] {
-	--bg-base:    #0a0f1e;
-	--bg-surface: #0f172a;
-	--bg-raised:  #1e293b;
-	--bg-overlay: #1e293b;
-	--border-soft:   #1e293b;
-	--border-strong: #334155;
-	--text-primary:   #e2e8f0;
-	--text-secondary: #94a3b8;
-	--text-muted:     #64748b;
-	--text-subtle:    #475569;
-	--graph-node-stub:    #64748b;
+	--bg-base:    #09090b;
+	--bg-surface: #121216;
+	--bg-raised:  #1a1b20;
+	--bg-overlay: #202228;
+	--border-soft:   #262830;
+	--border-strong: #383b46;
+	--text-primary:   #f3f4f6;
+	--text-secondary: #c8cbd3;
+	--text-muted:     #9095a1;
+	--text-subtle:    #626773;
+	--graph-node-stub:    #7b818d;
 	--graph-node-growing: #38bdf8;
 	--graph-node-mature:  #4ade80;
-	--graph-link:  #334155;
+	--graph-link:  #31343d;
 	--graph-focus: var(--accent-primary);
 	--border:       var(--border-soft);
 	--border-hover: var(--border-strong);
@@ -107,6 +107,7 @@
 	body {
 		background: var(--bg-base);
 		color: var(--text-primary);
+		color-scheme: light dark;
 		font-family: var(--font-sans);
 		min-height: 100vh;
 	}

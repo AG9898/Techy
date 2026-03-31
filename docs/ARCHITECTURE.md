@@ -256,7 +256,7 @@ The graph should continue to update immediately after confirmed assistant note c
 
 ## Styling System
 
-Techy continues to use Tailwind CSS v4 plus project-owned design tokens. The theme system changes from three named themes to a two-mode tonal model:
+Techy continues to use Tailwind CSS v4 plus project-owned design tokens. The theme system changes from three named themes to a two-mode tonal model, with dark mode tuned around neutral charcoal surfaces rather than cool blue slate:
 
 - `data-theme='dark'`
 - `data-theme='light'`
