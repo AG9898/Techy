@@ -1,92 +1,109 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import type { PageData } from './$types.js';
 
-	interface MatchedNote {
-		id: string;
+	const { data }: { data: PageData } = $props();
+	// Extract initial values before $state to avoid Svelte 5 prop-capture warnings
+	const initProvider = data.defaultProvider;
+	const initModel = data.defaultModel;
+
+	interface NoteDraft {
 		title: string;
-		slug: string;
-		url: string;
+		body: string;
+		tags: string[];
+		aliases: string[];
+		category: string;
+		status: string;
+		aiGenerated?: boolean;
+		aiModel?: string;
+		aiPrompt?: string;
 	}
 
-	interface UserMessage {
+	interface NoteProposal {
+		type: 'create_note' | 'update_note' | 'delete_note';
+		draft?: NoteDraft;
+	}
+
+	interface UserDisplayMessage {
 		type: 'user';
-		query: string;
+		content: string;
 	}
 
-	interface AssistantMessage {
+	interface AssistantDisplayMessage {
 		type: 'assistant';
-		matchedNote: MatchedNote | null;
-		summary: string;
-		possibleGaps: string[];
-		newTopicIdeas: string[];
+		content: string;
+		proposal: NoteProposal | null;
 	}
 
-	type Message = UserMessage | AssistantMessage;
+	type DisplayMessage = UserDisplayMessage | AssistantDisplayMessage;
 
 	let composerValue = $state('');
 	let isLoading = $state(false);
-	let messages = $state<Message[]>([]);
+	let displayMessages = $state<DisplayMessage[]>([]);
+	let conversationHistory = $state<{ role: 'user' | 'assistant'; content: string }[]>([]);
 	let conversationEl: HTMLDivElement | undefined;
+
+	let selectedProvider = $state(initProvider);
+	let selectedModel = $state(initModel);
+	let chatMode = $state<'chat' | 'create'>('chat');
+
+	const currentProviderModels = $derived(
+		data.providers.find((p) => p.id === selectedProvider)?.models ?? []
+	);
 
 	async function scrollToBottom() {
 		await tick();
 		if (conversationEl) conversationEl.scrollTop = conversationEl.scrollHeight;
 	}
 
-	async function sendQuery() {
-		const query = composerValue.trim();
-		if (!query || isLoading) return;
+	async function sendMessage() {
+		const content = composerValue.trim();
+		if (!content || isLoading) return;
 
 		composerValue = '';
-		messages = [...messages, { type: 'user', query }];
+		displayMessages = [...displayMessages, { type: 'user', content }];
+		conversationHistory = [...conversationHistory, { role: 'user', content }];
 		isLoading = true;
 		await scrollToBottom();
 
 		try {
-			const res = await fetch('/api/assistant/query', {
+			const res = await fetch('/api/assistant/respond', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ query })
+				body: JSON.stringify({
+					messages: conversationHistory,
+					mode: chatMode,
+					provider: selectedProvider,
+					model: selectedModel
+				})
 			});
 
 			if (res.ok) {
 				const data = await res.json();
-				messages = [
-					...messages,
-					{
-						type: 'assistant',
-						matchedNote: data.matchedNote ?? null,
-						summary: data.summary ?? '',
-						possibleGaps: data.possibleGaps ?? [],
-						newTopicIdeas: data.newTopicIdeas ?? []
-					}
+				const assistantContent: string = data.assistantMessage?.content ?? '';
+				const proposal: NoteProposal | null = data.proposal ?? null;
+
+				displayMessages = [
+					...displayMessages,
+					{ type: 'assistant', content: assistantContent, proposal }
+				];
+				conversationHistory = [
+					...conversationHistory,
+					{ role: 'assistant', content: assistantContent }
 				];
 			} else {
 				const err = await res.json().catch(() => ({}));
-				const notFound = res.status === 404;
-				messages = [
-					...messages,
-					{
-						type: 'assistant',
-						matchedNote: null,
-						summary: notFound
-							? 'No matching note found. Try rephrasing or check the Notes page to see what topics exist.'
-							: (err.message ?? 'Something went wrong. Please try again.'),
-						possibleGaps: [],
-						newTopicIdeas: []
-					}
+				const errMessage: string =
+					(err as { error?: string }).error ?? 'Something went wrong. Please try again.';
+				displayMessages = [
+					...displayMessages,
+					{ type: 'assistant', content: errMessage, proposal: null }
 				];
 			}
 		} catch {
-			messages = [
-				...messages,
-				{
-					type: 'assistant',
-					matchedNote: null,
-					summary: 'Network error. Please try again.',
-					possibleGaps: [],
-					newTopicIdeas: []
-				}
+			displayMessages = [
+				...displayMessages,
+				{ type: 'assistant', content: 'Network error. Please try again.', proposal: null }
 			];
 		}
 
@@ -101,8 +118,47 @@
 
 <div class="chat-shell">
 	<div class="conversation-column">
+		<!-- Toolbar: provider, model, mode -->
+		<div class="toolbar">
+			<div class="toolbar-group">
+				<select
+					class="toolbar-select"
+					bind:value={selectedProvider}
+					onchange={() => {
+						const prov = data.providers.find((p) => p.id === selectedProvider);
+						if (prov) selectedModel = prov.defaultModel;
+					}}
+				>
+					{#each data.providers as provider}
+						<option value={provider.id}>{provider.label}</option>
+					{/each}
+				</select>
+				<select class="toolbar-select" bind:value={selectedModel}>
+					{#each currentProviderModels as m}
+						<option value={m.id}>{m.label}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="mode-toggle" role="group" aria-label="Chat mode">
+				<button
+					class="mode-btn"
+					class:mode-btn--active={chatMode === 'chat'}
+					onclick={() => (chatMode = 'chat')}
+				>
+					Chat
+				</button>
+				<button
+					class="mode-btn"
+					class:mode-btn--active={chatMode === 'create'}
+					onclick={() => (chatMode = 'create')}
+				>
+					Create
+				</button>
+			</div>
+		</div>
+
 		<div class="conversation-area" bind:this={conversationEl} aria-label="Conversation">
-			{#if messages.length === 0}
+			{#if displayMessages.length === 0}
 				{#if isLoading}
 					<div class="centered-state">
 						<div class="loading-dots">
@@ -115,46 +171,40 @@
 				{:else}
 					<div class="centered-state">
 						<div class="empty-glyph">◈</div>
-						<p class="empty-title">Ask about your notes</p>
+						<p class="empty-title">
+							{chatMode === 'create' ? 'Create a new note' : 'Ask about your notes'}
+						</p>
 						<p class="empty-hint">
-							The assistant answers questions grounded in your knowledge graph.
+							{chatMode === 'create'
+								? 'Describe a technology or concept and the assistant will draft a note.'
+								: 'The assistant answers questions grounded in your knowledge graph.'}
 						</p>
 					</div>
 				{/if}
 			{:else}
 				<div class="messages-list">
-					{#each messages as msg}
+					{#each displayMessages as msg}
 						{#if msg.type === 'user'}
 							<div class="user-message">
-								<p class="user-bubble">{msg.query}</p>
+								<p class="user-bubble">{msg.content}</p>
 							</div>
 						{:else}
 							<div class="assistant-message">
-								{#if msg.matchedNote}
-									<a href={msg.matchedNote.url} class="note-link">
-										<span class="note-link-glyph">◈</span>
-										{msg.matchedNote.title}
-									</a>
-								{/if}
-								<p class="summary-text">{msg.summary}</p>
-								{#if msg.possibleGaps.length > 0}
-									<div class="response-section">
-										<p class="section-label">Possible additions</p>
-										<ul class="gaps-list">
-											{#each msg.possibleGaps as gap}
-												<li>{gap}</li>
-											{/each}
-										</ul>
-									</div>
-								{/if}
-								{#if msg.newTopicIdeas.length > 0}
-									<div class="response-section">
-										<p class="section-label">Explore next</p>
-										<div class="topics-chips">
-											{#each msg.newTopicIdeas as idea}
-												<span class="topic-chip">{idea}</span>
-											{/each}
+								<p class="summary-text">{msg.content}</p>
+								{#if msg.proposal?.type === 'create_note' && msg.proposal.draft}
+									<div class="proposal-card">
+										<div class="proposal-header">
+											<span class="proposal-glyph">◈</span>
+											<span class="proposal-label">Note draft</span>
 										</div>
+										<p class="proposal-title">{msg.proposal.draft.title}</p>
+										{#if msg.proposal.draft.tags?.length}
+											<div class="proposal-tags">
+												{#each msg.proposal.draft.tags as tag}
+													<span class="proposal-tag">{tag}</span>
+												{/each}
+											</div>
+										{/if}
 									</div>
 								{/if}
 							</div>
@@ -177,21 +227,23 @@
 		<div class="composer-wrap">
 			<textarea
 				class="composer-input"
-				placeholder="Ask about your notes…"
+				placeholder={chatMode === 'create'
+					? 'Describe a topic to create a note…'
+					: 'Ask about your notes…'}
 				rows="2"
 				disabled={isLoading}
 				bind:value={composerValue}
 				onkeydown={(e) => {
 					if (e.key === 'Enter' && !e.shiftKey) {
 						e.preventDefault();
-						sendQuery();
+						sendMessage();
 					}
 				}}
 			></textarea>
 			<button
 				class="send-btn"
 				disabled={!composerValue.trim() || isLoading}
-				onclick={sendQuery}
+				onclick={sendMessage}
 			>
 				Send
 			</button>
@@ -220,6 +272,61 @@
 		overflow: hidden;
 	}
 
+	/* ── Toolbar ─────────────────────────────────────────────────────── */
+	.toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.toolbar-group {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.toolbar-select {
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 8px;
+		color: var(--text-secondary);
+		font-family: inherit;
+		font-size: 0.78rem;
+		padding: 0.3rem 0.6rem;
+		cursor: pointer;
+		transition: border-color 0.15s ease;
+	}
+
+	.toolbar-select:hover {
+		border-color: var(--border-strong);
+	}
+
+	.mode-toggle {
+		display: flex;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 8px;
+		overflow: hidden;
+	}
+
+	.mode-btn {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		font-family: inherit;
+		font-size: 0.78rem;
+		font-weight: 500;
+		padding: 0.3rem 0.75rem;
+		cursor: pointer;
+		transition: color 0.15s ease, background 0.15s ease;
+	}
+
+	.mode-btn--active {
+		background: var(--bg-raised);
+		color: var(--text-primary);
+	}
+
 	/* ── Primary conversation surface ───────────────────────────────── */
 	.conversation-area {
 		flex: 1;
@@ -232,7 +339,7 @@
 		padding: 1.5rem;
 	}
 
-	/* ── Centred placeholder states (empty + first-load) ────────────── */
+	/* ── Centred placeholder states ─────────────────────────────────── */
 	.centered-state {
 		flex: 1;
 		display: flex;
@@ -300,32 +407,6 @@
 		max-width: 92%;
 	}
 
-	.note-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		color: var(--accent-primary);
-		text-decoration: none;
-		font-size: 0.82rem;
-		font-weight: 500;
-		background: var(--accent-soft);
-		border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, transparent);
-		border-radius: 6px;
-		padding: 0.25rem 0.65rem;
-		width: fit-content;
-		transition: color 0.15s ease, border-color 0.15s ease;
-	}
-
-	.note-link:hover {
-		color: var(--accent-strong);
-		border-color: color-mix(in srgb, var(--accent-strong) 35%, transparent);
-	}
-
-	.note-link-glyph {
-		font-size: 0.75rem;
-		opacity: 0.7;
-	}
-
 	.summary-text {
 		font-size: 0.9rem;
 		line-height: 1.75;
@@ -333,61 +414,57 @@
 		margin: 0;
 	}
 
-	/* ── Response sub-sections ───────────────────────────────────────── */
-	.response-section {
+	/* ── Note proposal card ──────────────────────────────────────────── */
+	.proposal-card {
+		background: var(--bg-raised);
+		border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+		border-radius: 10px;
+		padding: 0.75rem 1rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
-		padding-top: 0.25rem;
-		border-top: 1px solid var(--border-soft);
 	}
 
-	.section-label {
+	.proposal-header {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.proposal-glyph {
+		font-size: 0.75rem;
+		color: var(--accent-primary);
+		opacity: 0.8;
+	}
+
+	.proposal-label {
 		font-size: 0.68rem;
 		font-weight: 500;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
-		color: var(--text-muted);
+		color: var(--accent-primary);
+	}
+
+	.proposal-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--text-primary);
 		margin: 0;
 	}
 
-	.gaps-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-	}
-
-	.gaps-list li {
-		font-size: 0.85rem;
-		color: var(--text-secondary);
-		padding-left: 1rem;
-		position: relative;
-		line-height: 1.5;
-	}
-
-	.gaps-list li::before {
-		content: '·';
-		position: absolute;
-		left: 0.25rem;
-		color: var(--text-muted);
-	}
-
-	.topics-chips {
+	.proposal-tags {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 0.35rem;
 	}
 
-	.topic-chip {
-		background: var(--bg-raised);
-		border: 1px solid var(--border-soft);
+	.proposal-tag {
+		background: var(--accent-soft);
+		border: 1px solid color-mix(in srgb, var(--accent-primary) 20%, transparent);
 		border-radius: 999px;
-		padding: 0.2rem 0.65rem;
-		font-size: 0.75rem;
-		color: var(--text-secondary);
+		padding: 0.15rem 0.55rem;
+		font-size: 0.72rem;
+		color: var(--accent-primary);
 	}
 
 	/* ── Loading states ──────────────────────────────────────────────── */
@@ -404,12 +481,24 @@
 		animation: pulse 1.2s ease-in-out infinite;
 	}
 
-	.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-	.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+	.loading-dots span:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.loading-dots span:nth-child(3) {
+		animation-delay: 0.4s;
+	}
 
 	@keyframes pulse {
-		0%, 80%, 100% { opacity: 0.3; transform: scale(0.9); }
-		40%            { opacity: 1;   transform: scale(1.1); }
+		0%,
+		80%,
+		100% {
+			opacity: 0.3;
+			transform: scale(0.9);
+		}
+		40% {
+			opacity: 1;
+			transform: scale(1.1);
+		}
 	}
 
 	.loading-label {

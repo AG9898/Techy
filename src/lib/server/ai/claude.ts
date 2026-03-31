@@ -4,8 +4,43 @@ import {
 	RESEARCH_SYSTEM_PROMPT,
 	NOTE_GENERATION_SYSTEM_PROMPT,
 	ASSISTANT_QUERY_SYSTEM_PROMPT,
-	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT
+	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
+	RESPOND_SYSTEM_PROMPT_CHAT,
+	RESPOND_SYSTEM_PROMPT_CREATE
 } from './prompts.js';
+
+// ── Shared types for the unified respond endpoint ────────────────────────────
+
+export interface ConversationMessage {
+	role: 'user' | 'assistant';
+	content: string;
+}
+
+export interface NoteDraft {
+	title: string;
+	body: string;
+	tags: string[];
+	aliases: string[];
+	category: string;
+	status: 'stub' | 'growing' | 'mature';
+	aiGenerated?: boolean;
+	aiModel?: string;
+	aiPrompt?: string;
+}
+
+export interface NoteProposal {
+	type: 'create_note' | 'update_note' | 'delete_note';
+	draft?: NoteDraft;
+	linkedNotePatches?: { noteId: string; title: string; updatedBody: string }[];
+}
+
+export interface AssistantRespondResult {
+	assistantMessage: {
+		content: string;
+		citations: { title: string; url: string }[];
+	};
+	proposal: NoteProposal | null;
+}
 
 export interface AssistantQueryResult {
 	summary: string;
@@ -149,4 +184,59 @@ ${existingTopics.join(', ')}`;
 	}
 
 	return parsed;
+}
+
+/**
+ * Unified conversation endpoint — returns a conversational reply and an optional note proposal.
+ * @param messages - Full conversation transcript
+ * @param mode - "chat" for conversation only, "create" for note proposal generation
+ * @param model - A server-approved Anthropic model ID
+ */
+export async function respondConversation(
+	messages: ConversationMessage[],
+	mode: 'chat' | 'create',
+	model: string
+): Promise<AssistantRespondResult> {
+	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+	const systemPrompt = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+
+	const message = await client.messages.create({
+		model,
+		max_tokens: 4096,
+		system: systemPrompt,
+		messages: messages.map((m) => ({ role: m.role, content: m.content }))
+	});
+
+	const block = message.content[0];
+	if (block.type !== 'text') {
+		throw new Error('Unexpected response type from Anthropic API');
+	}
+
+	return parseRespondResponse(block.text);
+}
+
+function parseRespondResponse(text: string): AssistantRespondResult {
+	let parsed: {
+		content?: string;
+		citations?: { title: string; url: string }[];
+		proposal?: NoteProposal | null;
+	};
+	try {
+		parsed = JSON.parse(text) as typeof parsed;
+	} catch {
+		// Fallback: treat the entire response as plain conversational content
+		return { assistantMessage: { content: text, citations: [] }, proposal: null };
+	}
+
+	if (typeof parsed.content !== 'string' || !parsed.content) {
+		throw new Error('Assistant response missing content field');
+	}
+
+	return {
+		assistantMessage: {
+			content: parsed.content,
+			citations: Array.isArray(parsed.citations) ? parsed.citations : []
+		},
+		proposal: parsed.proposal ?? null
+	};
 }

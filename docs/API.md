@@ -143,7 +143,8 @@ Primary assistant surface for conversation and note authoring.
   providers: {
     id: 'anthropic' | 'openai',
     label: string,
-    models: { id: string, label: string }[]
+    models: { id: string, label: string }[],
+    defaultModel: string
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string
@@ -204,8 +205,8 @@ Legacy direct delete action for an existing note.
 
 ## JSON API Endpoints
 
-### `POST /api/assistant/query` *(current active endpoint)*
-Legacy assistant endpoint. This is the only assistant route currently live in code. It will be replaced by `/api/assistant/respond` and `/api/assistant/commit` once ASSIST-005 and ASSIST-007 land.
+### `POST /api/assistant/query` *(legacy endpoint)*
+Legacy assistant endpoint. Superseded by `/api/assistant/respond` (now live). Will be removed once `/api/assistant/commit` (ASSIST-007) lands and the migration is complete.
 
 **Request body:**
 ```json
@@ -226,7 +227,7 @@ Legacy assistant endpoint. This is the only assistant route currently live in co
 
 ---
 
-### `POST /api/assistant/respond` *(planned — ASSIST-005)*
+### `POST /api/assistant/respond`
 Primary assistant endpoint for conversation, live research, and proposal generation.
 
 **Request body:**

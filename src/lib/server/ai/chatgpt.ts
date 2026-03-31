@@ -1,6 +1,13 @@
 import OpenAI from 'openai';
 import { env } from '$env/dynamic/private';
-import { RESEARCH_SYSTEM_PROMPT, NOTE_GENERATION_SYSTEM_PROMPT, NOTE_RECOMMENDATIONS_SYSTEM_PROMPT } from './prompts.js';
+import {
+	RESEARCH_SYSTEM_PROMPT,
+	NOTE_GENERATION_SYSTEM_PROMPT,
+	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
+	RESPOND_SYSTEM_PROMPT_CHAT,
+	RESPOND_SYSTEM_PROMPT_CREATE
+} from './prompts.js';
+import type { ConversationMessage, AssistantRespondResult, NoteProposal } from './claude.js';
 
 /**
  * Research a technology topic using GPT and return a markdown note body.
@@ -92,4 +99,57 @@ export async function generateNote(topic: string): Promise<string> {
 		throw new Error('Unexpected empty response from OpenAI API');
 	}
 	return content;
+}
+
+/**
+ * Unified conversation endpoint for OpenAI — returns a conversational reply and an optional note proposal.
+ * @param messages - Full conversation transcript
+ * @param mode - "chat" for conversation only, "create" for note proposal generation
+ * @param model - A server-approved OpenAI model ID
+ */
+export async function respondConversation(
+	messages: ConversationMessage[],
+	mode: 'chat' | 'create',
+	model: string
+): Promise<AssistantRespondResult> {
+	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+	const systemPrompt = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+
+	const response = await client.chat.completions.create({
+		model,
+		max_tokens: 4096,
+		response_format: { type: 'json_object' },
+		messages: [
+			{ role: 'system', content: systemPrompt },
+			...messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+		]
+	});
+
+	const text = response.choices[0]?.message?.content;
+	if (!text) {
+		throw new Error('Unexpected empty response from OpenAI API');
+	}
+
+	let parsed: {
+		content?: string;
+		citations?: { title: string; url: string }[];
+		proposal?: NoteProposal | null;
+	};
+	try {
+		parsed = JSON.parse(text) as typeof parsed;
+	} catch {
+		return { assistantMessage: { content: text, citations: [] }, proposal: null };
+	}
+
+	if (typeof parsed.content !== 'string' || !parsed.content) {
+		throw new Error('OpenAI response missing content field');
+	}
+
+	return {
+		assistantMessage: {
+			content: parsed.content,
+			citations: Array.isArray(parsed.citations) ? parsed.citations : []
+		},
+		proposal: parsed.proposal ?? null
+	};
 }

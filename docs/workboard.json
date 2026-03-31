@@ -1339,7 +1339,7 @@
       "id": "ASSIST-005",
       "group_id": "ASSIST",
       "title": "Unified assistant respond endpoint with provider/model routing",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Replace the read-only assistant endpoint with a unified conversation endpoint that can return normal chat replies or structured mutation proposals.",
