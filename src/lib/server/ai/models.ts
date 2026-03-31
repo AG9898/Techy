@@ -12,7 +12,7 @@ export interface ProviderOption {
 	defaultModel: string;
 }
 
-export const ANTHROPIC_DEFAULT_MODEL = 'claude-opus-4-6';
+export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 export const OPENAI_DEFAULT_MODEL = 'gpt-5-mini';
 
 export const PROVIDERS: ProviderOption[] = [
@@ -39,8 +39,8 @@ export const PROVIDERS: ProviderOption[] = [
 	}
 ];
 
-export const DEFAULT_PROVIDER: Provider = 'anthropic';
-export const DEFAULT_MODEL = ANTHROPIC_DEFAULT_MODEL;
+export const DEFAULT_PROVIDER: Provider = 'openai';
+export const DEFAULT_MODEL = OPENAI_DEFAULT_MODEL;
 
 export function isValidProviderModel(provider: string, model: string): boolean {
 	const p = PROVIDERS.find((entry) => entry.id === provider);

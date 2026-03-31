@@ -191,6 +191,7 @@ ${existingTopics.join(', ')}`;
  * @param messages - Full conversation transcript
  * @param mode - "chat" | "create" | "update"
  * @param model - A server-approved Anthropic model ID
+ * @param currentNoteTitle - Selected note title for update mode grounding
  * @param currentNoteBody - Saved note body for update mode comparison
  */
 export async function respondConversation(
@@ -199,10 +200,17 @@ export async function respondConversation(
 	model: string,
 	researchContext?: ResearchContext,
 	noteTitles?: string[],
+	currentNoteTitle?: string,
 	currentNoteBody?: string
 ): Promise<AssistantRespondResult> {
 	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles, currentNoteBody);
+	const systemPrompt = buildRespondSystemPrompt(
+		mode,
+		researchContext,
+		noteTitles,
+		currentNoteTitle,
+		currentNoteBody
+	);
 
 	const message = await client.messages.create({
 		model,

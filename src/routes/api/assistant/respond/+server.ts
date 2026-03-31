@@ -70,19 +70,21 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	// Validate noteId for update mode
+	let currentNoteTitle: string | undefined;
 	let currentNoteBody: string | undefined;
 	if (mode === 'update') {
 		if (typeof noteId !== 'string' || !noteId) {
 			return json({ error: 'noteId is required for mode "update"' }, { status: 400 });
 		}
 		const noteRow = await db
-			.select({ body: notes.body })
+			.select({ title: notes.title, body: notes.body })
 			.from(notes)
 			.where(eq(notes.id, noteId))
 			.limit(1);
 		if (!noteRow.length) {
 			return json({ error: `Note not found: ${noteId}` }, { status: 400 });
 		}
+		currentNoteTitle = noteRow[0].title;
 		currentNoteBody = noteRow[0].body;
 	}
 
@@ -99,9 +101,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			? (topicCache as TopicCache)
 			: {};
 
-	// Derive the research topic from the last user message
+	// In update mode, always research the selected note title rather than the user's free-form request.
+	// This keeps "review this note" style prompts grounded on the chosen note.
 	const lastUserMsg = [...typedMessages].reverse().find((m) => m.role === 'user');
-	const rawTopic = lastUserMsg?.content ?? '';
+	const rawTopic = mode === 'update' ? (currentNoteTitle ?? '') : (lastUserMsg?.content ?? '');
 	const key = topicKey(rawTopic);
 
 	// Look up or perform live web research; always research for both modes so
@@ -126,6 +129,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				model,
 				researchContext,
 				noteTitles,
+				currentNoteTitle,
 				currentNoteBody
 			);
 		} else {
@@ -135,6 +139,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				model,
 				researchContext,
 				noteTitles,
+				currentNoteTitle,
 				currentNoteBody
 			);
 		}

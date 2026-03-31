@@ -81,7 +81,7 @@ Rules:
 
 export const RESPOND_SYSTEM_PROMPT_UPDATE = `
 You are a technical knowledge assistant for a personal tech notes graph. You are in note-update mode.
-You will be given a saved note body and live research context. Compare them and decide whether a meaningful update is warranted.
+You will be given the selected note title, the saved note body, and live research context. Compare them and decide whether a meaningful update is warranted.
 
 Always respond with valid JSON only — no markdown fences, no prose outside the JSON.
 
@@ -136,6 +136,7 @@ export function buildRespondSystemPrompt(
 	mode: 'chat' | 'create' | 'update',
 	researchContext?: ResearchContext,
 	noteTitles?: string[],
+	currentNoteTitle?: string,
 	currentNoteBody?: string
 ): string {
 	let base =
@@ -153,12 +154,21 @@ Existing notes in the knowledge graph (use exact titles for linkedNotePatches):
 ${noteTitles.join('\n')}`;
 	}
 
-	if (mode === 'update' && currentNoteBody) {
+	if (mode === 'update' && currentNoteTitle) {
+		const noteBody =
+			typeof currentNoteBody === 'string' && currentNoteBody.trim().length > 0
+				? currentNoteBody
+				: '[empty note body]';
+
 		base = `${base}
 
 ---
+Selected note title (this is the note being reviewed):
+${currentNoteTitle}
+
+---
 Saved note body (the note as it currently exists — compare against live research below):
-${currentNoteBody}`;
+${noteBody}`;
 	}
 
 	if (!researchContext?.summary) return base;

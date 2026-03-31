@@ -210,6 +210,7 @@ The assistant becomes the primary authoring layer on top of the existing notes t
 - receiving the explicit UI mode (`chat` or `create`)
 - validating provider/model choice
 - performing live web research for create and compare flows
+- resolving the selected note title/body from `noteId` in update mode and injecting that note context into the prompt, even when the saved body is empty
 - reusing topic context already known in the current conversation cache
 - resolving whether the assistant should stay conversational or return a structured proposal
 
@@ -243,6 +244,8 @@ Live web research is mandatory for:
 
 If the same topic has already been researched in the current chat session, the assistant should reuse the cached research context instead of re-running the same research request.
 
+For update mode, the selected note title is the research topic. The user's message can still say things like "review this note", but the live research/cache lookup stays anchored to the chosen note rather than the free-form request text.
+
 Planned persistence note:
 - the topic cache remains an ephemeral optimization for the active runtime
 - resumed chat history does not depend on a persisted raw topic cache
@@ -270,7 +273,8 @@ V1 target support:
 
 Current registry notes:
 - The approved provider/model combinations live in `src/lib/server/ai/models.ts`.
-- Anthropic currently defaults to `claude-opus-4-6`.
+- `/chat` currently defaults to OpenAI with `gpt-5-mini` preselected.
+- Anthropic currently defaults to `claude-haiku-4-5-20251001`.
 - OpenAI currently defaults to `gpt-5-mini` and exposes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`.
 
 Adapter notes:

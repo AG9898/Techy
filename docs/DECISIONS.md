@@ -428,7 +428,7 @@ Minor differences — rephrasing, supplementary examples, small additions that d
 
 **Context:** Techy now exposes OpenAI model selection through the shared `provider` / `model` contract on `/chat` and `/api/assistant/respond`. Supporting the newer GPT-5 family raised a design choice: keep the OpenAI adapter on Chat Completions for parity with Anthropic's adapter shape, or move the OpenAI side to the Responses API while preserving the app's external contract.
 
-**Decision:** Keep the external assistant API contract unchanged, but implement the OpenAI adapter with the Responses API. The approved OpenAI model registry is still defined centrally in `src/lib/server/ai/models.ts`, and the current OpenAI default is `gpt-5-mini`. Anthropic continues to use its existing Messages API integration.
+**Decision:** Keep the external assistant API contract unchanged, but implement the OpenAI adapter with the Responses API. The approved provider/model registry is still defined centrally in `src/lib/server/ai/models.ts`; `/chat` currently defaults to OpenAI with `gpt-5-mini`, and the current Anthropic default is `claude-haiku-4-5-20251001`. Anthropic continues to use its existing Messages API integration.
 
 **Reasons:**
 - The app contract stays stable: the client still sends `provider`, `model`, `messages`, and `mode` without caring about provider-specific transport details

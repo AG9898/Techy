@@ -53,7 +53,7 @@
 			}
 			bodyValue = data.body;
 			aiGenerated = true;
-			aiModel = data.model ?? 'claude-opus-4-6';
+			aiModel = data.model ?? 'claude-haiku-4-5-20251001';
 			aiPrompt = titleValue.trim();
 		} catch {
 			aiError = 'Network error — could not reach AI service';

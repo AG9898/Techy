@@ -171,7 +171,9 @@ Primary assistant surface for conversation and note authoring.
 - The composer includes an explicit create-mode toggle.
 - The page submits full conversation state to `POST /api/assistant/respond`.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
+- The initial `/chat` selection defaults to OpenAI with `gpt-5-mini`.
 - The current OpenAI chat allowlist includes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`. The current OpenAI default is `gpt-5-mini`.
+- The current Anthropic default is `claude-haiku-4-5-20251001`.
 - Assistant responses may include a structured proposal for `create_note`, `update_note`, or `delete_note`.
 - Create/update proposals render as editable draft panels in chat before save.
 - Delete proposals render as explicit confirmation UI.
@@ -317,7 +319,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
 | `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
-| `noteId` | conditional | UUID of the note to compare; required when `mode` is `"update"` |
+| `noteId` | conditional | UUID of the note to compare; required when `mode` is `"update"`. The server resolves the selected note title/body from this ID and uses that note as the grounding target for research and comparison. |
 
 **Response (200):**
 ```json
@@ -364,7 +366,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 - In all modes, the assistant remains conversational.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
 - In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
-- In update mode, the server looks up the saved note body by `noteId` and injects it into the system prompt alongside live research context. The assistant compares the two and only returns an `update_note` proposal when the note is materially wrong, materially outdated, or substantially incomplete. Minor or cosmetic differences do not trigger a proposal.
+- In update mode, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
 - Live web research is performed for all modes including update, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
@@ -450,7 +452,7 @@ Legacy helper endpoint. No longer the intended product entry point once the assi
 **Behaviour:**
 - Accepts `provider: "claude" | "chatgpt"`; defaults to `"claude"`.
 - Returns `{ body, model }`, where `model` reflects the current provider default.
-- The current defaults are `claude-opus-4-6` for Anthropic and `gpt-5-mini` for OpenAI.
+- The current defaults are `claude-haiku-4-5-20251001` for Anthropic and `gpt-5-mini` for OpenAI.
 
 ---
 
@@ -466,7 +468,7 @@ Legacy helper endpoint. No longer the intended product entry point once the assi
 - Accepts `provider: "claude" | "chatgpt"`; defaults to `"claude"`.
 - Generates and immediately persists a note, then syncs `note_links` and returns note metadata plus `nextNoteIdeas`.
 - The saved note writes `ai_model` using the current provider default.
-- The current defaults are `claude-opus-4-6` for Anthropic and `gpt-5-mini` for OpenAI.
+- The current defaults are `claude-haiku-4-5-20251001` for Anthropic and `gpt-5-mini` for OpenAI.
 
 ---
 
