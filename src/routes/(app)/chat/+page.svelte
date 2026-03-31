@@ -75,7 +75,8 @@
 
 	let selectedProvider = $state(initProvider);
 	let selectedModel = $state(initModel);
-	let chatMode = $state<'chat' | 'create'>('chat');
+	let chatMode = $state<'chat' | 'create' | 'update'>('chat');
+	let selectedNoteId = $state('');
 
 	const currentProviderModels = $derived(
 		data.providers.find((p) => p.id === selectedProvider)?.models ?? []
@@ -113,6 +114,7 @@
 	async function sendMessage() {
 		const content = composerValue.trim();
 		if (!content || isLoading) return;
+		if (chatMode === 'update' && !selectedNoteId) return;
 
 		composerValue = '';
 		displayMessages = [...displayMessages, { type: 'user', content }];
@@ -121,16 +123,20 @@
 		await scrollToBottom();
 
 		try {
+			const body: Record<string, unknown> = {
+				messages: conversationHistory,
+				mode: chatMode,
+				provider: selectedProvider,
+				model: selectedModel,
+				topicCache
+			};
+			if (chatMode === 'update' && selectedNoteId) {
+				body.noteId = selectedNoteId;
+			}
 			const res = await fetch('/api/assistant/respond', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					messages: conversationHistory,
-					mode: chatMode,
-					provider: selectedProvider,
-					model: selectedModel,
-					topicCache
-				})
+				body: JSON.stringify(body)
 			});
 
 			if (res.ok) {
@@ -214,8 +220,26 @@
 				>
 					Create
 				</button>
+				<button
+					class="mode-btn"
+					class:mode-btn--active={chatMode === 'update'}
+					onclick={() => { chatMode = 'update'; selectedNoteId = ''; }}
+				>
+					Update
+				</button>
 			</div>
 		</div>
+
+		{#if chatMode === 'update'}
+			<div class="note-picker-row">
+				<select class="note-picker" bind:value={selectedNoteId}>
+					<option value="">— select a note to review —</option>
+					{#each data.notes as note}
+						<option value={note.id}>{note.title}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 
 		<div class="conversation-area" bind:this={conversationEl} aria-label="Conversation">
 			{#if displayMessages.length === 0}
@@ -232,12 +256,18 @@
 					<div class="centered-state">
 						<div class="empty-glyph">◈</div>
 						<p class="empty-title">
-							{chatMode === 'create' ? 'Create a new note' : 'Ask about your notes'}
+							{chatMode === 'create'
+								? 'Create a new note'
+								: chatMode === 'update'
+									? 'Review an existing note'
+									: 'Ask about your notes'}
 						</p>
 						<p class="empty-hint">
 							{chatMode === 'create'
 								? 'Describe a technology or concept and the assistant will draft a note.'
-								: 'The assistant answers questions grounded in your knowledge graph.'}
+								: chatMode === 'update'
+									? 'Select a note above, then describe what to check or just ask for a review.'
+									: 'The assistant answers questions grounded in your knowledge graph.'}
 						</p>
 					</div>
 				{/if}
@@ -374,7 +404,9 @@
 				class="composer-input"
 				placeholder={chatMode === 'create'
 					? 'Describe a topic to create a note…'
-					: 'Ask about your notes…'}
+					: chatMode === 'update'
+						? 'Ask to review the selected note for updates…'
+						: 'Ask about your notes…'}
 				rows="2"
 				disabled={isLoading}
 				bind:value={composerValue}
@@ -387,7 +419,7 @@
 			></textarea>
 			<button
 				class="send-btn"
-				disabled={!composerValue.trim() || isLoading}
+				disabled={!composerValue.trim() || isLoading || (chatMode === 'update' && !selectedNoteId)}
 				onclick={sendMessage}
 			>
 				Send
@@ -470,6 +502,33 @@
 	.mode-btn--active {
 		background: var(--bg-raised);
 		color: var(--text-primary);
+	}
+
+	/* ── Note picker row (update mode) ─────────────────────────────── */
+	.note-picker-row {
+		flex-shrink: 0;
+	}
+
+	.note-picker {
+		width: 100%;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 8px;
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 0.85rem;
+		padding: 0.4rem 0.7rem;
+		cursor: pointer;
+		transition: border-color 0.15s ease;
+	}
+
+	.note-picker:hover {
+		border-color: var(--border-strong);
+	}
+
+	.note-picker:focus {
+		outline: none;
+		border-color: var(--accent-primary);
 	}
 
 	/* ── Primary conversation surface ───────────────────────────────── */

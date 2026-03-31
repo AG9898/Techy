@@ -129,7 +129,8 @@ Chat is now both the conversation surface and the primary authoring surface.
 
 ```
 [Conversation column........................................]
-[ assistant toolbar: create-mode toggle | provider | model ]
+[ assistant toolbar: mode toggle (Chat|Create|Update) | provider | model ]
+[ note picker row: visible only in Update mode            ]
 [ conversation area ....................................... ]
 [ assistant proposal panel appears inline beneath message  ]
 [ composer ................................................ ]
@@ -186,7 +187,9 @@ Rules:
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface
-- Add an explicit create-mode toggle near the composer
+- Three-mode toggle: Chat | Create | Update (segmented button group in toolbar)
+- In Update mode, a full-width note-picker `<select>` appears below the toolbar for choosing the note to review
+- Send is disabled in Update mode until a note is selected
 - Add provider/model selection controls
 - Render assistant citations and proposal panels inline
 - Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility

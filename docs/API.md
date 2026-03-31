@@ -146,7 +146,8 @@ Primary assistant surface for conversation and note authoring.
     defaultModel: string
   }[],
   defaultProvider: 'anthropic' | 'openai',
-  defaultModel: string
+  defaultModel: string,
+  notes: { id: string, title: string, slug: string }[]
 }
 ```
 

@@ -1584,7 +1584,7 @@
       "id": "NOTES-009b",
       "group_id": "NOTES",
       "title": "Chat page update proposal UI",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire the update flow into the /chat page so users can select a note and review an update_note proposal.",
