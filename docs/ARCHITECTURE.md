@@ -10,7 +10,7 @@ Techy is a **server-rendered SvelteKit 5 application** with a PostgreSQL databas
 Browser
   │
   ├─ GET /                    → +page.server.ts (graph data) → ForceGraph.svelte (D3, client-only)
-  ├─ GET /notes               → +page.server.ts (all notes + orphan detection)
+  ├─ GET /notes               → +page.server.ts (repository data + search/filter state + orphan detection)
   ├─ GET /notes/export        → +server.ts (zip all notes as Markdown)
   ├─ GET /notes/[slug]        → +page.server.ts (note + links + rendered HTML)
   ├─ GET /notes/[slug]/history          → +page.server.ts (revision list)
@@ -27,7 +27,7 @@ Browser
   └─ /auth/[...auth]         → Auth.js catch-all (GitHub OAuth)
 ```
 
-The dedicated `/notes/new` page is no longer part of the intended product architecture. New note creation moves into `/chat`.
+The dedicated `/notes/new` page is no longer part of the intended product architecture. New note creation moves into `/chat`. The dedicated `/search` page is also being retired so browsing and search converge on `/notes`.
 
 See [`docs/API.md`](API.md) for the target route reference including request params, response shapes, and assistant proposal behavior.
 
@@ -97,7 +97,6 @@ src/
     │   │   ├── +page.svelte
     │   │   ├── export/+server.ts
     │   │   └── [slug]/...
-    │   ├── search/...
     │   └── chat/
     │       ├── +page.server.ts    # provider/model options
     │       └── +page.svelte        # conversation + editable proposal UI
@@ -246,6 +245,18 @@ The `/notes` page continues to detect orphan notes — notes with no incoming or
 
 ---
 
+## App Shell
+
+Protected app routes continue to share a common shell, but the intended shell direction is now a collapsible left rail rather than a sticky horizontal nav.
+
+Rules:
+- the rail owns primary route navigation, theme/accent controls, and account actions
+- the graph route should default to a tucked or minimized rail state to preserve immersion
+- notes, chat, and detail routes may use a fuller rail state when it improves browsing and wayfinding
+- Melt UI is an appropriate primitive layer for collapse and disclosure behavior, but not for final styling
+
+---
+
 ## D3 Force Graph
 
 The `ForceGraph.svelte` component remains client-only. It consumes pre-fetched `nodes` and `links` arrays from server load.
@@ -262,6 +273,9 @@ Techy continues to use Tailwind CSS v4 plus project-owned design tokens. The the
 - `data-theme='light'`
 
 Accent selection remains independent of theme and continues to cascade into the D3 graph.
+
+Typography direction:
+- `Space Mono` is the authoritative app font across shell and page surfaces
 
 `src/app.html` should set `data-theme="dark" data-accent="sky"` as defaults and restore persisted values before first paint.
 

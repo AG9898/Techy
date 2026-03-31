@@ -50,6 +50,10 @@ Techy is a **personal, single-user tech knowledge graph** web app. It stores str
 - Delete forms must be separate `<form>` elements — never nested inside another form (HTML invalid)
 - Always run `npm run prepare` after adding new routes (generates `$types.js`)
 - For UI work, follow `docs/STYLE-GUIDE.md` for the overall direction and `docs/DESIGN-SPEC.md` for the currently documented implementation details and palette
+- For UI work, inspect `references/UI` when a relevant reference exists and treat it as a translation target for the implemented page or section
+- When a reference exists, replicate its layout intent, spacing, hierarchy, density, and interaction patterns as faithfully as practical within Techy's stack, tokens, and documented constraints
+- Use the reference as an additional style guide input, but do not ignore `docs/STYLE-GUIDE.md`, `docs/DESIGN-SPEC.md`, or established app behavior when they impose product or system constraints
+- Not every UI task will have a reference; when one does not exist, infer the design from `docs/STYLE-GUIDE.md`, `docs/DESIGN-SPEC.md`, and the visual patterns already established by the most relevant current pages
 
 ### When creating or editing notes (content, not code)
 Read `docs/NOTES.md` for the full authoring guide. Quick rules:

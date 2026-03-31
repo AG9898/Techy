@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Techy | Consolidated Notes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-error-container": "#ffd2c8",
+                "surface-tint": "#ff8c95",
+                "surface-variant": "#262626",
+                "on-secondary-fixed": "#690936",
+                "on-surface-variant": "#adaaaa",
+                "on-primary-container": "#4e0012",
+                "inverse-on-surface": "#565554",
+                "background": "#0e0e0e",
+                "inverse-surface": "#fcf8f8",
+                "tertiary-dim": "#af8af7",
+                "primary": "#ff8c95",
+                "error-dim": "#d53d18",
+                "error": "#ff7351",
+                "primary-dim": "#ff6f7e",
+                "outline-variant": "#494847",
+                "surface-container-highest": "#262626",
+                "on-tertiary-fixed-variant": "#471f89",
+                "on-secondary-fixed-variant": "#8f2a53",
+                "primary-fixed": "#ff7482",
+                "on-secondary": "#59002c",
+                "tertiary-fixed-dim": "#b490fd",
+                "surface-dim": "#0e0e0e",
+                "on-secondary-container": "#ffbfd1",
+                "primary-container": "#ff7482",
+                "on-primary": "#64001a",
+                "inverse-primary": "#bd0c3b",
+                "outline": "#777575",
+                "surface": "#0e0e0e",
+                "error-container": "#b92902",
+                "secondary-fixed": "#ffc1d2",
+                "tertiary-container": "#af8af7",
+                "on-error": "#450900",
+                "secondary-fixed-dim": "#ffacc5",
+                "secondary": "#fc81ab",
+                "surface-container-high": "#201f1f",
+                "on-surface": "#ffffff",
+                "tertiary": "#bc99ff",
+                "surface-container-low": "#131313",
+                "surface-bright": "#2c2c2c",
+                "on-primary-fixed-variant": "#5f0018",
+                "primary-fixed-dim": "#ff576f",
+                "surface-container": "#1a1919",
+                "tertiary-fixed": "#c0a0ff",
+                "surface-container-lowest": "#000000",
+                "on-tertiary-container": "#2b0065",
+                "secondary-container": "#822049",
+                "on-tertiary": "#39097c",
+                "on-background": "#ffffff",
+                "secondary-dim": "#ef77a1",
+                "on-tertiary-fixed": "#210050",
+                "on-primary-fixed": "#000000"
+              },
+              fontFamily: {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0e0e0e;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(26, 25, 25, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+      </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<aside class="hidden md:flex flex-col h-full w-64 fixed left-0 top-0 bg-[#131313] py-8 z-50">
+<div class="px-8 mb-12">
+<h1 class="text-xl font-bold text-[#ff8c95] font-headline tracking-tighter">Techy</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1 font-semibold">Technical Curator</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-8 py-3 text-[#adaaaa] hover:text-[#ffffff] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary" data-icon="hub">hub</span>
+<span class="font-headline font-semibold text-sm">Graph</span>
+</a>
+<a class="flex items-center px-8 py-3 text-[#ff8c95] bg-[#1a1919] rounded-r-lg border-l-4 border-[#ff8c95] transition-all duration-150 translate-x-1" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="description">description</span>
+<span class="font-headline font-semibold text-sm">Notes</span>
+</a>
+<a class="flex items-center px-8 py-3 text-[#adaaaa] hover:text-[#ffffff] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary" data-icon="search">search</span>
+<span class="font-headline font-semibold text-sm">Search</span>
+</a>
+<a class="flex items-center px-8 py-3 text-[#adaaaa] hover:text-[#ffffff] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined mr-4 group-hover:text-primary" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-headline font-semibold text-sm">Chat</span>
+</a>
+</nav>
+<div class="px-8 pt-8 mt-auto border-t border-outline-variant/10 space-y-1">
+<a class="flex items-center py-2 text-[#adaaaa] hover:text-[#ffffff] transition-all duration-200 text-sm font-headline font-semibold" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="flex items-center py-2 text-[#adaaaa] hover:text-[#ffffff] transition-all duration-200 text-sm font-headline font-semibold" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="logout">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-64 min-h-screen">
+<!-- Integrated Header & Search -->
+<header class="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-8 pt-12 pb-6">
+<div class="max-w-5xl mx-auto">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-4xl md:text-5xl font-bold font-headline tracking-tight">Repository</h2>
+<p class="text-on-surface-variant text-sm mt-2 max-w-md">Access your technical documentation, code snippets, and research archives.</p>
+</div>
+<div class="flex gap-4">
+<button class="p-2 hover:bg-surface-container rounded-md transition-all text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="sort">sort</span>
+</button>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-md font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                            New Note
+                        </button>
+</div>
+</div>
+<!-- Minimalist Search Input -->
+<div class="relative group mt-4">
+<span class="absolute left-0 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant group-focus-within:text-primary transition-colors" data-icon="search">search</span>
+<input class="w-full bg-transparent border-b border-outline-variant/30 py-4 pl-10 pr-4 text-xl focus:outline-none focus:border-primary transition-colors placeholder:text-outline-variant font-body" placeholder="Query documentation, syntax, or keywords..." type="text"/>
+</div>
+</div>
+</header>
+<!-- Content Grid -->
+<section class="px-8 pb-20 mt-8">
+<div class="max-w-5xl mx-auto">
+<!-- Category Chips -->
+<div class="flex items-center gap-6 mb-12 overflow-x-auto no-scrollbar pb-2">
+<button class="text-primary font-bold text-sm tracking-wide border-b-2 border-primary pb-1">All Collections</button>
+<button class="text-on-surface-variant hover:text-white font-semibold text-sm tracking-wide transition-colors pb-1">Programming</button>
+<button class="text-on-surface-variant hover:text-white font-semibold text-sm tracking-wide transition-colors pb-1">Architecture</button>
+<button class="text-on-surface-variant hover:text-white font-semibold text-sm tracking-wide transition-colors pb-1">Security</button>
+<button class="text-on-surface-variant hover:text-white font-semibold text-sm tracking-wide transition-colors pb-1">Hardware</button>
+</div>
+<!-- Notes Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+<!-- Major Note: Rust -->
+<article class="md:col-span-8 group">
+<div class="bg-surface-container-low hover:bg-surface-container p-8 rounded-xl transition-all duration-300 relative overflow-hidden">
+<div class="flex justify-between items-start mb-6">
+<div class="flex gap-2">
+<span class="text-[10px] font-bold tracking-widest text-secondary uppercase bg-secondary-container/20 px-2 py-0.5 rounded">Memory Safety</span>
+<span class="text-[10px] font-bold tracking-widest text-tertiary uppercase bg-tertiary-container/20 px-2 py-0.5 rounded">Systems</span>
+</div>
+<time class="text-[11px] font-semibold text-on-surface-variant/60 uppercase">Updated 2h ago</time>
+</div>
+<h3 class="text-3xl font-headline font-bold mb-3 group-hover:text-primary transition-colors">rust</h3>
+<p class="text-on-surface-variant font-body leading-relaxed mb-6 line-clamp-2">Exploring the borrow checker, zero-cost abstractions, and the implementation of ownership semantics in complex concurrency models. Practical applications of trait objects vs generics for dynamic dispatch.</p>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-low bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a technical expert software engineer cyberpunk aesthetic dark lighting pink hues" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA00X9JaNxqFU8M-TVs2PutBViTws6L9vRDGZdQLGUP-cbGNuliJ3vKIoJ4KCH3pnAGPf1islEjbV2ECUwrNQ7K85CErWp5kZm482CmZE270XT9E2qupUfBd53c3aA7Q_hD9BjbiwQB1I-sshmQTyydVECyrEqDd-noy6hnSF0wQOZCpEpDtosMbX6ZWAPAL86fkIR_oD8ZFkawF7Fu0UdbMSZdGkifiueRzJUIPidOgMjW1Ox1s_Ilym1rQRdZHEtcr3Os6kgzlV2i"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-low bg-primary flex items-center justify-center text-[10px] font-bold text-on-primary">+3</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform" data-icon="arrow_right_alt">arrow_right_alt</span>
+</div>
+</div>
+</article>
+<!-- Sidebar Note: Python -->
+<article class="md:col-span-4 group">
+<div class="bg-surface-container-low hover:bg-surface-container p-6 rounded-xl transition-all duration-300 border-l-2 border-transparent hover:border-primary">
+<div class="mb-4">
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant/50 uppercase">Scripting</span>
+</div>
+<h3 class="text-xl font-headline font-bold mb-2">Python</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed mb-4">Deep dive into asyncio, generator expressions, and advanced metaclass programming for library development.</p>
+<div class="flex gap-3">
+<span class="text-xs text-secondary-dim font-medium">#async</span>
+<span class="text-xs text-tertiary-dim font-medium">#backend</span>
+</div>
+</div>
+</article>
+<!-- Medium Note: Go Language -->
+<article class="md:col-span-6 group">
+<div class="bg-surface-container-low hover:bg-surface-container p-6 rounded-xl transition-all duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary/40" data-icon="grid_view">grid_view</span>
+<span class="text-[10px] font-bold text-on-surface-variant/40">MAR 12</span>
+</div>
+<h3 class="text-2xl font-headline font-bold mb-2">Go Language</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed">Microservices orchestration using Go channels and context management. Performance benchmarking against Node.js runtime environments.</p>
+</div>
+</article>
+<!-- Small Note: Kubernetes -->
+<article class="md:col-span-6 group">
+<div class="bg-surface-container-low hover:bg-surface-container p-6 rounded-xl transition-all duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-tertiary/40" data-icon="layers">layers</span>
+<span class="text-[10px] font-bold text-on-surface-variant/40">MAR 08</span>
+</div>
+<h3 class="text-2xl font-headline font-bold mb-2">Kubernetes</h3>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed">Helm charts optimization and custom resource definitions (CRD) for specialized operators in distributed systems.</p>
+</div>
+</article>
+<!-- List Style Note: Typography & CSS -->
+<article class="md:col-span-12 group mt-4">
+<div class="flex flex-col md:flex-row md:items-center gap-6 p-6 hover:bg-surface-container-low rounded-xl transition-all duration-200">
+<div class="w-12 h-12 rounded bg-surface-container-highest flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="format_paint" data-weight="fill" style="font-variation-settings: 'FILL' 1;">format_paint</span>
+</div>
+<div class="flex-1">
+<h3 class="text-lg font-headline font-bold mb-1">Frontend Design Systems</h3>
+<p class="text-on-surface-variant text-sm font-body">Leveraging Tailwind CSS with custom design tokens for high-fidelity editorial experiences.</p>
+</div>
+<div class="flex gap-4 items-center">
+<span class="text-[10px] font-bold text-on-surface-variant/40 uppercase">Ref: DS-04</span>
+<button class="p-2 text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+</div>
+</section>
+</main>
+<!-- Mobile Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-outline-variant/10 px-6 py-4 flex justify-between items-center z-50">
+<a class="flex flex-col items-center text-[#adaaaa] hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="text-[10px] font-bold mt-1 uppercase">Graph</span>
+</a>
+<a class="flex flex-col items-center text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="text-[10px] font-bold mt-1 uppercase">Notes</span>
+</a>
+<a class="flex flex-col items-center text-[#adaaaa] hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-[10px] font-bold mt-1 uppercase">Search</span>
+</a>
+<a class="flex flex-col items-center text-[#adaaaa] hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="text-[10px] font-bold mt-1 uppercase">Chat</span>
+</a>
+</nav>
+<!-- Global Floating Action Button -->
+<button class="fixed bottom-24 right-8 md:bottom-12 md:right-12 w-14 h-14 bg-gradient-to-br from-primary to-primary-container rounded-full shadow-2xl flex items-center justify-center text-on-primary hover:scale-110 active:scale-95 transition-all z-40">
+<span class="material-symbols-outlined text-3xl" data-icon="edit">edit</span>
+</button>
+</body></html>

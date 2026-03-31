@@ -91,8 +91,23 @@ Desired feel:
 
 Rules:
 - notes browsing is no longer the primary creation surface
+- notes browsing and search should live together in the same `/notes` surface
+- the notes index should feel like a repository, not a search-results utility page
+- avoid a wall of interchangeable boxed cards; use mixed-density composition and open space
 - note detail should still feel like a polished docs page
 - backlinks and linked notes remain supporting regions
+
+### Shell
+
+Desired feel:
+- quiet
+- structural
+- spatially adaptive
+
+Rules:
+- the shared app shell should use a left rail instead of a horizontal top nav
+- the rail should be collapsible and able to auto-tuck on immersive routes like the graph
+- shell behavior should preserve focus on the current page rather than constantly demanding attention
 
 ### 3. Chat
 
@@ -177,6 +192,9 @@ Avoid:
 Notes should still feel like the reading and browsing half of the same world established by the graph and assistant.
 
 Rules:
+- the `/notes` page should combine search and browsing into one coherent surface
+- the search bar should read as part of the page composition, not as a separate utility module
+- favor zones, staggered emphasis, and editorial spacing over uniform card grids
 - note detail prioritizes comfortable reading width and hierarchy
 - metadata stays integrated near the title
 - internal links should feel elegant and connected to the graph model
@@ -208,6 +226,7 @@ Use Melt for behavior and accessibility primitives where the assistant flow bene
 - provider/model selectors
 - disclosure and confirmation UI
 - compact command-like controls
+- shell collapse / tucked-state disclosure where it improves accessibility and keyboard behavior
 
 Do not let Melt define the visual language.
 

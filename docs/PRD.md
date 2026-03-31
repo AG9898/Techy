@@ -12,7 +12,7 @@ The primary value is building and maintaining a persistent, interconnected menta
 
 1. Capture knowledge about tech topics in a structured, reusable format
 2. Visualise how topics relate to each other via a D3 force-directed graph
-3. Search notes quickly by title, tags, and category
+3. Browse and search notes quickly by title, tags, and category from a unified repository surface
 4. Create, revise, and remove notes through a unified assistant chat flow rather than a separate new-note form
 5. Keep the app private (single-user, GitHub OAuth gate)
 6. Ask for a summary of an existing topic and get note-grounded suggestions for what to add next
@@ -85,12 +85,16 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-20 | Replace the current multi-theme system with a tonal dark/light theme model while keeping accent options separate | High |
 | F-21 | Use Melt UI selectively for assistant controls, selectors, and confirmation affordances | Medium |
 | F-22 | Use GSAP selectively for assistant/draft transitions and other meaningful motion polish | Medium |
+| F-23 | Use Space Mono as the authoritative typeface across the app shell and content surfaces | Medium |
+| F-24 | Replace the current top navigation with a collapsible left rail that can auto-tuck on immersive pages | High |
+| F-25 | Consolidate standalone search into `/notes` so browsing and search happen in one repository surface | High |
 
 ---
 
 ## Notes on Superseded Direction
 
 - The dedicated `/notes/new` page is being retired from the product direction.
+- The dedicated `/search` page is being retired in favor of integrated search within `/notes`.
 - The “Research with AI” button on a standalone note-authoring form is no longer the intended primary creation flow.
 - The previous three-theme model (`night`, `paper`, `mist`) is being replaced by a tonal `dark/light` theme model with accent selection preserved.
 

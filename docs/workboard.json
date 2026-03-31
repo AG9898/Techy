@@ -1462,7 +1462,7 @@
       "id": "NOTES-007",
       "group_id": "NOTES",
       "title": "Assistant create-note persistence with immediate graph linking",
-      "status": "pending",
+      "status": "todo",
       "priority": "high",
       "type": "feature",
       "summary": "Persist confirmed assistant-created notes so graph connections appear immediately after save.",
@@ -1503,7 +1503,7 @@
       "id": "NOTES-008",
       "group_id": "NOTES",
       "title": "Reciprocal link propagation for assistant-created notes",
-      "status": "pending",
+      "status": "todo",
       "priority": "high",
       "type": "implementation",
       "summary": "Allow assistant note creation to patch existing note bodies so new graph relationships are visible immediately in both directions where appropriate.",
@@ -1543,7 +1543,7 @@
       "id": "NOTES-009",
       "group_id": "NOTES",
       "title": "Assistant update proposals with materiality gate and revision-backed apply",
-      "status": "pending",
+      "status": "todo",
       "priority": "high",
       "type": "implementation",
       "summary": "Only propose assistant-driven note updates for material issues, and preserve revision history when those updates are applied.",
@@ -1585,7 +1585,7 @@
       "id": "NOTES-010",
       "group_id": "NOTES",
       "title": "Assistant delete confirmation and commit flow",
-      "status": "pending",
+      "status": "todo",
       "priority": "medium",
       "type": "feature",
       "summary": "Support assistant-driven note deletion behind an explicit confirmation step in chat.",
@@ -1625,7 +1625,7 @@
       "id": "UI-007",
       "group_id": "UI",
       "title": "Unified chat authoring interface",
-      "status": "pending",
+      "status": "todo",
       "priority": "high",
       "type": "feature",
       "summary": "Turn `/chat` into the single assistant surface for conversation, note drafting, note review, and note mutations.",
@@ -1669,7 +1669,7 @@
       "id": "UI-008",
       "group_id": "UI",
       "title": "Remove dedicated new-note route and legacy creation entry points",
-      "status": "pending",
+      "status": "todo",
       "priority": "medium",
       "type": "implementation",
       "summary": "Remove `/notes/new` and clean up all product entry points that still assume a separate new-note page.",
@@ -1751,7 +1751,7 @@
       "id": "UI-010",
       "group_id": "UI",
       "title": "Melt UI primitives for assistant controls and review affordances",
-      "status": "pending",
+      "status": "todo",
       "priority": "medium",
       "type": "feature",
       "summary": "Use Melt primitives where the new assistant interaction model benefits from better accessibility and keyboard behavior.",
@@ -1787,7 +1787,7 @@
       "id": "UI-011",
       "group_id": "UI",
       "title": "GSAP motion polish for assistant workflow",
-      "status": "pending",
+      "status": "todo",
       "priority": "low",
       "type": "feature",
       "summary": "Add restrained motion to the assistant experience where it improves continuity and focus.",
@@ -1818,6 +1818,160 @@
         "npm run check"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "UI-012",
+      "group_id": "UI",
+      "title": "Adopt Space Mono as the authoritative project font",
+      "status": "todo",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Make Space Mono the primary typeface across the app and align theme tokens and docs around that decision.",
+      "description": "Replace the current Inter/Fira split with Space Mono as the canonical UI and editorial font across the shared app shell and page surfaces. Update font loading, theme tokens, and any component assumptions that still hardcode the old typography model.",
+      "acceptance_criteria": [
+        "Space Mono is loaded and used as the default app font",
+        "Global font tokens no longer default to Inter or Fira Code",
+        "Nav, notes, graph shell, and note cards visually inherit the new typography without one-off overrides",
+        "Relevant design and product docs are updated to reflect the new typography authority"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "src/app.css",
+        "src/app.html",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "Keep the font change global and authoritative rather than mixing old and new systems."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-013",
+      "group_id": "UI",
+      "title": "Redesign the shared app shell into a collapsible left rail",
+      "status": "todo",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Replace the current sticky top nav with a route-aware left rail that can collapse, auto-tuck, and expand without compromising the graph page.",
+      "description": "Rework the shared `(app)` layout and navigation into a left sidebar inspired by the repository mockup. The rail should feel integrated rather than boxed, support a collapsed or tucked state on immersive pages like the graph, and use Melt where behavior and accessibility matter for disclosure, collapse, and compact controls.",
+      "acceptance_criteria": [
+        "The app shell uses a left rail instead of the current top nav",
+        "The rail can collapse or auto-tuck and be expanded again without losing keyboard accessibility",
+        "The graph page remains low-chrome and visually close to its current immersive feel",
+        "Theme, accent, and account controls are integrated into the new rail cleanly"
+      ],
+      "depends_on": [
+        "UI-012"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/Nav.svelte",
+        "src/routes/(app)/+layout.svelte",
+        "src/routes/(app)/+page.svelte",
+        "src/app.css"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Use Melt for interaction primitives, not for canned styling.",
+        "Prefer route-aware default states so the graph can stay tucked while notes can be expanded."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-014",
+      "group_id": "UI",
+      "title": "Redesign the notes page as the unified repository and search surface",
+      "status": "todo",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Merge browsing and search into `/notes` with a repository-style layout, integrated search bar, and mixed-density note presentation.",
+      "description": "Replace the current notes grid plus separate search page model with a single `/notes` experience that follows the reference composition: large page title, integrated search bar, lighter category filtering, and a notes layout that avoids turning every result into the same boxed card. Use the current stack pragmatically and only introduce Melt where it improves filter, disclosure, or responsive behavior.",
+      "acceptance_criteria": [
+        "The notes page includes the primary search input directly in the page header area",
+        "Title, tag, category, and orphan filtering are available from `/notes` without navigating to `/search`",
+        "The page composition feels closer to the reference and avoids a wall of identical component boxes",
+        "The layout works on desktop and mobile and coexists with the new left rail"
+      ],
+      "depends_on": [
+        "UI-012",
+        "UI-013"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/notes/+page.svelte",
+        "src/routes/(app)/notes/+page.server.ts",
+        "src/lib/components/NoteCard.svelte",
+        "src/app.css"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Phase 1 can keep filtering client-side against the notes already loaded by `/notes`.",
+        "Preserve import and export, but subordinate them to the repository header rather than button-heavy chrome."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "L"
+    },
+    {
+      "id": "UI-015",
+      "group_id": "UI",
+      "title": "Retire the dedicated search route and clean up navigation and docs",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Remove `/search` once `/notes` fully absorbs search responsibilities and sync the remaining product and documentation references.",
+      "description": "Delete the standalone `/search` page, remove its navigation entry, and update product, API, and architecture docs so they describe `/notes` as the unified browsing and search surface. Ensure there are no stale links or route assumptions left in the shell after the notes redesign lands.",
+      "acceptance_criteria": [
+        "The `/search` route files are removed",
+        "Navigation no longer links to a dedicated search page",
+        "Docs no longer describe `/search` as a first-class route",
+        "Generated route types are refreshed after route removal"
+      ],
+      "depends_on": [
+        "UI-014"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/search/+page.svelte",
+        "src/routes/(app)/search/+page.server.ts",
+        "src/lib/components/Nav.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "If any temporary redirect is kept during migration, it should be treated as short-lived cleanup rather than a permanent surface."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "S"
     }
   ]
 }

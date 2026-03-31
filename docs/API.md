@@ -24,19 +24,33 @@ Home page. Loads all notes and links for the D3 force graph.
 ---
 
 ### `GET /notes`
-Notes list with category filter chips and orphan detection.
+Unified notes repository surface with integrated search, category filtering, and orphan detection.
+
+**Query params:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `q` | string | Title or category substring for repository search |
+| `tags` | string | Comma-separated tag list |
+| `category` | string | Category filter |
+| `orphans` | string | Optional truthy flag to focus orphan notes |
 
 **Server load returns:**
 ```ts
 {
   notes: { id, title, slug, tags, category, status, createdAt }[],
-  orphanIds: string[]
+  orphanIds: string[],
+  q?: string,
+  tagsParam?: string,
+  category?: string,
+  showOrphans?: boolean
 }
 ```
 
 **Notes:**
-- `/notes` remains the browsing and management surface for existing notes.
+- `/notes` is the unified browsing, search, and management surface for existing notes.
+- The first implementation pass may keep filtering on the client over the loaded notes dataset.
 - New note creation is no longer expected to originate from a dedicated `/notes/new` page.
+- Standalone `/search` is being retired after the notes-page migration lands.
 
 ---
 
@@ -111,26 +125,11 @@ Full content of a specific revision, rendered as HTML.
 ---
 
 ### `GET /search`
-Search results page.
+Legacy standalone search page during migration.
 
-**Query params:**
-| Param | Type | Description |
-|-------|------|-------------|
-| `q` | string | Title or category substring (case-insensitive) |
-| `tags` | string | Comma-separated tag list (notes must have ≥1 matching tag) |
-| `category` | string | Category substring (case-insensitive) |
-
-**Server load returns:**
-```ts
-{
-  results: { id, title, slug, tags, category, status, createdAt }[],
-  q: string,
-  tagsParam: string,
-  category: string
-}
-```
-
-Empty query returns `results: []`.
+**Notes:**
+- This route is being retired in favor of integrated repository search on `/notes`.
+- Once the notes-page migration lands, navigation and documentation should stop treating `/search` as a first-class route.
 
 ---
 

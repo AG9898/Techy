@@ -62,14 +62,17 @@ All new components must use tokens. No hardcoded hex values should appear in com
 
 ## Typography
 
-Current implementation still uses:
+Authoritative typography should use:
 
 ```css
-font-family: 'Inter', system-ui, sans-serif;
-font-family: 'Fira Code', 'Cascadia Code', monospace;
+font-family: 'Space Mono', monospace;
 ```
 
-Typography should continue to feel closer to polished docs pages than to a dashboard.
+Rules:
+- `Space Mono` is the default font for the app shell, notes browsing, note detail, chat, and controls
+- Do not treat `Space Mono` as a decorative accent font; it is the primary reading and UI face
+- Typography should still feel closer to polished docs pages and technical terminals than to a dashboard
+- If a future secondary face is introduced, `Space Mono` remains the authoritative base until the design docs explicitly change
 
 ---
 
@@ -78,34 +81,47 @@ Typography should continue to feel closer to polished docs pages than to a dashb
 ### Global Shell
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│ Nav: [Techy] [Graph] [Notes] [Search] [Chat] [Dark/Light] ●●●● [avatar] [Sign out] │
-├────────────────────────────────────────────────────────────┤
-│                                                            │
-│  <main class="page-content">                               │
-│  max-width: 1200px, margin: 0 auto, padding: 2rem          │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+┌──────────────┬─────────────────────────────────────────────┐
+│ Left rail    │                                             │
+│ [Techy]      │  <main class="page-content">                │
+│ [Graph]      │  route-aware layout region                  │
+│ [Notes]      │  notes/search, graph, chat, note detail     │
+│ [Chat]       │                                             │
+│ [theme]      │                                             │
+│ [account]    │                                             │
+└──────────────┴─────────────────────────────────────────────┘
 ```
 
-The `+ New` navigation item is removed. `/chat` becomes the primary authoring entry point.
+Rules:
+- The app shell should use a left rail rather than a top nav
+- The rail should support expanded, collapsed, and auto-tucked states
+- The graph page should default to the least intrusive rail presentation so the graph remains immersive
+- `/chat` remains the primary authoring entry point
+- `/notes` is the browsing and search surface
 
 ### Home (Graph)
 
-- Full-viewport SVG below the sticky nav
+- Full-viewport SVG adjacent to the left rail
 - Minimal chrome
 - Floating legend and filter controls
+- Left rail should auto-tuck or minimize by default here, while still remaining expandable
 - Graph should reflect new links immediately after assistant-confirmed note creation
 
 ### Notes List
 
 ```
-[Page header: "Notes"   [↑ Import] [↓ Export] [Chat-first helper copy] ]
-[Category filter chips]
-[Grid: auto-fill minmax(280px, 1fr)]
+[Page header: "Repository"  helper copy  [↑ Import] [↓ Export] ]
+[Integrated search bar]
+[Category tabs / chips]
+[Mixed-density notes layout with a few larger anchor items and lighter secondary rows]
 ```
 
-The notes page remains for browsing, filtering, import, export, and opening existing notes. It is no longer the primary creation surface.
+Rules:
+- `/notes` owns search, filtering, import, export, and opening existing notes
+- The old standalone `/search` route is removed after migration
+- The page should borrow the open, repository-like composition from the reference rather than reverting to a wall of uniform cards
+- Search should sit directly in the notes header region rather than living on a separate route
+- Import and export remain present, but should not dominate the composition
 
 ### Chat
 
@@ -159,10 +175,10 @@ Rules:
 ## Components
 
 ### `Nav.svelte`
-- Remove the `+ New` link
-- Replace the 3-theme selector with a true dark/light toggle
-- Keep accent dots
-- Consider Melt primitives for toggle-group behavior and keyboard handling
+- Replace the current top nav with a collapsible left rail
+- Integrate route links, theme controls, accent controls, and account actions into the rail
+- Keep the dark/light toggle and accent dots
+- Use Melt primitives where they improve collapse, disclosure, and keyboard behavior
 
 ### `ForceGraph.svelte`
 - Keep current graph legend/filter/edge drilldown work
