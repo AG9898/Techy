@@ -98,6 +98,17 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-23 | Use Space Mono as the authoritative typeface across the app shell and content surfaces | Medium |
 | F-24 | Replace the current top navigation with a collapsible left rail that can auto-tuck on immersive pages | High |
 | F-25 | Consolidate standalone search into `/notes` so browsing and search happen in one repository surface | High |
+| F-31 | Add a unified graph control panel that persists local graph-view tuning for appearance, filters, and force behavior | High |
+
+### Graph Controls
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-32 | The graph page exposes one bottom-right floating control panel instead of separate legend and filter overlays | High |
+| F-33 | The graph control panel stays collapsed by default and expands only when invoked | High |
+| F-34 | Graph controls persist as local browser preferences rather than account-level or database-backed settings | High |
+| F-35 | The panel allows live tuning of node sizing, line thickness, text fade behavior, color/filter state, and force interaction | High |
+| F-36 | The panel includes a reset action that restores a documented default graph preset | Medium |
 
 ---
 

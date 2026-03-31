@@ -2008,6 +2008,117 @@
         "npm run check"
       ],
       "estimate": "S"
+    },
+    {
+      "id": "GRAPH-007",
+      "group_id": "GRAPH",
+      "title": "Unify graph overlays into a collapsible control panel",
+      "status": "todo",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Replace the separate graph legend and filter overlays with one bottom-right control panel that stays collapsed by default and expands on demand.",
+      "description": "Rework the home graph controls in `ForceGraph.svelte` so the current legend, colour-mode toggle, and category/status filters live inside one Obsidian-inspired floating panel. The panel should sit in the bottom-right corner of the graph, show a compact trigger when collapsed, expand without taking over the page, and preserve the graph-first low-chrome feel. Edge drilldown remains a separate interaction state and should not be absorbed into the control panel.",
+      "acceptance_criteria": [
+        "The graph shows one bottom-right controls trigger instead of separate legend and filter overlays",
+        "The control panel is collapsed by default and expands when invoked",
+        "Current colour-mode and category/status filter behavior remains available inside the unified panel",
+        "Removing the old overlays does not break graph drag, zoom, node navigation, or edge drilldown"
+      ],
+      "depends_on": [
+        "GRAPH-001",
+        "GRAPH-002",
+        "GRAPH-006"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/ForceGraph.svelte",
+        "src/routes/(app)/+page.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "The panel should feel like a soft tuning dock rather than a permanent sidebar or utility drawer.",
+        "Keep the control surface compatible with the future route-aware left rail rather than hardcoding assumptions around the current top nav."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "GRAPH-008",
+      "group_id": "GRAPH",
+      "title": "Persist graph view settings and add reset-to-defaults behavior",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Store graph tuning and filter preferences in local browser state and let the panel restore a documented default preset.",
+      "description": "Add a client-owned graph settings model for the home graph and persist it in `localStorage` under a dedicated key. The stored values should include the unified panel's visual, filter, colour-mode, and force-layout settings, restore safely on reload, and expose a reset action that returns the graph to the documented Obsidian-like default preset. The implementation should validate or sanitize malformed stored values and must not introduce database-backed user settings or new API contracts.",
+      "acceptance_criteria": [
+        "Graph control settings persist across reloads in the browser",
+        "Reset to defaults restores the documented graph preset from inside the control panel",
+        "Malformed or missing stored settings fall back safely without breaking graph render",
+        "No new schema, route, or API persistence is introduced for graph preferences"
+      ],
+      "depends_on": [
+        "GRAPH-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/ForceGraph.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Expanded/collapsed panel state is transient UI state and should not be persisted alongside graph settings."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "GRAPH-009",
+      "group_id": "GRAPH",
+      "title": "Add Obsidian-style graph tuning controls for appearance and physics",
+      "status": "todo",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Expose live graph tuning controls for node sizing, line thickness, text fade, and D3 force behavior inside the unified panel.",
+      "description": "Extend the unified graph control panel so it can tune the existing D3 graph live without forcing a full redraw unless a specific simulation parameter requires reheating. The first version should include node-size scaling on top of the existing degree-based sizing rule, visible link thickness control, zoom-threshold text fade behavior, and a dense but D3-native physics set covering link distance, charge strength, collision spacing, centering strength, velocity decay, and alpha decay. Preserve graph readability, drag behavior, zooming, and edge hit-area usability while deferring any expert-only Obsidian controls that do not map cleanly to the current D3 simulation.",
+      "acceptance_criteria": [
+        "Users can tune node scale, visible link thickness, and text fade threshold from the graph panel",
+        "Users can tune D3-native force controls including link distance, repulsion, spacing, centering, and simulation decay values",
+        "Node sizing remains degree-based with a user-controlled multiplier rather than becoming fully manual",
+        "Graph interactions remain intact and edge hit zones stay usable even when visible line thickness changes"
+      ],
+      "depends_on": [
+        "GRAPH-007",
+        "GRAPH-008"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/ForceGraph.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Prefer direct mappings to existing D3 force parameters; if a broader Obsidian-style control would require disproportionate custom behavior, defer it rather than expanding scope inside this task."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }

@@ -76,10 +76,16 @@ Desired feel:
 - softly luminous
 
 Preferred supporting elements:
-- floating legend or filter tray
+- one unified graph tuning panel
 - compact focus control
 - contextual graph overlays
 - unobtrusive theme/accent controls
+
+Graph control panel guidance:
+- the panel should stay hidden by default behind a compact trigger
+- the expanded panel should feel like a soft docked instrument for tuning the graph, not a permanent sidebar
+- legend, filtering, and force-tuning controls should feel like one family of controls rather than separate floating widgets
+- persisted graph preferences should preserve user tuning without adding heavy chrome to the page
 
 ### 2. Notes Search -> Note Detail
 

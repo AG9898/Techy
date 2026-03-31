@@ -21,7 +21,7 @@ Each task should include:
 - Use the current repo naming style for IDs, such as `UI-016`, `NOTES-011`, `AI-010`, or another prefix that matches the subsystem.
 - Default new tasks to `status: "todo"` unless the user asks for a different workflow state.
 - Keep `type` aligned to the task intent, such as `feature`, `implementation`, `ops`, or `scaffolding`.
-- Write `description` as one implementation-ready paragraph that states the intended behavior and boundaries.
+- Write `description` as one detailed implementation-ready paragraph that states the intended behavior and boundaries.
 - Make `acceptance_criteria` a short list of observable outcomes.
 - Use `depends_on` for prerequisite tasks already identified.
 - Use `blocked_by` when an external or earlier decision prevents work from starting.

@@ -103,9 +103,37 @@ Rules:
 
 - Full-viewport SVG adjacent to the left rail
 - Minimal chrome
-- Floating legend and filter controls
+- Bottom-right floating graph control panel with a compact collapsed trigger
 - Left rail should auto-tuck or minimize by default here, while still remaining expandable
 - Graph should reflect new links immediately after assistant-confirmed note creation
+- Graph controls should absorb legend and filter behavior into one unified panel instead of scattering multiple floating fragments
+
+### Graph Control Panel
+
+The graph page should use a single Obsidian-inspired tuning panel rather than separate legend and filter trays.
+
+Structure:
+```
+[ Graph controls trigger ]
+  -> expanded panel
+[ Appearance ]
+[ Filters ]
+[ Physics ]
+[ Reset to defaults ]
+```
+
+Rules:
+- The trigger lives in the bottom-right corner of the graph page
+- The panel is collapsed by default on load so the graph remains the hero
+- Expanded state is transient UI state, but the chosen graph settings persist locally across visits
+- The panel should feel like a soft instrument dock, not a dashboard sidebar
+- The panel replaces the old separate legend and filter overlays
+- Reset restores the documented default graph preset rather than clearing the graph into an undefined state
+
+Panel sections:
+- `Appearance` includes node sizing, link thickness, and text fade controls
+- `Filters` includes the graph colour mode plus category/status filtering controls
+- `Physics` includes force-layout controls such as link distance, repulsion, spacing, centering, and simulation tuning values that map cleanly to D3
 
 ### Notes List
 
@@ -183,7 +211,10 @@ Rules:
 - Use Melt primitives where they improve collapse, disclosure, and keyboard behavior
 
 ### `ForceGraph.svelte`
-- Keep current graph legend/filter/edge drilldown work
+- Replace separate legend/filter overlays with one unified graph control panel
+- Persist graph-view preferences locally in the browser
+- Support live graph tuning for appearance, filters, and D3 force behavior
+- Keep edge drilldown work
 - Ensure graph colors remain legible in both tonal themes
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
