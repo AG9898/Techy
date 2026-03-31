@@ -230,7 +230,7 @@
 		margin-bottom: 0.2rem;
 	}
 	.err-file {
-		font-family: monospace;
+		font-family: var(--font-mono);
 		color: var(--accent-primary);
 	}
 	.result-empty {

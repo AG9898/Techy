@@ -258,7 +258,7 @@
 		background: var(--bg-overlay);
 		border-radius: 3px;
 		padding: 0.1em 0.3em;
-		font-family: var(--font-mono, 'Fira Code', monospace);
+		font-family: var(--font-mono);
 		font-size: 0.85em;
 	}
 	.preview-pane :global(pre) {
@@ -331,7 +331,7 @@
 
 	textarea {
 		resize: vertical;
-		font-family: var(--font-mono, 'Fira Code', 'Cascadia Code', monospace);
+		font-family: var(--font-mono);
 		font-size: 0.85rem;
 		line-height: 1.65;
 	}

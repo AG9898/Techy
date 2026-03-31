@@ -1859,7 +1859,7 @@
       "id": "UI-012",
       "group_id": "UI",
       "title": "Adopt Space Mono as the authoritative project font",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Make Space Mono the primary typeface across the app and align theme tokens and docs around that decision.",
