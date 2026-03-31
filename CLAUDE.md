@@ -14,8 +14,9 @@ Techy is a **personal, single-user tech knowledge graph** web app. It stores str
 |-----|-------------|
 | `docs/PRD.md` | Feature requirements and product constraints |
 | `docs/NOTES.md` | Note schema, tags, categories, template, wikilink format, authoring rules |
+| `docs/schema.md` | Database tables, relationships, and persistence boundaries |
 | `docs/API.md` | All routes, form actions, and JSON API endpoints |
-| `docs/ARCHITECTURE.md` | System design, file structure, DB schema, auth flow |
+| `docs/ARCHITECTURE.md` | System design, file structure, auth flow, and runtime boundaries |
 | `docs/DESIGN-SPEC.md` | Colour palette, typography, component specs, layout patterns |
 | `docs/STYLE-GUIDE.md` | High-level visual direction, page composition, theming, and motion rules for UI work |
 | `docs/DECISIONS.md` | Why specific technologies were chosen — check before proposing alternatives |
@@ -35,7 +36,8 @@ Techy is a **personal, single-user tech knowledge graph** web app. It stores str
 ### After completing a task
 1. Mark the task `"status": "done"` in `docs/workboard.json`.
 2. Check if any docs need updating to reflect your changes — **document concurrency must always be maintained**:
-   - `docs/ARCHITECTURE.md` — added routes, changed DB schema, modified auth flow
+   - `docs/ARCHITECTURE.md` — changed system structure, auth flow, or runtime boundaries
+   - `docs/schema.md` — changed DB schema, persistence shape, or table relationships
    - `docs/API.md` — added or changed any routes or endpoints
    - `docs/NOTES.md` — changed note schema, wikilink behaviour, tags, or categories
    - `docs/DESIGN-SPEC.md` — added new components or changed colours/layout

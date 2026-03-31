@@ -6,6 +6,8 @@ All routes are SvelteKit. Page routes return SSR HTML. Form actions use `applica
 
 Protected app routes are grouped under `src/routes/(app)` and enforced by `src/routes/(app)/+layout.server.ts`. Public auth routes remain outside that group at `/signin`, `/auth/*`, and `/debug/auth/*`.
 
+See [`docs/schema.md`](schema.md) for persisted-table reference and [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) for runtime subsystem boundaries.
+
 ---
 
 ## Page Routes
@@ -49,6 +51,7 @@ Unified notes repository surface with integrated search, category filtering, and
 **Notes:**
 - `/notes` is the unified browsing, search, and management surface for existing notes.
 - The first implementation pass may keep filtering on the client over the loaded notes dataset.
+- `orphanIds` is server-computed from notes with no incoming and no outgoing `note_links`.
 - New note creation is no longer expected to originate from a dedicated `/notes/new` page.
 - Standalone `/search` is being retired after the notes-page migration lands.
 
@@ -364,6 +367,7 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 
 **Behaviour:**
 - In all modes, the assistant remains conversational.
+- The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
 - In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - In update mode, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
@@ -419,6 +423,7 @@ Persist a confirmed assistant proposal.
 - `delete_note`
 
 **Behaviour:**
+- This endpoint is the assistant mutation boundary for confirmed create, update, and delete proposals.
 - `create_note` inserts the note, parses `[[wikilinks]]`, and syncs `note_links` immediately.
 - If `linkedNotePatches` are included, the commit also updates those existing note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows before returning.
 - `update_note` stores a revision snapshot before updating the note and re-syncs links.

@@ -203,6 +203,7 @@ Opens Drizzle Studio at http://local.drizzle.studio — a GUI for browsing and e
 ## Further Reading
 
 - [`docs/NOTES.md`](NOTES.md) — Note schema, template, wikilink format, authoring rules
+- [`docs/schema.md`](schema.md) — Database tables, relationships, and persistence boundaries
 - [`docs/API.md`](API.md) — All routes, form actions, and API endpoints
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — System design and data flow
 - [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) — High-level UI direction, theming, and motion rules

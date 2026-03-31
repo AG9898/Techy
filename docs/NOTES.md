@@ -2,11 +2,13 @@
 
 This document is the single source of truth for note content: what fields a note has, how to write one, how links work, and how assistant-driven note creation must behave.
 
+For the database-table reference behind these note fields, see [`docs/schema.md`](schema.md).
+
 ---
 
 ## Note Schema
 
-Notes are stored in the `notes` table in Neon PostgreSQL. The schema source of truth is `src/lib/server/db/schema.ts`.
+Notes are stored in the `notes` table in Neon PostgreSQL. See [`docs/schema.md`](schema.md) for the full database reference and `src/lib/server/db/schema.ts` for the implemented Drizzle source of truth.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
