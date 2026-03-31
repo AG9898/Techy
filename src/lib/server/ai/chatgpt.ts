@@ -104,18 +104,20 @@ export async function generateNote(topic: string): Promise<string> {
 /**
  * Unified conversation endpoint for OpenAI — returns a conversational reply and an optional note proposal.
  * @param messages - Full conversation transcript
- * @param mode - "chat" for conversation only, "create" for note proposal generation
+ * @param mode - "chat" | "create" | "update"
  * @param model - A server-approved OpenAI model ID
+ * @param currentNoteBody - Saved note body for update mode comparison
  */
 export async function respondConversation(
 	messages: ConversationMessage[],
-	mode: 'chat' | 'create',
+	mode: 'chat' | 'create' | 'update',
 	model: string,
 	researchContext?: ResearchContext,
-	noteTitles?: string[]
+	noteTitles?: string[],
+	currentNoteBody?: string
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles);
+	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles, currentNoteBody);
 
 	const response = await client.chat.completions.create({
 		model,

@@ -8,6 +8,7 @@ import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
 import { db } from '$lib/server/db/index.js';
 import { notes } from '$lib/server/db/schema.js';
+import { eq } from 'drizzle-orm';
 
 /**
  * POST /api/assistant/respond
@@ -29,7 +30,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Request body must be a JSON object' }, { status: 400 });
 	}
 
-	const { messages, mode, provider, model, topicCache } = body as Record<string, unknown>;
+	const { messages, mode, provider, model, topicCache, noteId } = body as Record<string, unknown>;
 
 	// Validate messages
 	if (!Array.isArray(messages) || messages.length === 0) {
@@ -52,8 +53,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	// Validate mode
-	if (mode !== 'chat' && mode !== 'create') {
-		return json({ error: 'mode must be "chat" or "create"' }, { status: 400 });
+	if (mode !== 'chat' && mode !== 'create' && mode !== 'update') {
+		return json({ error: 'mode must be "chat", "create", or "update"' }, { status: 400 });
 	}
 
 	// Validate provider/model
@@ -66,6 +67,23 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ error: `Invalid provider/model combination: ${provider}/${model}` },
 			{ status: 400 }
 		);
+	}
+
+	// Validate noteId for update mode
+	let currentNoteBody: string | undefined;
+	if (mode === 'update') {
+		if (typeof noteId !== 'string' || !noteId) {
+			return json({ error: 'noteId is required for mode "update"' }, { status: 400 });
+		}
+		const noteRow = await db
+			.select({ body: notes.body })
+			.from(notes)
+			.where(eq(notes.id, noteId))
+			.limit(1);
+		if (!noteRow.length) {
+			return json({ error: `Note not found: ${noteId}` }, { status: 400 });
+		}
+		currentNoteBody = noteRow[0].body;
 	}
 
 	const typedMessages = messages as ConversationMessage[];
@@ -102,13 +120,30 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		let result;
 		if (provider === 'anthropic') {
-			result = await respondWithClaude(typedMessages, mode, model, researchContext, noteTitles);
+			result = await respondWithClaude(
+				typedMessages,
+				mode,
+				model,
+				researchContext,
+				noteTitles,
+				currentNoteBody
+			);
 		} else {
-			result = await respondWithOpenAI(typedMessages, mode, model, researchContext, noteTitles);
+			result = await respondWithOpenAI(
+				typedMessages,
+				mode,
+				model,
+				researchContext,
+				noteTitles,
+				currentNoteBody
+			);
 		}
 
-		// Attach server-side metadata to any create_note proposal draft
-		if (result.proposal?.type === 'create_note' && result.proposal.draft) {
+		// Attach server-side metadata to any create_note or update_note proposal draft
+		if (
+			(result.proposal?.type === 'create_note' || result.proposal?.type === 'update_note') &&
+			result.proposal.draft
+		) {
 			const lastMsg = [...typedMessages].reverse().find((m) => m.role === 'user');
 			result.proposal.draft.aiGenerated = true;
 			result.proposal.draft.aiModel = model;

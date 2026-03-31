@@ -1540,19 +1540,19 @@
       "estimate": "L"
     },
     {
-      "id": "NOTES-009",
+      "id": "NOTES-009a",
       "group_id": "NOTES",
-      "title": "Assistant update proposals with materiality gate and revision-backed apply",
-      "status": "todo",
+      "title": "Update-mode prompt and respond endpoint",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
-      "summary": "Only propose assistant-driven note updates for material issues, and preserve revision history when those updates are applied.",
-      "description": "Implement update proposal generation and commit behavior for existing notes. The assistant should compare saved note content against live web research and only return an `update_note` proposal when the note appears materially incorrect, materially outdated, or substantially incomplete. On commit, capture a revision snapshot before applying the update and re-sync links from the new body.",
+      "summary": "Add update mode to the respond endpoint with a materiality-gated system prompt.",
+      "description": "Add RESPOND_SYSTEM_PROMPT_UPDATE to prompts.ts that instructs the LLM to compare the saved note body against live research and only return an update_note proposal when the note is materially wrong, outdated, or substantially incomplete — not for minor or cosmetic differences. Extend /api/assistant/respond to accept mode:\"update\" with a noteId param; look up the saved note body from the DB and inject it into the prompt context. Extend respondConversation in claude.ts and chatgpt.ts to accept and forward the current note body. Update docs/API.md with the new mode and noteId param.",
       "acceptance_criteria": [
-        "Minor or cosmetic differences do not trigger an `update_note` proposal",
-        "Materially wrong, outdated, or substantially incomplete notes can trigger an editable `update_note` proposal",
-        "Confirming an `update_note` proposal stores a revision snapshot before the note is updated",
-        "Updated note bodies re-sync `note_links` and preserve existing rename-propagation behavior"
+        "Minor or cosmetic differences do not trigger an update_note proposal",
+        "Materially wrong, outdated, or substantially incomplete notes trigger an editable update_note proposal",
+        "mode:\"update\" with a valid noteId succeeds; missing/invalid noteId returns 400",
+        "npm run check passes with 0 errors"
       ],
       "depends_on": [
         "ASSIST-006",
@@ -1561,25 +1561,61 @@
       ],
       "blocked_by": [],
       "files": [
-        "src/routes/api/assistant/respond/+server.ts",
-        "src/routes/api/assistant/commit/+server.ts",
-        "src/lib/server/assistant/commit.ts",
         "src/lib/server/ai/prompts.ts",
-        "src/routes/(app)/chat/+page.svelte"
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/ai/claude.ts",
+        "src/lib/server/ai/chatgpt.ts",
+        "docs/API.md"
       ],
       "docs": [
-        "docs/PRD.md",
         "docs/API.md",
-        "docs/ARCHITECTURE.md",
-        "docs/DECISIONS.md"
+        "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "Materiality judgment belongs to the assistant proposal stage, but the commit path must remain generic and safe."
+        "commitUpdate in src/lib/server/assistant/commit.ts already snapshots revisions and re-syncs links — no changes needed there.",
+        "The materiality gate is purely a prompt instruction; do not add application-level diff logic."
       ],
       "commands": [
         "npm run check"
       ],
-      "estimate": "L"
+      "estimate": "M"
+    },
+    {
+      "id": "NOTES-009b",
+      "group_id": "NOTES",
+      "title": "Chat page update proposal UI",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Wire the update flow into the /chat page so users can select a note and review an update_note proposal.",
+      "description": "Add an update review flow to the /chat page. The page.server.ts load function should expose a list of notes (id, title, slug) for selection. In the Svelte component, add a note-picker (a select or searchable input) that, when a note is chosen, sends a message to /api/assistant/respond with mode:\"update\" and the noteId. Display the returned update_note proposal in an editable panel (same draft-editor pattern as create_note). A confirm button calls /api/assistant/commit with the update_note proposal; on success show the slug link. Also handle the case where the assistant returns no proposal (no material issues found).",
+      "acceptance_criteria": [
+        "User can select an existing note and trigger an update review from the chat page",
+        "The update_note proposal is displayed in an editable panel before confirmation",
+        "Confirming calls /api/assistant/commit and shows a success link",
+        "When no proposal is returned the assistant message explains why (no material issues)",
+        "npm run check passes with 0 errors"
+      ],
+      "depends_on": [
+        "NOTES-009a"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.server.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Follow the existing create_note proposal panel pattern — do not invent new UI primitives.",
+        "The note-picker does not need to be fancy; a simple <select> is acceptable at this stage."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     },
     {
       "id": "NOTES-010",

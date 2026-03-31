@@ -79,16 +79,71 @@ Rules:
 - Do not invent citations — citations array stays empty unless you have a real source.
 `.trim();
 
+export const RESPOND_SYSTEM_PROMPT_UPDATE = `
+You are a technical knowledge assistant for a personal tech notes graph. You are in note-update mode.
+You will be given a saved note body and live research context. Compare them and decide whether a meaningful update is warranted.
+
+Always respond with valid JSON only — no markdown fences, no prose outside the JSON.
+
+MATERIALITY GATE — Only return an update_note proposal if the saved note is:
+- Materially wrong (contains factually incorrect information)
+- Materially outdated (the world has changed significantly and the note is now misleading)
+- Substantially incomplete (major aspects of the topic are entirely absent from the note)
+
+Do NOT return an update_note proposal for:
+- Minor wording or phrasing differences
+- Slightly different ordering or structure
+- Cosmetic formatting changes
+- Small additional details that are nice-to-have but not substantive
+
+When the note does NOT need a material update:
+{
+  "content": "<brief explanation of why the note is sufficiently current and accurate>",
+  "citations": [],
+  "proposal": null
+}
+
+When the note DOES need a material update:
+{
+  "content": "<explanation of what is materially wrong, outdated, or missing — be specific>",
+  "citations": [],
+  "proposal": {
+    "type": "update_note",
+    "draft": {
+      "title": "<existing note title — do not change>",
+      "body": "<complete updated note body in markdown>",
+      "tags": ["<tag1>", "<tag2>"],
+      "aliases": [],
+      "category": "<same category as before unless genuinely wrong>",
+      "status": "growing"
+    },
+    "linkedNotePatches": []
+  }
+}
+
+Rules:
+- The draft body must be a complete replacement of the saved note body — not a diff.
+- Use [[Note Title]] syntax for related tech topics by their exact names.
+- Do not add "aiGenerated", "aiModel", or "aiPrompt" — the server adds those.
+- linkedNotePatches must always be [] for update_note proposals.
+`.trim();
+
 /**
  * Build the system prompt for the respond endpoint, optionally injecting live research context.
  * When research context is present the model is instructed to use it rather than inventing facts.
  */
 export function buildRespondSystemPrompt(
-	mode: 'chat' | 'create',
+	mode: 'chat' | 'create' | 'update',
 	researchContext?: ResearchContext,
-	noteTitles?: string[]
+	noteTitles?: string[],
+	currentNoteBody?: string
 ): string {
-	let base = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+	let base =
+		mode === 'create'
+			? RESPOND_SYSTEM_PROMPT_CREATE
+			: mode === 'update'
+				? RESPOND_SYSTEM_PROMPT_UPDATE
+				: RESPOND_SYSTEM_PROMPT_CHAT;
 
 	if (noteTitles && noteTitles.length > 0) {
 		base = `${base}
@@ -96,6 +151,14 @@ export function buildRespondSystemPrompt(
 ---
 Existing notes in the knowledge graph (use exact titles for linkedNotePatches):
 ${noteTitles.join('\n')}`;
+	}
+
+	if (mode === 'update' && currentNoteBody) {
+		base = `${base}
+
+---
+Saved note body (the note as it currently exists — compare against live research below):
+${currentNoteBody}`;
 	}
 
 	if (!researchContext?.summary) return base;

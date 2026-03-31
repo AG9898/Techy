@@ -252,10 +252,11 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 | Field | Required | Description |
 |-------|----------|-------------|
 | `messages` | yes | Full conversation transcript for the current client-side session |
-| `mode` | yes | `"chat"` \| `"create"` |
+| `mode` | yes | `"chat"` \| `"create"` \| `"update"` |
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
 | `topicCache` | no | Per-conversation research cache used to avoid re-researching the same topic repeatedly |
+| `noteId` | conditional | UUID of the note to compare; required when `mode` is `"update"` |
 
 **Response (200):**
 ```json
@@ -301,13 +302,13 @@ Primary assistant endpoint for conversation, live research, and proposal generat
 **Behaviour:**
 - In all modes, the assistant remains conversational.
 - In create mode, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
-- Live web research is required for note creation and for note-comparison work.
+- In update mode, the server looks up the saved note body by `noteId` and injects it into the system prompt alongside live research context. The assistant compares the two and only returns an `update_note` proposal when the note is materially wrong, materially outdated, or substantially incomplete. Minor or cosmetic differences do not trigger a proposal.
+- Live web research is performed for all modes including update, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
-- For existing-note comparison, the assistant should only return an `update_note` proposal when the saved note appears materially incorrect, materially outdated, or substantially incomplete.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
 
 **Errors:**
-- `400` — invalid body, missing messages, invalid mode, or invalid provider/model combination
+- `400` — invalid body, missing messages, invalid mode, invalid provider/model combination, or missing/invalid `noteId` for update mode
 - `401` — invalid or missing provider API key
 - `429` — provider rate limit exceeded
 - `500` — assistant orchestration or provider failure
