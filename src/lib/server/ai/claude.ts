@@ -220,27 +220,103 @@ export async function respondConversation(
 }
 
 function parseRespondResponse(text: string): AssistantRespondResult {
-	let parsed: {
-		content?: string;
-		citations?: { title: string; url: string }[];
-		proposal?: NoteProposal | null;
-	};
-	try {
-		parsed = JSON.parse(text) as typeof parsed;
-	} catch {
-		// Fallback: treat the entire response as plain conversational content
-		return { assistantMessage: { content: text, citations: [] }, proposal: null };
+	for (const candidate of getJsonCandidates(text)) {
+		try {
+			const parsed = JSON.parse(candidate) as {
+				content?: string;
+				citations?: { title: string; url: string }[];
+				proposal?: NoteProposal | null;
+			};
+
+			if (typeof parsed.content !== 'string' || !parsed.content) {
+				continue;
+			}
+
+			return {
+				assistantMessage: {
+					content: parsed.content,
+					citations: Array.isArray(parsed.citations) ? parsed.citations : []
+				},
+				proposal: parsed.proposal ?? null
+			};
+		} catch {
+			continue;
+		}
 	}
 
-	if (typeof parsed.content !== 'string' || !parsed.content) {
-		throw new Error('Assistant response missing content field');
+	// Fall back to plain conversational content if Claude wraps the JSON badly.
+	return { assistantMessage: { content: text, citations: [] }, proposal: null };
+}
+
+function getJsonCandidates(text: string): string[] {
+	const trimmed = text.trim();
+	const candidates = new Set<string>();
+
+	if (trimmed) {
+		candidates.add(trimmed);
 	}
 
-	return {
-		assistantMessage: {
-			content: parsed.content,
-			citations: Array.isArray(parsed.citations) ? parsed.citations : []
-		},
-		proposal: parsed.proposal ?? null
-	};
+	const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+	if (fencedMatch?.[1]) {
+		candidates.add(fencedMatch[1].trim());
+	}
+
+	const firstObject = extractFirstJsonObject(trimmed);
+	if (firstObject) {
+		candidates.add(firstObject);
+	}
+
+	return [...candidates];
+}
+
+function extractFirstJsonObject(text: string): string | null {
+	let start = -1;
+	let depth = 0;
+	let inString = false;
+	let escaped = false;
+
+	for (let i = 0; i < text.length; i += 1) {
+		const char = text[i];
+
+		if (start === -1) {
+			if (char === '{') {
+				start = i;
+				depth = 1;
+			}
+			continue;
+		}
+
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+
+		if (char === '\\') {
+			escaped = true;
+			continue;
+		}
+
+		if (char === '"') {
+			inString = !inString;
+			continue;
+		}
+
+		if (inString) {
+			continue;
+		}
+
+		if (char === '{') {
+			depth += 1;
+			continue;
+		}
+
+		if (char === '}') {
+			depth -= 1;
+			if (depth === 0) {
+				return text.slice(start, i + 1);
+			}
+		}
+	}
+
+	return null;
 }

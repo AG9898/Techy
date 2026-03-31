@@ -19,7 +19,7 @@ Notes are stored in the `notes` table in Neon PostgreSQL. The schema source of t
 | `category` | text | no | One of the Hub Categories below. |
 | `status` | enum | no | `stub` \| `growing` \| `mature`. Default: `stub`. |
 | `ai_generated` | boolean | no | `true` if created or materially revised by an AI provider. Default: `false`. |
-| `ai_model` | text | no | Model name (for example `claude-opus-4-6` or `gpt-4o`). Null if not AI. |
+| `ai_model` | text | no | Model name (for example `claude-opus-4-6` or `gpt-5-mini`). Null if not AI. |
 | `ai_prompt` | text | no | The originating assistant request or topic prompt. Null if not AI. |
 | `created_at` | timestamp | auto | Set on insert. |
 | `updated_at` | timestamp | auto | Must be set manually on update: `updatedAt: new Date()`. |

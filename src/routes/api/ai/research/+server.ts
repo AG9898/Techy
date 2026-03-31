@@ -2,6 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { researchTopic as claudeResearch } from '$lib/server/ai/claude.js';
 import { researchTopic as chatgptResearch } from '$lib/server/ai/chatgpt.js';
+import {
+	ANTHROPIC_DEFAULT_MODEL,
+	OPENAI_DEFAULT_MODEL
+} from '$lib/server/ai/models.js';
 
 /**
  * POST /api/ai/research
@@ -32,7 +36,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			provider === 'chatgpt'
 				? await chatgptResearch(topic.trim())
 				: await claudeResearch(topic.trim());
-		const model = provider === 'chatgpt' ? 'gpt-4o' : 'claude-opus-4-6';
+		const model = provider === 'chatgpt' ? OPENAI_DEFAULT_MODEL : ANTHROPIC_DEFAULT_MODEL;
 		return json({ body, model });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

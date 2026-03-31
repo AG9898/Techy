@@ -8,6 +8,10 @@ import { extractWikilinks } from '$lib/utils/wikilinks.js';
 import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks } from '$lib/server/db/schema.js';
 import { eq, or } from 'drizzle-orm';
+import {
+	ANTHROPIC_DEFAULT_MODEL,
+	OPENAI_DEFAULT_MODEL
+} from '$lib/server/ai/models.js';
 
 /**
  * POST /api/ai/generate-note
@@ -98,7 +102,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			category,
 			status,
 			aiGenerated: true,
-			aiModel: provider === 'chatgpt' ? 'gpt-4o' : 'claude-opus-4-6',
+			aiModel: provider === 'chatgpt' ? OPENAI_DEFAULT_MODEL : ANTHROPIC_DEFAULT_MODEL,
 			aiPrompt: topic
 		})
 		.returning({ id: notes.id, slug: notes.slug, title: notes.title });

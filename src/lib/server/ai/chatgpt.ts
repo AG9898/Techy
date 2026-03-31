@@ -8,6 +8,7 @@ import {
 } from './prompts.js';
 import type { ConversationMessage, AssistantRespondResult, NoteProposal } from './claude.js';
 import type { ResearchContext } from '$lib/server/assistant/research.js';
+import { OPENAI_DEFAULT_MODEL } from './models.js';
 
 /**
  * Research a technology topic using GPT and return a markdown note body.
@@ -17,16 +18,15 @@ import type { ResearchContext } from '$lib/server/assistant/research.js';
 export async function researchTopic(topic: string): Promise<string> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-	const response = await client.chat.completions.create({
-		model: 'gpt-4o',
-		max_tokens: 1024,
-		messages: [
-			{ role: 'system', content: RESEARCH_SYSTEM_PROMPT },
-			{ role: 'user', content: topic }
-		]
+	const response = await client.responses.create({
+		model: OPENAI_DEFAULT_MODEL,
+		instructions: RESEARCH_SYSTEM_PROMPT,
+		input: topic,
+		max_output_tokens: 1024,
+		reasoning: getReasoningConfig(OPENAI_DEFAULT_MODEL)
 	});
 
-	const content = response.choices[0]?.message?.content;
+	const content = response.output_text;
 	if (!content) {
 		throw new Error('Unexpected empty response from OpenAI API');
 	}
@@ -49,16 +49,15 @@ export async function getNextNoteRecommendations(
 Existing note topics (do NOT suggest these):
 ${existingTopics.join(', ')}`;
 
-	const response = await client.chat.completions.create({
-		model: 'gpt-4o',
-		max_tokens: 256,
-		messages: [
-			{ role: 'system', content: NOTE_RECOMMENDATIONS_SYSTEM_PROMPT },
-			{ role: 'user', content: userMessage }
-		]
+	const response = await client.responses.create({
+		model: OPENAI_DEFAULT_MODEL,
+		instructions: NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
+		input: userMessage,
+		max_output_tokens: 256,
+		reasoning: getReasoningConfig(OPENAI_DEFAULT_MODEL)
 	});
 
-	const content = response.choices[0]?.message?.content;
+	const content = response.output_text;
 	if (!content) {
 		throw new Error('Unexpected empty response from OpenAI API');
 	}
@@ -85,16 +84,15 @@ ${existingTopics.join(', ')}`;
 export async function generateNote(topic: string): Promise<string> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
-	const response = await client.chat.completions.create({
-		model: 'gpt-4o',
-		max_tokens: 2048,
-		messages: [
-			{ role: 'system', content: NOTE_GENERATION_SYSTEM_PROMPT },
-			{ role: 'user', content: `Generate a structured note about: ${topic}` }
-		]
+	const response = await client.responses.create({
+		model: OPENAI_DEFAULT_MODEL,
+		instructions: NOTE_GENERATION_SYSTEM_PROMPT,
+		input: `Generate a structured note about: ${topic}`,
+		max_output_tokens: 2048,
+		reasoning: getReasoningConfig(OPENAI_DEFAULT_MODEL)
 	});
 
-	const content = response.choices[0]?.message?.content;
+	const content = response.output_text;
 	if (!content) {
 		throw new Error('Unexpected empty response from OpenAI API');
 	}
@@ -119,17 +117,19 @@ export async function respondConversation(
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 	const systemPrompt = buildRespondSystemPrompt(mode, researchContext, noteTitles, currentNoteBody);
 
-	const response = await client.chat.completions.create({
+	const response = await client.responses.create({
 		model,
-		max_tokens: 4096,
-		response_format: { type: 'json_object' },
-		messages: [
-			{ role: 'system', content: systemPrompt },
-			...messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
-		]
+		instructions: systemPrompt,
+		input: messages.map((m) => ({
+			type: 'message' as const,
+			role: m.role,
+			content: m.content
+		})),
+		max_output_tokens: 4096,
+		reasoning: getReasoningConfig(model)
 	});
 
-	const text = response.choices[0]?.message?.content;
+	const text = response.output_text;
 	if (!text) {
 		throw new Error('Unexpected empty response from OpenAI API');
 	}
@@ -156,4 +156,8 @@ export async function respondConversation(
 		},
 		proposal: parsed.proposal ?? null
 	};
+}
+
+function getReasoningConfig(model: string) {
+	return model.startsWith('gpt-5') ? { effort: 'medium' as const } : undefined;
 }
