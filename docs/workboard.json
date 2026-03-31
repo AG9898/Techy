@@ -1462,7 +1462,7 @@
       "id": "NOTES-007",
       "group_id": "NOTES",
       "title": "Assistant create-note persistence with immediate graph linking",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Persist confirmed assistant-created notes so graph connections appear immediately after save.",
