@@ -5,9 +5,9 @@ import {
 	NOTE_GENERATION_SYSTEM_PROMPT,
 	ASSISTANT_QUERY_SYSTEM_PROMPT,
 	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
-	RESPOND_SYSTEM_PROMPT_CHAT,
-	RESPOND_SYSTEM_PROMPT_CREATE
+	buildRespondSystemPrompt
 } from './prompts.js';
+import type { ResearchContext } from '$lib/server/assistant/research.js';
 
 // ── Shared types for the unified respond endpoint ────────────────────────────
 
@@ -195,10 +195,11 @@ ${existingTopics.join(', ')}`;
 export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create',
-	model: string
+	model: string,
+	researchContext?: ResearchContext
 ): Promise<AssistantRespondResult> {
 	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-	const systemPrompt = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+	const systemPrompt = buildRespondSystemPrompt(mode, researchContext);
 
 	const message = await client.messages.create({
 		model,

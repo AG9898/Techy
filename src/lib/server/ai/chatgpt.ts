@@ -4,10 +4,10 @@ import {
 	RESEARCH_SYSTEM_PROMPT,
 	NOTE_GENERATION_SYSTEM_PROMPT,
 	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
-	RESPOND_SYSTEM_PROMPT_CHAT,
-	RESPOND_SYSTEM_PROMPT_CREATE
+	buildRespondSystemPrompt
 } from './prompts.js';
 import type { ConversationMessage, AssistantRespondResult, NoteProposal } from './claude.js';
+import type { ResearchContext } from '$lib/server/assistant/research.js';
 
 /**
  * Research a technology topic using GPT and return a markdown note body.
@@ -110,10 +110,11 @@ export async function generateNote(topic: string): Promise<string> {
 export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create',
-	model: string
+	model: string,
+	researchContext?: ResearchContext
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const systemPrompt = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+	const systemPrompt = buildRespondSystemPrompt(mode, researchContext);
 
 	const response = await client.chat.completions.create({
 		model,

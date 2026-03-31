@@ -1,3 +1,5 @@
+import type { ResearchContext } from '$lib/server/assistant/research.js';
+
 /**
  * System prompts for AI-generated notes.
  * These are placeholders — fill in with your actual prompts when implementing AI features.
@@ -76,6 +78,24 @@ Rules:
 - Be informative, concise, and grounded. Reference specific tech topics where relevant.
 - Do not invent citations — citations array stays empty unless you have a real source.
 `.trim();
+
+/**
+ * Build the system prompt for the respond endpoint, optionally injecting live research context.
+ * When research context is present the model is instructed to use it rather than inventing facts.
+ */
+export function buildRespondSystemPrompt(
+	mode: 'chat' | 'create',
+	researchContext?: ResearchContext
+): string {
+	const base = mode === 'create' ? RESPOND_SYSTEM_PROMPT_CREATE : RESPOND_SYSTEM_PROMPT_CHAT;
+	if (!researchContext?.summary) return base;
+
+	return `${base}
+
+---
+Live web research context (use this as the factual basis for your response — do not invent facts not present here):
+${researchContext.summary}`;
+}
 
 export const RESPOND_SYSTEM_PROMPT_CREATE = `
 You are a technical knowledge assistant for a personal tech notes graph. You help users create structured knowledge notes.

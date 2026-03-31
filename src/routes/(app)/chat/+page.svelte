@@ -29,9 +29,15 @@
 		content: string;
 	}
 
+	interface Citation {
+		title: string;
+		url: string;
+	}
+
 	interface AssistantDisplayMessage {
 		type: 'assistant';
 		content: string;
+		citations: Citation[];
 		proposal: NoteProposal | null;
 	}
 
@@ -41,6 +47,7 @@
 	let isLoading = $state(false);
 	let displayMessages = $state<DisplayMessage[]>([]);
 	let conversationHistory = $state<{ role: 'user' | 'assistant'; content: string }[]>([]);
+	let topicCache = $state<Record<string, unknown>>({});
 	let conversationEl: HTMLDivElement | undefined;
 
 	let selectedProvider = $state(initProvider);
@@ -74,18 +81,24 @@
 					messages: conversationHistory,
 					mode: chatMode,
 					provider: selectedProvider,
-					model: selectedModel
+					model: selectedModel,
+					topicCache
 				})
 			});
 
 			if (res.ok) {
 				const data = await res.json();
 				const assistantContent: string = data.assistantMessage?.content ?? '';
+				const citations: Citation[] = data.assistantMessage?.citations ?? [];
 				const proposal: NoteProposal | null = data.proposal ?? null;
+
+				if (data.topicCache && typeof data.topicCache === 'object') {
+					topicCache = data.topicCache as Record<string, unknown>;
+				}
 
 				displayMessages = [
 					...displayMessages,
-					{ type: 'assistant', content: assistantContent, proposal }
+					{ type: 'assistant', content: assistantContent, citations, proposal }
 				];
 				conversationHistory = [
 					...conversationHistory,
@@ -97,13 +110,13 @@
 					(err as { error?: string }).error ?? 'Something went wrong. Please try again.';
 				displayMessages = [
 					...displayMessages,
-					{ type: 'assistant', content: errMessage, proposal: null }
+					{ type: 'assistant', content: errMessage, citations: [], proposal: null }
 				];
 			}
 		} catch {
 			displayMessages = [
 				...displayMessages,
-				{ type: 'assistant', content: 'Network error. Please try again.', proposal: null }
+				{ type: 'assistant', content: 'Network error. Please try again.', citations: [], proposal: null }
 			];
 		}
 
@@ -191,6 +204,18 @@
 						{:else}
 							<div class="assistant-message">
 								<p class="summary-text">{msg.content}</p>
+								{#if msg.citations?.length}
+									<div class="citations-list">
+										{#each msg.citations as citation}
+											<a
+												class="citation-link"
+												href={citation.url}
+												target="_blank"
+												rel="noopener noreferrer"
+											>{citation.title}</a>
+										{/each}
+									</div>
+								{/if}
 								{#if msg.proposal?.type === 'create_note' && msg.proposal.draft}
 									<div class="proposal-card">
 										<div class="proposal-header">
@@ -412,6 +437,35 @@
 		line-height: 1.75;
 		color: var(--text-secondary);
 		margin: 0;
+	}
+
+	/* ── Citations list ─────────────────────────────────────────────── */
+	.citations-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		margin-top: -0.25rem;
+	}
+
+	.citation-link {
+		display: inline-block;
+		background: var(--bg-raised);
+		border: 1px solid var(--border-soft);
+		border-radius: 6px;
+		padding: 0.15rem 0.5rem;
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.15s ease, border-color 0.15s ease;
+		max-width: 220px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.citation-link:hover {
+		color: var(--accent-primary);
+		border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
 	}
 
 	/* ── Note proposal card ──────────────────────────────────────────── */

@@ -1382,7 +1382,7 @@
       "id": "ASSIST-006",
       "group_id": "ASSIST",
       "title": "Live web research integration and per-conversation topic cache",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Require live web research for assistant note creation and note comparison, while caching topic context within a single conversation.",
