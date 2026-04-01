@@ -2056,7 +2056,7 @@
       "id": "GRAPH-008",
       "group_id": "GRAPH",
       "title": "Persist graph view settings and add reset-to-defaults behavior",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Store graph tuning and filter preferences in local browser state and let the panel restore a documented default preset.",

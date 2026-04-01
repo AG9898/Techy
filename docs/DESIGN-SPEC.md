@@ -233,7 +233,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - `getRadius` and `degreeMap` are module-level so they are accessible from the physics `$effect`
 - Edge drilldown remains a separate bottom-center overlay and is not absorbed into the control panel
 - `graph-container` uses `height: 100%` to fill the fixed-position `graph-wrapper` from `+page.svelte`
-- Future: persist graph-view preferences to `localStorage` across visits
+- Graph-view settings (`colorMode`, `hiddenCategories`, `hiddenStatuses`, `linkDistance`, `chargeStrength`, `collisionPadding`) persist to `localStorage` under key `techy:graph-settings`; loaded at init via `loadGraphSettings()` with per-field validation and clamping; written back by a dedicated `$effect`; `controlsOpen` is transient and excluded
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface

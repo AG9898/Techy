@@ -201,9 +201,10 @@ Current direction:
 
 `ForceGraph.svelte` remains client-only. The graph consumes server-loaded `nodes` and `links` arrays and should reflect saved note/link changes immediately after the corresponding server commit succeeds.
 
-Graph-view preferences are also owned entirely by the client. The graph control panel may persist local browser settings for appearance, filters, and force-layout tuning, but those settings do not introduce new API contracts or database-backed user preferences.
+Graph-view preferences are owned entirely by the client and persisted to `localStorage` under the key `techy:graph-settings`. The stored shape is `{ colorMode, hiddenCategories, hiddenStatuses, linkDistance, chargeStrength, collisionPadding }`. Settings are loaded at component init, sanitized/clamped to valid ranges, and written back via a `$effect` on every change. Malformed or missing values fall back to the documented defaults. This introduces no API contracts or database-backed user preferences.
 
 Current boundary:
 - graph data (`nodes` and `links`) is loaded on the server and passed into the page
 - graph rendering, simulation state, and graph-control interactions stay in the browser
 - persisted graph-view tuning is local UI state, not durable application data
+- `controlsOpen` (panel open/closed) is transient UI state and is not persisted

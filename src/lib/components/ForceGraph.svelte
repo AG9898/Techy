@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import * as d3 from 'd3';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 
 	type GraphNode = {
 		id: string;
@@ -51,20 +52,73 @@
 		)
 	);
 
-	// Controls panel state
+	// Graph settings persistence
+	const STORAGE_KEY = 'techy:graph-settings';
+
+	const DEFAULT_SETTINGS = {
+		colorMode: 'status' as 'status' | 'category',
+		hiddenCategories: [] as string[],
+		hiddenStatuses: [] as string[],
+		linkDistance: 80,
+		chargeStrength: 200,
+		collisionPadding: 5
+	};
+
+	function loadGraphSettings(): typeof DEFAULT_SETTINGS {
+		if (!browser) return { ...DEFAULT_SETTINGS };
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (!raw) return { ...DEFAULT_SETTINGS };
+			const p = JSON.parse(raw) as Record<string, unknown>;
+			return {
+				colorMode:
+					p.colorMode === 'status' || p.colorMode === 'category'
+						? (p.colorMode as 'status' | 'category')
+						: DEFAULT_SETTINGS.colorMode,
+				hiddenCategories:
+					Array.isArray(p.hiddenCategories) &&
+					(p.hiddenCategories as unknown[]).every((x) => typeof x === 'string')
+						? (p.hiddenCategories as string[])
+						: DEFAULT_SETTINGS.hiddenCategories,
+				hiddenStatuses:
+					Array.isArray(p.hiddenStatuses) &&
+					(p.hiddenStatuses as unknown[]).every((x) => typeof x === 'string')
+						? (p.hiddenStatuses as string[])
+						: DEFAULT_SETTINGS.hiddenStatuses,
+				linkDistance:
+					typeof p.linkDistance === 'number' && Number.isFinite(p.linkDistance)
+						? Math.max(30, Math.min(300, p.linkDistance))
+						: DEFAULT_SETTINGS.linkDistance,
+				chargeStrength:
+					typeof p.chargeStrength === 'number' && Number.isFinite(p.chargeStrength)
+						? Math.max(50, Math.min(600, p.chargeStrength))
+						: DEFAULT_SETTINGS.chargeStrength,
+				collisionPadding:
+					typeof p.collisionPadding === 'number' && Number.isFinite(p.collisionPadding)
+						? Math.max(0, Math.min(30, p.collisionPadding))
+						: DEFAULT_SETTINGS.collisionPadding
+			};
+		} catch {
+			return { ...DEFAULT_SETTINGS };
+		}
+	}
+
+	const _init = loadGraphSettings();
+
+	// Controls panel state (transient — not persisted)
 	let controlsOpen = $state(false);
 
 	// Colour mode toggle
-	let colorMode = $state<'status' | 'category'>('status');
+	let colorMode = $state<'status' | 'category'>(_init.colorMode);
 
 	// Filter state
-	let hiddenCategories = $state<string[]>([]);
-	let hiddenStatuses = $state<string[]>([]);
+	let hiddenCategories = $state<string[]>(_init.hiddenCategories);
+	let hiddenStatuses = $state<string[]>(_init.hiddenStatuses);
 
-	// Physics state (default values)
-	let linkDistance = $state(80);
-	let chargeStrength = $state(200); // user-facing positive; applied as negative internally
-	let collisionPadding = $state(5);
+	// Physics state
+	let linkDistance = $state(_init.linkDistance);
+	let chargeStrength = $state(_init.chargeStrength); // user-facing positive; applied as negative internally
+	let collisionPadding = $state(_init.collisionPadding);
 
 	// D3 selections — assigned in onMount, read in $effect
 	let nodeSelection: d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown> | null = null;
@@ -154,6 +208,22 @@
 		chargeForceRef.strength(-s);
 		simRef.force('collision', d3.forceCollide<GraphNode>((n) => getRadius(n.id) + cp));
 		simRef.alpha(0.3).restart();
+	});
+
+	// Persist settings to localStorage whenever they change
+	$effect(() => {
+		if (!browser) return;
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({
+				colorMode,
+				hiddenCategories,
+				hiddenStatuses,
+				linkDistance,
+				chargeStrength,
+				collisionPadding
+			})
+		);
 	});
 
 	let activeFilters = $derived(hiddenCategories.length + hiddenStatuses.length);
