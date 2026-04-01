@@ -50,25 +50,20 @@
 		{ id: 'rose', color: '#a94f5e' }
 	];
 
+	type RailMode = 'route-default' | 'manual-collapsed' | 'temporary' | 'pinned';
+
 	let railEl = $state<HTMLElement | null>(null);
-	let baseCollapsed = $state(page.url.pathname === '/');
-	let temporarilyExpanded = $state(false);
-	let manualCollapsedPreference = $state<boolean | null>(null);
-	let pointerInside = $state(false);
-	let focusInside = $state(false);
-	let closeTimer: ReturnType<typeof setTimeout> | null = null;
+	let railMode = $state<RailMode>('route-default');
 
 	const railContentId = 'main-navigation-content';
-	const closeDelayMs = 500;
-
-	const visuallyCollapsed = $derived(baseCollapsed && !temporarilyExpanded);
-
-	$effect(() => {
-		const routeDefaultCollapsed = page.url.pathname === '/';
-		if (manualCollapsedPreference === null) {
-			baseCollapsed = routeDefaultCollapsed;
-		}
-	});
+	const isPinned = $derived(railMode === 'pinned');
+	const isTemporaryOpen = $derived(railMode === 'temporary');
+	const visuallyExpanded = $derived(
+		railMode === 'pinned' ||
+			railMode === 'temporary' ||
+			(railMode === 'route-default' && page.url.pathname !== '/')
+	);
+	const visuallyCollapsed = $derived(!visuallyExpanded);
 
 	// Keep a CSS variable in sync so graph-page can offset its fixed position
 	$effect(() => {
@@ -92,92 +87,52 @@
 		return page.url.pathname.startsWith(href);
 	}
 
-	function clearCloseTimer() {
-		if (closeTimer) {
-			clearTimeout(closeTimer);
-			closeTimer = null;
-		}
+	function openRail() {
+		railMode = 'temporary';
 	}
 
-	function scheduleClose() {
-		clearCloseTimer();
-
-		if (!baseCollapsed || pointerInside || focusInside) return;
-
-		closeTimer = setTimeout(() => {
-			if (!pointerInside && !focusInside) {
-				temporarilyExpanded = false;
-			}
-			closeTimer = null;
-		}, closeDelayMs);
+	function collapseRail() {
+		railMode = 'manual-collapsed';
 	}
 
-	function openTemporarily() {
-		if (!baseCollapsed) return;
-
-		clearCloseTimer();
-		temporarilyExpanded = true;
-	}
-
-	function handlePointerEnter() {
-		pointerInside = true;
-		openTemporarily();
-	}
-
-	function handlePointerLeave() {
-		pointerInside = false;
-		scheduleClose();
-	}
-
-	function handleFocusIn() {
-		focusInside = true;
-		openTemporarily();
-	}
-
-	function handleFocusOut(event: FocusEvent) {
-		const nextTarget = event.relatedTarget;
-		if (nextTarget instanceof Node && railEl?.contains(nextTarget)) return;
-
-		focusInside = false;
-		scheduleClose();
-	}
-
-	function toggleRail() {
-		clearCloseTimer();
-
-		if (baseCollapsed) {
-			baseCollapsed = false;
-			manualCollapsedPreference = false;
-			temporarilyExpanded = false;
+	function togglePin() {
+		if (railMode === 'pinned') {
+			railMode = 'temporary';
 			return;
 		}
 
-		baseCollapsed = true;
-		manualCollapsedPreference = true;
-		temporarilyExpanded = false;
+		railMode = 'pinned';
 	}
 
 	function handleNavLinkClick() {
-		if (!baseCollapsed) return;
+		if (railMode !== 'temporary') return;
 
-		manualCollapsedPreference = true;
-		temporarilyExpanded = false;
-		clearCloseTimer();
+		collapseRail();
+	}
+
+	function handleWindowPointerDown(event: PointerEvent) {
+		if (railMode !== 'temporary') return;
+
+		const target = event.target;
+		if (target instanceof Node && railEl?.contains(target)) return;
+
+		collapseRail();
+	}
+
+	function handleWindowKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Escape' || railMode !== 'temporary') return;
+
+		collapseRail();
 	}
 </script>
 
-<svelte:window onbeforeunload={clearCloseTimer} />
+<svelte:window onpointerdown={handleWindowPointerDown} onkeydown={handleWindowKeydown} />
 
 <nav
 	bind:this={railEl}
 	class="rail"
 	class:collapsed={visuallyCollapsed}
-	class:base-collapsed={baseCollapsed}
 	aria-label="Main navigation"
-	onpointerenter={handlePointerEnter}
-	onpointerleave={handlePointerLeave}
-	onfocusin={handleFocusIn}
-	onfocusout={handleFocusOut}
 >
 	<!-- ── Header ──────────────────────────────────────────────── -->
 	<div class="rail-header">
@@ -188,18 +143,49 @@
 				<span class="logo-sub">Knowledge Graph</span>
 			</span>
 		</a>
-		<button
-			class="rail-toggle"
-			type="button"
-			aria-controls={railContentId}
-			aria-expanded={!visuallyCollapsed}
-			aria-label={baseCollapsed ? 'Expand navigation' : 'Collapse navigation'}
-			onclick={toggleRail}
-		>
-			<svg class="chevron" class:flipped={baseCollapsed} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<polyline points="15 18 9 12 15 6" />
-			</svg>
-		</button>
+		{#if visuallyCollapsed}
+			<button
+				class="rail-toggle"
+				type="button"
+				aria-controls={railContentId}
+				aria-expanded="false"
+				aria-label="Expand navigation"
+				onclick={openRail}
+			>
+				<svg class="chevron flipped" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<polyline points="15 18 9 12 15 6" />
+				</svg>
+			</button>
+		{:else}
+			<div class="rail-actions">
+				<button
+					class="rail-toggle"
+					type="button"
+					aria-controls={railContentId}
+					aria-pressed={isPinned}
+					aria-label={isPinned ? 'Unpin navigation' : 'Pin navigation'}
+					onclick={togglePin}
+				>
+					<svg class="pin-icon" class:active={isPinned} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M9 3h6" />
+						<path d="M10 3v5l-3 3v1h10v-1l-3-3V3" />
+						<path d="M12 12v9" />
+					</svg>
+				</button>
+				<button
+					class="rail-toggle"
+					type="button"
+					aria-controls={railContentId}
+					aria-expanded="true"
+					aria-label="Collapse navigation"
+					onclick={collapseRail}
+				>
+					<svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="15 18 9 12 15 6" />
+					</svg>
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- ── Primary nav ─────────────────────────────────────────── -->
@@ -361,6 +347,12 @@
 		padding-inline: 0;
 	}
 
+	.rail-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
 	.logo {
 		display: flex;
 		align-items: center;
@@ -450,6 +442,15 @@
 
 	.chevron.flipped {
 		transform: rotate(180deg);
+	}
+
+	.pin-icon {
+		transition: color 0.15s ease, transform 0.15s ease;
+	}
+
+	.pin-icon.active {
+		color: var(--accent-primary);
+		transform: rotate(-18deg);
 	}
 
 	/* ── Nav body (collapsible content region) ────────────────── */

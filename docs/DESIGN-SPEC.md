@@ -224,12 +224,14 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
   - `--rail-w-expanded: 192px`
   - `--rail-w-collapsed: 52px`
   - `--rail-w: var(--rail-w-expanded)` (updated live on `document.documentElement` to match the rail's current visual width)
-- The rail toggle owns `aria-expanded` / `aria-controls` directly and the nav body remains mounted so temporary hover-open transitions do not rebuild the shell
-- Route-aware default: the graph page (`/`) starts collapsed; all other routes start expanded unless the user has already pinned the rail open or closed for the current session
-- When the collapsed rail is hovered or receives focus inside, it opens immediately; when hover/focus leaves, it waits 500ms before closing; re-entry cancels the pending close
-- Clicking a nav item while the rail is in its collapsed mode preserves the collapsed state after navigation instead of re-expanding on the destination route
+- The rail toggle owns `aria-expanded` / `aria-controls` directly and the nav body remains mounted so temporary opens do not rebuild the shell
+- Route-aware default: the graph page (`/`) starts collapsed; other routes stay in their broader reading layout unless the user has explicitly collapsed or pinned the rail during the current session
+- Collapsed mode expands only on the explicit top-left toggle; there is no hover-driven expansion
+- When the rail is open but unpinned, it behaves as a temporary panel: route selection, outside click, or `Escape` collapses it again
+- When pinned, the rail stays expanded across navigation until the user unpins or collapses it
 - Nav labels (`span.nav-label`) fade out and collapse to zero width in `.rail.collapsed`; the toggle chevron rotates 180° (`.chevron.flipped`)
-- In the collapsed visual state, the header shows only the centered toggle button, the `T` logo mark is hidden, and the accent dot row is hidden to prevent clipping inside the 52px rail
+- In the collapsed visual state, the header shows only the centered expand toggle, the `T` logo mark is hidden, and the accent dot row is hidden to prevent clipping inside the 52px rail
+- In the expanded visual state, the header shows explicit pin/unpin and collapse controls so the user can promote a temporary open rail into a persistent one
 - Rail footer contains: dark/light theme toggle buttons, accent dot group (sand/lavender/mauve/rose), avatar + username, and sign-out form
 - Any fixed-position page that needs to offset from the rail must use `left: var(--rail-w)` — never a hardcoded pixel offset
 

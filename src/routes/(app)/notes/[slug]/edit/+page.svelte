@@ -121,6 +121,10 @@
 		class="delete-section"
 		onsubmit={(e) => { if (!confirm('Delete this note? This cannot be undone.')) e.preventDefault(); }}
 	>
+		<div class="delete-copy">
+			<p class="delete-eyebrow">Delete note</p>
+			<p class="delete-message">Permanently remove this note from your graph. This cannot be undone.</p>
+		</div>
 		<button type="submit" class="btn-delete">Delete Note</button>
 	</form>
 </div>
@@ -393,23 +397,79 @@
 	}
 
 	.delete-section {
-		border-top: 1px solid var(--border-soft);
-		padding-top: 0.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid color-mix(in srgb, var(--accent-red) 18%, var(--border-soft));
+		border-radius: 12px;
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--accent-red) 8%, transparent),
+				color-mix(in srgb, var(--bg-surface) 92%, transparent)
+			),
+			var(--bg-surface);
+	}
+
+	.delete-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.18rem;
+		min-width: 0;
+	}
+
+	.delete-eyebrow,
+	.delete-message {
+		margin: 0;
+	}
+
+	.delete-eyebrow {
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--accent-red) 82%, var(--text-secondary));
+	}
+
+	.delete-message {
+		max-width: 42ch;
+		font-size: 0.84rem;
+		line-height: 1.55;
+		color: var(--text-muted);
 	}
 
 	.btn-delete {
+		flex-shrink: 0;
 		background: none;
-		border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent-red) 45%, transparent);
 		color: var(--accent-red);
-		padding: 0.4rem 0.85rem;
-		border-radius: 8px;
+		padding: 0.5rem 0.95rem;
+		border-radius: 9999px;
 		cursor: pointer;
 		font-size: 0.85rem;
-		transition: background 150ms ease, border-color 150ms ease;
+		font-weight: 500;
+		transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 	}
 
 	.btn-delete:hover {
 		background: color-mix(in srgb, var(--accent-red) 10%, transparent);
 		border-color: var(--accent-red);
+	}
+
+	@media (max-width: 720px) {
+		.delete-section {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.delete-message {
+			max-width: none;
+		}
+
+		.btn-delete {
+			align-self: flex-start;
+		}
 	}
 </style>

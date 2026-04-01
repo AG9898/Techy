@@ -113,7 +113,8 @@ Desired feel:
 Rules:
 - the shared app shell should use a left rail instead of a horizontal top nav
 - the rail should be collapsible and able to auto-tuck on immersive routes like the graph
-- when the rail is in its collapsed mode, hover or keyboard focus may reveal it temporarily, but it should close quietly after a short delay instead of snapping shut immediately
+- collapsed rails should reopen only through an explicit user action, not passive hover
+- temporary expanded rails may close on route selection, outside click, or `Escape`, while pinned rails stay stable across navigation
 - shell behavior should preserve focus on the current page rather than constantly demanding attention
 - pages that scroll inside `.page-content` do not need to reference the rail width; only full-bleed fixed-position pages (currently only the graph) should anchor to `left: var(--rail-w)` — never a hardcoded pixel offset
 

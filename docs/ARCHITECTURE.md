@@ -40,7 +40,7 @@ The `--rail-w` CSS variable (set on `document.documentElement`) is the contract 
 |---|---|
 | `--rail-w-expanded` | `192px` |
 | `--rail-w-collapsed` | `52px` |
-| `--rail-w` | updated live to the rail's current visual width, including temporary hover-open state |
+| `--rail-w` | updated live to the rail's current visual width, including temporary explicit-open state |
 
 Most pages scroll inside `.page-content` and never need to reference `--rail-w`. The graph page (`/`) is the current exception: it opts out of `.page-content` scroll by using `position: fixed; top: 0; left: var(--rail-w); right: 0; bottom: 0` so the D3 canvas fills the remaining viewport exactly. Any future page that needs the same full-bleed treatment must anchor to `left: var(--rail-w)`, not a hardcoded pixel value.
 
