@@ -156,6 +156,8 @@ npm run check
 
 **Build note:** The build requires `DATABASE_URL` to be set in the Vercel environment variables — the DB client is initialised at module load time. Vercel injects env vars into the build, so this works automatically once the variable is configured.
 
+**Env-loading note:** App server modules use SvelteKit's private env access, while standalone tooling such as `drizzle.config.ts` still reads from plain Node environment variables. Keep running Drizzle commands from the repo root so `.env` is loaded as expected.
+
 ### Debug Bypass
 
 For agent-driven Playwright testing, Techy can mint a signed debug session without going through GitHub OAuth.

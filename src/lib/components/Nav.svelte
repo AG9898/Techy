@@ -1,12 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Collapsible } from 'melt/builders';
 	import type { DefaultSession } from '@auth/sveltekit';
 
 	let { session }: { session: DefaultSession | null } = $props();
 
 	type Theme = 'dark' | 'light';
-	type Accent = 'sky' | 'mint' | 'amber' | 'rose';
+	type Accent = 'sand' | 'lavender' | 'mauve' | 'rose';
+
+	function normalizeAccent(value: string | null): Accent {
+		if (value === 'sand' || value === 'lavender' || value === 'mauve' || value === 'rose') {
+			return value;
+		}
+
+		if (value === 'sky') return 'lavender';
+		if (value === 'amber' || value === 'mint') return 'sand';
+		return 'sand';
+	}
 
 	// Initialize from DOM attributes set by app.html inline script (client-side only)
 	let theme = $state<Theme>(
@@ -15,9 +24,11 @@
 			: null) ?? 'dark'
 	);
 	let accent = $state<Accent>(
-		(typeof document !== 'undefined'
-			? (document.documentElement.getAttribute('data-accent') as Accent)
-			: null) ?? 'sky'
+		normalizeAccent(
+			typeof document !== 'undefined'
+				? document.documentElement.getAttribute('data-accent')
+				: null
+		)
 	);
 
 	$effect(() => {
@@ -33,23 +44,29 @@
 	];
 
 	const accents: { id: Accent; color: string }[] = [
-		{ id: 'sky', color: '#7dd3fc' },
-		{ id: 'mint', color: '#86efac' },
-		{ id: 'amber', color: '#fcd34d' },
-		{ id: 'rose', color: '#fda4af' }
+		{ id: 'sand', color: '#a9895c' },
+		{ id: 'lavender', color: '#8392b4' },
+		{ id: 'mauve', color: '#aa88a1' },
+		{ id: 'rose', color: '#a94f5e' }
 	];
 
-	// ── Route-aware collapse state ────────────────────────────────
-	// Graph page auto-tucks the rail; other pages default to expanded.
-	// User can override, but navigating to a new route resets to its default.
-	let prevPath = $state(page.url.pathname);
-	let collapsed = $state(page.url.pathname === '/');
+	let railEl = $state<HTMLElement | null>(null);
+	let baseCollapsed = $state(page.url.pathname === '/');
+	let temporarilyExpanded = $state(false);
+	let manualCollapsedPreference = $state<boolean | null>(null);
+	let pointerInside = $state(false);
+	let focusInside = $state(false);
+	let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const railContentId = 'main-navigation-content';
+	const closeDelayMs = 500;
+
+	const visuallyCollapsed = $derived(baseCollapsed && !temporarilyExpanded);
 
 	$effect(() => {
-		const currentPath = page.url.pathname;
-		if (currentPath !== prevPath) {
-			collapsed = currentPath === '/';
-			prevPath = currentPath;
+		const routeDefaultCollapsed = page.url.pathname === '/';
+		if (manualCollapsedPreference === null) {
+			baseCollapsed = routeDefaultCollapsed;
 		}
 	});
 
@@ -58,17 +75,8 @@
 		if (typeof document !== 'undefined') {
 			document.documentElement.style.setProperty(
 				'--rail-w',
-				collapsed ? 'var(--rail-w-collapsed)' : 'var(--rail-w-expanded)'
+				visuallyCollapsed ? 'var(--rail-w-collapsed)' : 'var(--rail-w-expanded)'
 			);
-		}
-	});
-
-	// Melt Collapsible: provides aria-expanded, aria-controls, and the
-	// content id for the toggle button — accessibility without canned styles.
-	const collapsible = new Collapsible({
-		open: () => !collapsed,
-		onOpenChange: (v) => {
-			collapsed = !v;
 		}
 	});
 
@@ -83,9 +91,94 @@
 		if (href === '/') return page.url.pathname === '/';
 		return page.url.pathname.startsWith(href);
 	}
+
+	function clearCloseTimer() {
+		if (closeTimer) {
+			clearTimeout(closeTimer);
+			closeTimer = null;
+		}
+	}
+
+	function scheduleClose() {
+		clearCloseTimer();
+
+		if (!baseCollapsed || pointerInside || focusInside) return;
+
+		closeTimer = setTimeout(() => {
+			if (!pointerInside && !focusInside) {
+				temporarilyExpanded = false;
+			}
+			closeTimer = null;
+		}, closeDelayMs);
+	}
+
+	function openTemporarily() {
+		if (!baseCollapsed) return;
+
+		clearCloseTimer();
+		temporarilyExpanded = true;
+	}
+
+	function handlePointerEnter() {
+		pointerInside = true;
+		openTemporarily();
+	}
+
+	function handlePointerLeave() {
+		pointerInside = false;
+		scheduleClose();
+	}
+
+	function handleFocusIn() {
+		focusInside = true;
+		openTemporarily();
+	}
+
+	function handleFocusOut(event: FocusEvent) {
+		const nextTarget = event.relatedTarget;
+		if (nextTarget instanceof Node && railEl?.contains(nextTarget)) return;
+
+		focusInside = false;
+		scheduleClose();
+	}
+
+	function toggleRail() {
+		clearCloseTimer();
+
+		if (baseCollapsed) {
+			baseCollapsed = false;
+			manualCollapsedPreference = false;
+			temporarilyExpanded = false;
+			return;
+		}
+
+		baseCollapsed = true;
+		manualCollapsedPreference = true;
+		temporarilyExpanded = false;
+	}
+
+	function handleNavLinkClick() {
+		if (!baseCollapsed) return;
+
+		manualCollapsedPreference = true;
+		temporarilyExpanded = false;
+		clearCloseTimer();
+	}
 </script>
 
-<nav class="rail" class:collapsed aria-label="Main navigation">
+<svelte:window onbeforeunload={clearCloseTimer} />
+
+<nav
+	bind:this={railEl}
+	class="rail"
+	class:collapsed={visuallyCollapsed}
+	class:base-collapsed={baseCollapsed}
+	aria-label="Main navigation"
+	onpointerenter={handlePointerEnter}
+	onpointerleave={handlePointerLeave}
+	onfocusin={handleFocusIn}
+	onfocusout={handleFocusOut}
+>
 	<!-- ── Header ──────────────────────────────────────────────── -->
 	<div class="rail-header">
 		<a href="/" class="logo" aria-label="Techy home">
@@ -97,17 +190,20 @@
 		</a>
 		<button
 			class="rail-toggle"
-			{...collapsible.trigger}
-			aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+			type="button"
+			aria-controls={railContentId}
+			aria-expanded={!visuallyCollapsed}
+			aria-label={baseCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+			onclick={toggleRail}
 		>
-			<svg class="chevron" class:flipped={collapsed} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<svg class="chevron" class:flipped={baseCollapsed} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
 		</button>
 	</div>
 
 	<!-- ── Primary nav ─────────────────────────────────────────── -->
-	<div class="nav-body" {...collapsible.content}>
+	<div id={railContentId} class="nav-body">
 		<ul class="nav-list" role="list">
 			{#each navLinks as link}
 				<li>
@@ -115,8 +211,9 @@
 						href={link.href}
 						class="nav-item"
 						class:active={isActive(link.href)}
-						title={collapsed ? link.label : undefined}
+						title={visuallyCollapsed ? link.label : undefined}
 						aria-current={isActive(link.href) ? 'page' : undefined}
+						onclick={handleNavLinkClick}
 					>
 						{#if link.label === 'Graph'}
 							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -159,7 +256,7 @@
 						class:active={theme === t.id}
 						onclick={() => (theme = t.id)}
 						aria-label="Switch to {t.label} theme"
-						title={collapsed ? t.label : undefined}
+						title={visuallyCollapsed ? t.label : undefined}
 					>
 						{#if t.id === 'dark'}
 							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -184,22 +281,24 @@
 			</div>
 
 			<!-- Accent dots -->
-			<div class="accent-row">
-				{#each accents as a}
-					<button
-						class="accent-dot"
-						class:active={accent === a.id}
-						onclick={() => (accent = a.id)}
-						aria-label="Switch to {a.id} accent"
-						title={a.id}
-						style="--dot-color: {a.color}"
-					></button>
-				{/each}
-			</div>
+			{#if !visuallyCollapsed}
+				<div class="accent-row">
+					{#each accents as a}
+						<button
+							class="accent-dot"
+							class:active={accent === a.id}
+							onclick={() => (accent = a.id)}
+							aria-label="Switch to {a.id} accent"
+							title={a.id}
+							style="--dot-color: {a.color}"
+						></button>
+					{/each}
+				</div>
+			{/if}
 
 			<!-- Account -->
 			{#if session?.user}
-				<div class="account-row" title={collapsed && session.user.name ? session.user.name : undefined}>
+				<div class="account-row" title={visuallyCollapsed && session.user.name ? session.user.name : undefined}>
 					{#if session.user.image}
 						<img
 							src={session.user.image}
@@ -210,7 +309,7 @@
 					<span class="nav-label user-name">{session.user.name ?? ''}</span>
 				</div>
 				<form method="POST" action="/auth/signout">
-					<button type="submit" class="signout-btn" title={collapsed ? 'Sign out' : undefined}>
+					<button type="submit" class="signout-btn" title={visuallyCollapsed ? 'Sign out' : undefined}>
 						<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
 							<polyline points="16 17 21 12 16 7"/>
@@ -257,6 +356,11 @@
 		flex-shrink: 0;
 	}
 
+	.rail.collapsed .rail-header {
+		justify-content: center;
+		padding-inline: 0;
+	}
+
 	.logo {
 		display: flex;
 		align-items: center;
@@ -286,6 +390,10 @@
 		overflow: hidden;
 		transition: opacity 0.15s ease;
 		min-width: 0;
+	}
+
+	.rail.collapsed .logo {
+		display: none;
 	}
 
 	.rail.collapsed .logo-words {
@@ -323,6 +431,11 @@
 		cursor: pointer;
 		flex-shrink: 0;
 		transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+	}
+
+	.rail.collapsed .rail-toggle {
+		width: 28px;
+		height: 28px;
 	}
 
 	.rail-toggle:hover {
@@ -398,6 +511,7 @@
 	.rail.collapsed .nav-label {
 		opacity: 0;
 		pointer-events: none;
+		width: 0;
 	}
 
 	/* ── Rail footer ──────────────────────────────────────────── */
@@ -417,6 +531,11 @@
 		gap: 0.125rem;
 	}
 
+	.rail.collapsed .theme-row {
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
 	.theme-btn {
 		display: flex;
 		align-items: center;
@@ -432,6 +551,20 @@
 		font-family: inherit;
 		white-space: nowrap;
 		transition: color 0.15s ease, background 0.15s ease;
+	}
+
+	.rail.collapsed .nav-item,
+	.rail.collapsed .theme-btn,
+	.rail.collapsed .signout-btn,
+	.rail.collapsed .account-row {
+		justify-content: center;
+		gap: 0;
+	}
+
+	.rail.collapsed .nav-item,
+	.rail.collapsed .theme-btn,
+	.rail.collapsed .signout-btn {
+		padding-inline: 0;
 	}
 
 	.theme-btn:hover {
@@ -480,6 +613,10 @@
 		gap: 0.5rem;
 		padding: 0 0.25rem;
 		overflow: hidden;
+	}
+
+	.rail.collapsed .account-row {
+		padding-inline: 0;
 	}
 
 	.avatar {

@@ -1,10 +1,11 @@
 import { SvelteKitAuth } from '@auth/sveltekit';
 import GitHub from '@auth/sveltekit/providers/github';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import { env } from '$env/dynamic/private';
 import { db } from './db/index.js';
 import { accounts, sessions, users, verificationTokens } from './db/schema.js';
 
-const ALLOWED_USERNAME = process.env.ALLOWED_GITHUB_USERNAME;
+const ALLOWED_USERNAME = env.ALLOWED_GITHUB_USERNAME;
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
 	trustHost: true,
@@ -16,8 +17,8 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	}),
 	providers: [
 		GitHub({
-			clientId: process.env.GITHUB_CLIENT_ID,
-			clientSecret: process.env.GITHUB_CLIENT_SECRET
+			clientId: env.GITHUB_CLIENT_ID,
+			clientSecret: env.GITHUB_CLIENT_SECRET
 		})
 	],
 	callbacks: {

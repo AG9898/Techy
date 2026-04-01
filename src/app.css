@@ -55,44 +55,53 @@
 	--accent-purple:      #7c3aed;
 }
 
-/* ─── Sky accent (default — calm, clear, technical) ─────── */
-[data-accent='sky'] {
-	--accent-primary:    #7dd3fc;
-	--accent-strong:     #1d4ed8;
-	--accent-soft:       #bae6fd;
-	--accent-blue-light: #7dd3fc;
-	--accent-blue:       #1d4ed8;
-	--accent-blue-hover: #2563eb;
+/* ─── Accent families (tuned per theme for contrast) ────── */
+html[data-theme='dark'][data-accent='sand'] {
+	--accent-primary: #a9895c;
+	--accent-strong:  #765f3d;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 16%, var(--bg-surface));
 }
 
-/* ─── Mint accent (fresh, research-oriented) ────────────── */
-[data-accent='mint'] {
-	--accent-primary:    #86efac;
-	--accent-strong:     #16a34a;
-	--accent-soft:       #bbf7d0;
-	--accent-blue-light: #86efac;
-	--accent-blue:       #16a34a;
-	--accent-blue-hover: #22c55e;
+html[data-theme='light'][data-accent='sand'] {
+	--accent-primary: #765f3d;
+	--accent-strong:  #6b5535;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
 }
 
-/* ─── Amber accent (warm, thoughtful) ───────────────────── */
-[data-accent='amber'] {
-	--accent-primary:    #fcd34d;
-	--accent-strong:     #d97706;
-	--accent-soft:       #fde68a;
-	--accent-blue-light: #fcd34d;
-	--accent-blue:       #d97706;
-	--accent-blue-hover: #f59e0b;
+html[data-theme='dark'][data-accent='lavender'] {
+	--accent-primary: #8392b4;
+	--accent-strong:  #516490;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 16%, var(--bg-surface));
 }
 
-/* ─── Rose accent (soft, personal) ──────────────────────── */
-[data-accent='rose'] {
-	--accent-primary:    #fda4af;
-	--accent-strong:     #e11d48;
-	--accent-soft:       #fecdd3;
-	--accent-blue-light: #fda4af;
-	--accent-blue:       #e11d48;
-	--accent-blue-hover: #f43f5e;
+html[data-theme='light'][data-accent='lavender'] {
+	--accent-primary: #516490;
+	--accent-strong:  #44557d;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+}
+
+html[data-theme='dark'][data-accent='mauve'] {
+	--accent-primary: #aa88a1;
+	--accent-strong:  #7a5c72;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 16%, var(--bg-surface));
+}
+
+html[data-theme='light'][data-accent='mauve'] {
+	--accent-primary: #7a5c72;
+	--accent-strong:  #6b4d63;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+}
+
+html[data-theme='dark'][data-accent='rose'] {
+	--accent-primary: #c2808b;
+	--accent-strong:  #a94f5e;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 16%, var(--bg-surface));
+}
+
+html[data-theme='light'][data-accent='rose'] {
+	--accent-primary: #9e4c5a;
+	--accent-strong:  #8f4050;
+	--accent-soft:    color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
 }
 
 @layer base {

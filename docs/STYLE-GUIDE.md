@@ -113,6 +113,7 @@ Desired feel:
 Rules:
 - the shared app shell should use a left rail instead of a horizontal top nav
 - the rail should be collapsible and able to auto-tuck on immersive routes like the graph
+- when the rail is in its collapsed mode, hover or keyboard focus may reveal it temporarily, but it should close quietly after a short delay instead of snapping shut immediately
 - shell behavior should preserve focus on the current page rather than constantly demanding attention
 - pages that scroll inside `.page-content` do not need to reference the rail width; only full-bleed fixed-position pages (currently only the graph) should anchor to `left: var(--rail-w)` — never a hardcoded pixel offset
 
@@ -171,10 +172,16 @@ Light should be tonal and editorial:
 ### Accents
 
 Accents remain separate from theme and can stay expressive:
-- `Sky`
-- `Mint`
-- `Amber`
+- `Sand`
+- `Lavender`
+- `Mauve`
 - `Rose`
+
+Rules:
+- Accent families should be retuned per theme instead of forcing one shared hex palette across both `dark` and `light`
+- Accent colors should stay slightly desaturated and editorial against the charcoal dark shell
+- `sand` is the default accent because it fits the neutral shell without pulling the product back toward blue
+- Accent color is primarily for links, active emphasis, and key interactive states; use it sparingly so the graph and content remain the focus
 
 ---
 

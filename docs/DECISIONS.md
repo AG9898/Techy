@@ -439,7 +439,6 @@ Minor differences — rephrasing, supplementary examples, small additions that d
 **Trade-offs:**
 - The provider adapters now differ more internally, so the normalization layer must keep output and error handling aligned
 - Reasoning settings for GPT-5-family models become an adapter concern that needs maintenance as OpenAI guidance evolves
-- Sky accent remains visibly blue by design, so dark mode still includes blue highlights when that accent is selected
 
 ---
 
@@ -486,3 +485,24 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 - Conservative matching may occasionally miss an update opportunity unless the user opts into review explicitly
 - Older conversations may eventually need truncation, summarization, or retention rules to control context size and storage growth
 - Reopened conversations may rerun live research for fresh turns because the ephemeral topic cache is not persisted as durable history
+
+---
+
+## ADR-022: Theme-specific accent palettes over one shared accent hex set
+
+**Date:** 2026-04-01
+**Status:** Accepted
+
+**Context:** Techy's tonal dark and tonal light themes now share one accent-family model, but the old implementation used one set of accent hex values across both themes. That made the original pastel accents read well on charcoal surfaces while washing out on the tonal light theme. The inverse problem appeared when testing deeper editorial colors such as `#A94F5E`: they read well on light surfaces but became too low-contrast for dark-mode links and emphasis.
+
+**Decision:** Keep accent selection independent from the `dark / light` theme axis, but tune accent tokens per theme. The accent families are now `sand`, `lavender`, `mauve`, and `rose`, with `sand` as the default. Each family provides separate `dark` and `light` values for `--accent-primary` and `--accent-strong`, while `--accent-soft` is derived from the active accent and current surface tokens.
+
+**Reasons:**
+- Theme-specific accent values preserve readable contrast for links and active emphasis in both modes
+- The renamed palette fits the quieter editorial tone better than the inherited `sky / mint / amber / rose` set
+- Keeping the accent axis independent still preserves personalization without multiplying the core theme model
+- Derived soft tints keep chips and tinted surfaces coherent with the active theme instead of drifting into chalky pastels
+
+**Trade-offs:**
+- Legacy stored accent preferences need a migration path into the new family names
+- Accent documentation and UI labels need to stay synchronized because the family names are now part of the product language

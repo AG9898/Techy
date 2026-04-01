@@ -24,12 +24,18 @@ Theme axis:
 - `light` — tonal light, not harsh white
 
 Accent axis:
-- `sky`
-- `mint`
-- `amber`
+- `sand`
+- `lavender`
+- `mauve`
 - `rose`
 
 All new components must use tokens. No hardcoded hex values should appear in component code.
+
+Accent rules:
+- Accent families are semantic names, not promises of one shared hex across all themes
+- `dark` and `light` each provide their own tuned values for `--accent-primary` and `--accent-strong`
+- `--accent-soft` should be derived from the current accent and surface tokens rather than hardcoded as a static pastel fill
+- `sand` is the default accent for new sessions and for migrated preferences that no longer map cleanly
 
 ### Semantic Tokens
 
@@ -217,11 +223,14 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Rail widths are controlled by CSS variables in `app.css :root`:
   - `--rail-w-expanded: 192px`
   - `--rail-w-collapsed: 52px`
-  - `--rail-w: var(--rail-w-expanded)` (updated live on `document.documentElement` via a `$effect` when collapsed state changes)
-- Melt `Collapsible` builder handles open/close state and ARIA (`aria-expanded`, `aria-controls`)
-- Route-aware default: the graph page (`/`) auto-tucks the rail (starts collapsed); all other routes default to expanded
-- Nav labels (`span.nav-label`) fade out via `opacity: 0` when `.rail.collapsed`; the toggle chevron rotates 180° (`.chevron.flipped`)
-- Rail footer contains: dark/light theme toggle buttons, accent dot group (sky/mint/amber/rose), avatar + username, and sign-out form
+  - `--rail-w: var(--rail-w-expanded)` (updated live on `document.documentElement` to match the rail's current visual width)
+- The rail toggle owns `aria-expanded` / `aria-controls` directly and the nav body remains mounted so temporary hover-open transitions do not rebuild the shell
+- Route-aware default: the graph page (`/`) starts collapsed; all other routes start expanded unless the user has already pinned the rail open or closed for the current session
+- When the collapsed rail is hovered or receives focus inside, it opens immediately; when hover/focus leaves, it waits 500ms before closing; re-entry cancels the pending close
+- Clicking a nav item while the rail is in its collapsed mode preserves the collapsed state after navigation instead of re-expanding on the destination route
+- Nav labels (`span.nav-label`) fade out and collapse to zero width in `.rail.collapsed`; the toggle chevron rotates 180° (`.chevron.flipped`)
+- In the collapsed visual state, the header shows only the centered toggle button, the `T` logo mark is hidden, and the accent dot row is hidden to prevent clipping inside the 52px rail
+- Rail footer contains: dark/light theme toggle buttons, accent dot group (sand/lavender/mauve/rose), avatar + username, and sign-out form
 - Any fixed-position page that needs to offset from the rail must use `left: var(--rail-w)` — never a hardcoded pixel offset
 
 ### `ForceGraph.svelte`

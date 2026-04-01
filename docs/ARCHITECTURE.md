@@ -18,6 +18,7 @@ The main architectural boundaries are:
 - assistant orchestration stays inside the app server layer rather than a separate service
 - Auth.js owns OAuth/session handling, while route protection is enforced in the app shell
 - D3 graph rendering stays client-only and consumes pre-fetched graph data from server load
+- SvelteKit server modules read app secrets through `$env/dynamic/private`, while non-app CLI/config files such as `drizzle.config.ts` continue to use plain Node env access
 
 See [`docs/API.md`](API.md) for the route-by-route surface and endpoint contracts.
 
@@ -39,7 +40,7 @@ The `--rail-w` CSS variable (set on `document.documentElement`) is the contract 
 |---|---|
 | `--rail-w-expanded` | `192px` |
 | `--rail-w-collapsed` | `52px` |
-| `--rail-w` | updated live to whichever state is active |
+| `--rail-w` | updated live to the rail's current visual width, including temporary hover-open state |
 
 Most pages scroll inside `.page-content` and never need to reference `--rail-w`. The graph page (`/`) is the current exception: it opts out of `.page-content` scroll by using `position: fixed; top: 0; left: var(--rail-w); right: 0; bottom: 0` so the D3 canvas fills the remaining viewport exactly. Any future page that needs the same full-bleed treatment must anchor to `left: var(--rail-w)`, not a hardcoded pixel value.
 

@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { DefaultSession } from '@auth/sveltekit';
 import type { Cookies } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 
 const DEBUG_AUTH_COOKIE = 'techy_debug_session';
 const DEBUG_AUTH_MAX_AGE = 60 * 60 * 8;
@@ -12,7 +13,7 @@ type DebugAuthPayload = {
 	exp: number;
 };
 
-const getDebugAuthSecret = () => process.env.DEBUG_AUTH_BYPASS_SECRET?.trim() ?? '';
+const getDebugAuthSecret = () => env.DEBUG_AUTH_BYPASS_SECRET?.trim() ?? '';
 
 const signPayload = (payload: string, secret: string) =>
 	createHmac('sha256', secret).update(payload).digest('base64url');
@@ -49,7 +50,7 @@ const decodePayload = (encodedPayload: string): DebugAuthPayload | null => {
 };
 
 export const isDebugAuthEnabled = () =>
-	process.env.DEBUG_AUTH_BYPASS_ENABLED === 'true' && getDebugAuthSecret().length > 0;
+	env.DEBUG_AUTH_BYPASS_ENABLED === 'true' && getDebugAuthSecret().length > 0;
 
 export const isDebugAuthSecretValid = (candidate: string | null) => {
 	const secret = getDebugAuthSecret();
@@ -62,7 +63,7 @@ export const isDebugAuthSecretValid = (candidate: string | null) => {
 };
 
 export const getDebugAuthDisplayName = () =>
-	process.env.DEBUG_AUTH_BYPASS_NAME?.trim() || DEFAULT_DEBUG_AUTH_NAME;
+	env.DEBUG_AUTH_BYPASS_NAME?.trim() || DEFAULT_DEBUG_AUTH_NAME;
 
 export const getSafeRedirectTarget = (redirectTo: string | null) => {
 	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
