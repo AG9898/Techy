@@ -225,11 +225,15 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Any fixed-position page that needs to offset from the rail must use `left: var(--rail-w)` — never a hardcoded pixel offset
 
 ### `ForceGraph.svelte`
-- Replace separate legend/filter overlays with one unified graph control panel
-- Persist graph-view preferences locally in the browser
-- Support live graph tuning for appearance, filters, and D3 force behavior
-- Keep edge drilldown work
-- Ensure graph colors remain legible in both tonal themes
+- A single `.controls-dock` at bottom-right replaces the old separate legend (bottom-left) and filter (bottom-right) overlays
+- The trigger button (`controls-trigger`) shows a sliders icon and "Graph controls" label; coloured accent + badge when active filters are set
+- The panel is collapsed by default (`controlsOpen = false`) and expands above the trigger on click
+- Panel sections: **Appearance** (colour-mode toggle Status/Category + legend dots + size hint), **Filters** (category + status checkboxes), **Physics** (link distance, repulsion, collision padding sliders), **Reset to defaults** button
+- Physics controls live-tune the D3 simulation via module-level refs (`simRef`, `linkForceRef`, `chargeForceRef`) and a single `$effect` that tracks the three reactive state values
+- `getRadius` and `degreeMap` are module-level so they are accessible from the physics `$effect`
+- Edge drilldown remains a separate bottom-center overlay and is not absorbed into the control panel
+- `graph-container` uses `height: 100%` to fill the fixed-position `graph-wrapper` from `+page.svelte`
+- Future: persist graph-view preferences to `localStorage` across visits
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface

@@ -46,25 +46,47 @@
 
 	// Stable category→colour map (sorted so same set always produces same assignment)
 	let categoryColorMap = $derived(
-		Object.fromEntries(categories.map((cat, i) => [cat, CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]]))
+		Object.fromEntries(
+			categories.map((cat, i) => [cat, CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]])
+		)
 	);
 
-	// Colour mode toggle (local, not persisted)
+	// Controls panel state
+	let controlsOpen = $state(false);
+
+	// Colour mode toggle
 	let colorMode = $state<'status' | 'category'>('status');
 
-	// Filter state (local, not persisted)
+	// Filter state
 	let hiddenCategories = $state<string[]>([]);
 	let hiddenStatuses = $state<string[]>([]);
-	let filterOpen = $state(false);
 
-	// Edge drilldown state
-	let selectedEdge = $state<{ source: GraphNode; target: GraphNode } | null>(null);
+	// Physics state (default values)
+	let linkDistance = $state(80);
+	let chargeStrength = $state(200); // user-facing positive; applied as negative internally
+	let collisionPadding = $state(5);
 
 	// D3 selections — assigned in onMount, read in $effect
 	let nodeSelection: d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown> | null = null;
 	let linkSelection: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown> | null = null;
 	let linkHitSelection: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown> | null =
 		null;
+
+	// Simulation refs for live physics tuning
+	let simRef: d3.Simulation<GraphNode, GraphLink> | null = null;
+	let linkForceRef: d3.ForceLink<GraphNode, GraphLink> | null = null;
+	let chargeForceRef: d3.ForceManyBody<GraphNode> | null = null;
+
+	// Degree map for node radius — populated in onMount
+	let degreeMap: Map<string, number> = new Map();
+
+	function getRadius(id: string): number {
+		const degree = degreeMap.get(id) ?? 0;
+		return Math.max(6, Math.min(20, 6 + Math.sqrt(degree) * 2));
+	}
+
+	// Edge drilldown state
+	let selectedEdge = $state<{ source: GraphNode; target: GraphNode } | null>(null);
 
 	function toggleCategory(cat: string) {
 		if (hiddenCategories.includes(cat)) {
@@ -122,25 +144,41 @@
 		});
 	});
 
+	// Physics tuning — reads reactive state before guard so tracking is established on first run
+	$effect(() => {
+		const d = linkDistance;
+		const s = chargeStrength;
+		const cp = collisionPadding;
+		if (!simRef || !linkForceRef || !chargeForceRef) return;
+		linkForceRef.distance(d);
+		chargeForceRef.strength(-s);
+		simRef.force('collision', d3.forceCollide<GraphNode>((n) => getRadius(n.id) + cp));
+		simRef.alpha(0.3).restart();
+	});
+
 	let activeFilters = $derived(hiddenCategories.length + hiddenStatuses.length);
+
+	function resetDefaults() {
+		colorMode = 'status';
+		hiddenCategories = [];
+		hiddenStatuses = [];
+		linkDistance = 80;
+		chargeStrength = 200;
+		collisionPadding = 5;
+	}
 
 	onMount(() => {
 		const width = container.clientWidth || 800;
 		const height = container.clientHeight || 600;
 
 		// Compute degree (incoming + outgoing) for each node from link props
-		const degreeMap = new Map<string, number>();
+		degreeMap = new Map<string, number>();
 		for (const n of nodes) degreeMap.set(n.id, 0);
 		for (const l of links) {
 			const src = l.source as string;
 			const tgt = l.target as string;
 			degreeMap.set(src, (degreeMap.get(src) ?? 0) + 1);
 			degreeMap.set(tgt, (degreeMap.get(tgt) ?? 0) + 1);
-		}
-
-		function getRadius(id: string): number {
-			const degree = degreeMap.get(id) ?? 0;
-			return Math.max(6, Math.min(20, 6 + Math.sqrt(degree) * 2));
 		}
 
 		const svg = d3
@@ -186,18 +224,23 @@
 		const simNodes: GraphNode[] = nodes.map((n) => ({ ...n }));
 		const simLinks: GraphLink[] = links.map((l) => ({ ...l }));
 
+		const linkForce = d3
+			.forceLink<GraphNode, GraphLink>(simLinks)
+			.id((d) => d.id)
+			.distance(linkDistance);
+
+		const chargeForce = d3.forceManyBody<GraphNode>().strength(-chargeStrength);
+
 		const simulation = d3
 			.forceSimulation<GraphNode>(simNodes)
-			.force(
-				'link',
-				d3
-					.forceLink<GraphNode, GraphLink>(simLinks)
-					.id((d) => d.id)
-					.distance(80)
-			)
-			.force('charge', d3.forceManyBody().strength(-200))
+			.force('link', linkForce)
+			.force('charge', chargeForce)
 			.force('center', d3.forceCenter(width / 2, height / 2))
-			.force('collision', d3.forceCollide<GraphNode>((d) => getRadius(d.id) + 5));
+			.force('collision', d3.forceCollide<GraphNode>((d) => getRadius(d.id) + collisionPadding));
+
+		simRef = simulation;
+		linkForceRef = linkForce;
+		chargeForceRef = chargeForce;
 
 		linkSelection = g
 			.append('g')
@@ -338,55 +381,67 @@
 			</div>
 		</div>
 	{/if}
-	<!-- Legend — bottom-left, shows current colour mode items -->
-	<div class="graph-legend">
-		<div class="legend-mode-row">
-			<button
-				class="legend-mode-btn"
-				class:active={colorMode === 'status'}
-				onclick={() => (colorMode = 'status')}
-			>Status</button>
-			<button
-				class="legend-mode-btn"
-				class:active={colorMode === 'category'}
-				onclick={() => (colorMode = 'category')}
-			>Category</button>
-		</div>
-		{#if colorMode === 'status'}
-			{#each ['stub', 'growing', 'mature'] as s}
-				<span class="legend-item">
-					<span class="legend-dot" style="background: {statusColor[s]}"></span>
-					<span>{s}</span>
-				</span>
-			{/each}
-		{:else}
-			{#if categories.length === 0}
-				<span class="legend-empty">No categories</span>
-			{:else}
-				{#each categories as cat}
-					<span class="legend-item">
-						<span class="legend-dot" style="background: {categoryColorMap[cat]}"></span>
-						<span>{cat}</span>
-					</span>
-				{/each}
-			{/if}
-		{/if}
-		<div class="legend-size-hint">
-			<span class="size-hint-bubbles">
-				<span class="size-bubble small"></span>
-				<span class="size-bubble large"></span>
-			</span>
-			<span>size = link count</span>
-		</div>
-	</div>
 
-	{#if categories.length > 0 || statuses.length > 0}
-		<div class="filter-wrap">
-			{#if filterOpen}
-				<div class="filter-panel">
-					{#if categories.length > 0}
-						<div class="filter-section">
-							<div class="filter-section-label">Category</div>
+	<!-- Unified graph controls dock — bottom-right -->
+	<div class="controls-dock">
+		{#if controlsOpen}
+			<div class="controls-panel">
+				<!-- Appearance -->
+				<div class="panel-section">
+					<div class="panel-section-label">Appearance</div>
+					<div class="colour-mode-row">
+						<button
+							class="mode-btn"
+							class:active={colorMode === 'status'}
+							onclick={() => (colorMode = 'status')}
+						>Status</button>
+						<button
+							class="mode-btn"
+							class:active={colorMode === 'category'}
+							onclick={() => (colorMode = 'category')}
+						>Category</button>
+					</div>
+					<div class="legend-items">
+						{#if colorMode === 'status'}
+							{#each ['stub', 'growing', 'mature'] as s}
+								<span class="legend-item">
+									<span class="legend-dot" style="background: {statusColor[s]}"></span>
+									<span>{s}</span>
+								</span>
+							{/each}
+						{:else if categories.length === 0}
+							<span class="legend-empty">No categories</span>
+						{:else}
+							{#each categories as cat}
+								<span class="legend-item">
+									<span class="legend-dot" style="background: {categoryColorMap[cat]}"></span>
+									<span>{cat}</span>
+								</span>
+							{/each}
+						{/if}
+					</div>
+					<div class="size-hint-row">
+						<span class="size-hint-bubbles">
+							<span class="size-bubble small"></span>
+							<span class="size-bubble large"></span>
+						</span>
+						<span>size = link count</span>
+					</div>
+				</div>
+
+				<div class="panel-divider"></div>
+
+				<!-- Filters -->
+				{#if categories.length > 0 || statuses.length > 0}
+					<div class="panel-section">
+						<div class="panel-section-label">
+							Filters
+							{#if activeFilters > 0}
+								<span class="filter-badge">{activeFilters}</span>
+							{/if}
+						</div>
+						{#if categories.length > 0}
+							<div class="filter-group-label">Category</div>
 							{#each categories as cat}
 								<label class="filter-item">
 									<input
@@ -394,14 +449,13 @@
 										checked={!hiddenCategories.includes(cat)}
 										onchange={() => toggleCategory(cat)}
 									/>
+									<span class="legend-dot" style="background: {categoryColorMap[cat]}"></span>
 									<span>{cat}</span>
 								</label>
 							{/each}
-						</div>
-					{/if}
-					{#if statuses.length > 0}
-						<div class="filter-section">
-							<div class="filter-section-label">Status</div>
+						{/if}
+						{#if statuses.length > 0}
+							<div class="filter-group-label">Status</div>
 							{#each statuses as status}
 								<label class="filter-item">
 									<input
@@ -410,139 +464,94 @@
 										onchange={() => toggleStatus(status)}
 									/>
 									<span
-										class="status-dot"
+										class="legend-dot"
 										style="background: {statusColor[status] ?? 'var(--graph-node-stub)'}"
 									></span>
 									<span>{status}</span>
 								</label>
 							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
-			<button
-				class="filter-btn"
-				class:active={activeFilters > 0}
-				onclick={() => (filterOpen = !filterOpen)}
-			>
-				{#if activeFilters > 0}
-					Filters · {activeFilters}
-				{:else}
-					Filters
+						{/if}
+					</div>
+
+					<div class="panel-divider"></div>
 				{/if}
-			</button>
-		</div>
-	{/if}
+
+				<!-- Physics -->
+				<div class="panel-section">
+					<div class="panel-section-label">Physics</div>
+					<div class="physics-row">
+						<span class="physics-label">Link distance</span>
+						<input
+							type="range"
+							min="30"
+							max="300"
+							step="10"
+							bind:value={linkDistance}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{linkDistance}</span>
+					</div>
+					<div class="physics-row">
+						<span class="physics-label">Repulsion</span>
+						<input
+							type="range"
+							min="50"
+							max="600"
+							step="10"
+							bind:value={chargeStrength}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{chargeStrength}</span>
+					</div>
+					<div class="physics-row">
+						<span class="physics-label">Collision</span>
+						<input
+							type="range"
+							min="0"
+							max="30"
+							step="1"
+							bind:value={collisionPadding}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{collisionPadding}</span>
+					</div>
+				</div>
+
+				<div class="panel-divider"></div>
+
+				<button class="reset-btn" onclick={resetDefaults}>Reset to defaults</button>
+			</div>
+		{/if}
+
+		<button
+			class="controls-trigger"
+			class:open={controlsOpen}
+			class:has-filters={activeFilters > 0}
+			onclick={() => (controlsOpen = !controlsOpen)}
+		>
+			<svg width="12" height="10" viewBox="0 0 12 10" fill="none" aria-hidden="true">
+				<line x1="0" y1="1.5" x2="12" y2="1.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+				<circle cx="4" cy="1.5" r="1.5" fill="var(--bg-overlay)" stroke="currentColor" stroke-width="1.25"/>
+				<line x1="0" y1="5" x2="12" y2="5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+				<circle cx="8" cy="5" r="1.5" fill="var(--bg-overlay)" stroke="currentColor" stroke-width="1.25"/>
+				<line x1="0" y1="8.5" x2="12" y2="8.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+				<circle cx="3" cy="8.5" r="1.5" fill="var(--bg-overlay)" stroke="currentColor" stroke-width="1.25"/>
+			</svg>
+			Graph controls
+			{#if activeFilters > 0}
+				<span class="trigger-badge">{activeFilters}</span>
+			{/if}
+		</button>
+	</div>
 </div>
 
 <style>
 	.graph-container {
 		position: relative;
 		width: 100%;
-		height: calc(100vh - 60px);
+		height: 100%;
 		overflow: hidden;
 		background: var(--bg-base);
-	}
-
-	/* Legend — bottom-left */
-	.graph-legend {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-		background: var(--bg-overlay);
-		border: 1px solid var(--border-soft);
-		border-radius: 0.75rem;
-		padding: 0.6rem 0.9rem;
-		backdrop-filter: blur(6px);
-		z-index: 10;
-	}
-
-	.legend-mode-row {
-		display: flex;
-		gap: 0.2rem;
-		margin-bottom: 0.15rem;
-	}
-
-	.legend-mode-btn {
-		flex: 1;
-		background: none;
-		border: 1px solid var(--border-soft);
-		border-radius: 0.4rem;
-		padding: 0.15rem 0.4rem;
-		font-size: 0.68rem;
-		color: var(--text-muted);
-		cursor: pointer;
-		letter-spacing: 0.01em;
-		transition: border-color 120ms, color 120ms, background 120ms;
-	}
-
-	.legend-mode-btn:hover {
-		color: var(--text-secondary);
-		border-color: var(--border-strong);
-	}
-
-	.legend-mode-btn.active {
-		color: var(--accent-primary);
-		border-color: var(--accent-primary);
-		background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
-	}
-
-	.legend-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		color: var(--text-secondary);
-		letter-spacing: 0.01em;
-	}
-
-	.legend-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-
-	.legend-empty {
-		font-size: 0.72rem;
-		color: var(--text-muted);
-		font-style: italic;
-	}
-
-	.legend-size-hint {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.72rem;
-		color: var(--text-muted);
-		margin-top: 0.1rem;
-		padding-top: 0.35rem;
-		border-top: 1px solid var(--border-soft);
-	}
-
-	.size-hint-bubbles {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
-
-	.size-bubble {
-		background: var(--text-muted);
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-
-	.size-bubble.small {
-		width: 6px;
-		height: 6px;
-	}
-
-	.size-bubble.large {
-		width: 11px;
-		height: 11px;
 	}
 
 	/* Edge drilldown panel — bottom-center */
@@ -637,8 +646,8 @@
 		flex-shrink: 0;
 	}
 
-	/* Filter overlay — bottom-right */
-	.filter-wrap {
+	/* Controls dock — bottom-right */
+	.controls-dock {
 		position: absolute;
 		bottom: 1.5rem;
 		right: 1.5rem;
@@ -649,11 +658,14 @@
 		z-index: 10;
 	}
 
-	.filter-btn {
+	.controls-trigger {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
 		background: var(--bg-overlay);
 		border: 1px solid var(--border-soft);
 		border-radius: 0.75rem;
-		padding: 0.35rem 0.8rem;
+		padding: 0.35rem 0.75rem;
 		font-size: 0.75rem;
 		color: var(--text-muted);
 		cursor: pointer;
@@ -662,17 +674,32 @@
 		letter-spacing: 0.01em;
 	}
 
-	.filter-btn:hover {
+	.controls-trigger:hover,
+	.controls-trigger.open {
 		border-color: var(--border-strong);
 		color: var(--text-secondary);
 	}
 
-	.filter-btn.active {
+	.controls-trigger.has-filters {
 		color: var(--accent-primary);
 		border-color: var(--accent-primary);
 	}
 
-	.filter-panel {
+	.trigger-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 16px;
+		height: 16px;
+		border-radius: 8px;
+		padding: 0 3px;
+		background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+		color: var(--accent-primary);
+		font-size: 0.65rem;
+		font-weight: 600;
+	}
+
+	.controls-panel {
 		background: var(--bg-overlay);
 		border: 1px solid var(--border-soft);
 		border-radius: 0.75rem;
@@ -680,23 +707,152 @@
 		backdrop-filter: blur(6px);
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		min-width: 160px;
+		gap: 0;
+		min-width: 210px;
+		max-height: calc(100vh - 6rem);
+		overflow-y: auto;
 	}
 
-	.filter-section {
+	.panel-section {
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
+		padding: 0.4rem 0;
 	}
 
-	.filter-section-label {
+	.panel-section:first-child {
+		padding-top: 0;
+	}
+
+	.panel-section-label {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 		font-size: 0.65rem;
 		font-weight: 600;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--text-muted);
-		margin-bottom: 0.1rem;
+		margin-bottom: 0.2rem;
+	}
+
+	.panel-divider {
+		height: 1px;
+		background: var(--border-soft);
+		margin: 0.1rem 0;
+	}
+
+	.filter-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 16px;
+		height: 16px;
+		border-radius: 8px;
+		padding: 0 3px;
+		background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+		color: var(--accent-primary);
+		font-size: 0.6rem;
+		font-weight: 700;
+	}
+
+	/* Appearance */
+	.colour-mode-row {
+		display: flex;
+		gap: 0.2rem;
+		margin-bottom: 0.2rem;
+	}
+
+	.mode-btn {
+		flex: 1;
+		background: none;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.4rem;
+		padding: 0.15rem 0.4rem;
+		font-size: 0.68rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		letter-spacing: 0.01em;
+		transition: border-color 120ms, color 120ms, background 120ms;
+	}
+
+	.mode-btn:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
+	}
+
+	.mode-btn.active {
+		color: var(--accent-primary);
+		border-color: var(--accent-primary);
+		background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+	}
+
+	.legend-items {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.legend-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		color: var(--text-secondary);
+		letter-spacing: 0.01em;
+	}
+
+	.legend-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.legend-empty {
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		font-style: italic;
+	}
+
+	.size-hint-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		margin-top: 0.2rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid var(--border-soft);
+	}
+
+	.size-hint-bubbles {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.size-bubble {
+		background: var(--text-muted);
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.size-bubble.small {
+		width: 6px;
+		height: 6px;
+	}
+
+	.size-bubble.large {
+		width: 11px;
+		height: 11px;
+	}
+
+	/* Filters */
+	.filter-group-label {
+		font-size: 0.68rem;
+		color: var(--text-subtle);
+		margin-top: 0.1rem;
 	}
 
 	.filter-item {
@@ -717,10 +873,52 @@
 		flex-shrink: 0;
 	}
 
-	.status-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		flex-shrink: 0;
+	/* Physics */
+	.physics-row {
+		display: grid;
+		grid-template-columns: 82px 1fr 28px;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.physics-label {
+		font-size: 0.72rem;
+		color: var(--text-secondary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.physics-slider {
+		width: 100%;
+		accent-color: var(--accent-primary);
+		cursor: pointer;
+	}
+
+	.physics-val {
+		font-size: 0.68rem;
+		color: var(--text-muted);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Reset */
+	.reset-btn {
+		background: none;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.5rem;
+		padding: 0.3rem 0.6rem;
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		text-align: center;
+		width: 100%;
+		margin-top: 0.15rem;
+		transition: border-color 120ms, color 120ms;
+	}
+
+	.reset-btn:hover {
+		border-color: var(--border-strong);
+		color: var(--text-secondary);
 	}
 </style>

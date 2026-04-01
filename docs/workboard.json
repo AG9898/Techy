@@ -2017,7 +2017,7 @@
       "id": "GRAPH-007",
       "group_id": "GRAPH",
       "title": "Unify graph overlays into a collapsible control panel",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Replace the separate graph legend and filter overlays with one bottom-right control panel that stays collapsed by default and expands on demand.",
