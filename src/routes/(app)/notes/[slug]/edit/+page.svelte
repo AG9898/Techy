@@ -9,6 +9,7 @@
 	let bodyValue = $state(untrack(() => data.note.body));
 	let showPreview = $state(false);
 	let tagsValue = $state(untrack(() => data.note.tags.join(', ')));
+	let deleteDialog: HTMLDialogElement | null = $state(null);
 
 	const tagOptions = $derived.by(() => {
 		const parts = tagsValue.split(',');
@@ -29,6 +30,21 @@
 			return `<span class="${cls}">${title}</span>`;
 		});
 		return marked.parse(preprocessed) as string;
+	}
+
+	// Use a custom dialog so destructive confirmation can follow Techy's theme.
+	function openDeleteDialog() {
+		deleteDialog?.showModal();
+	}
+
+	function closeDeleteDialog() {
+		deleteDialog?.close();
+	}
+
+	function handleDeleteDialogClick(event: MouseEvent) {
+		if (event.target === deleteDialog) {
+			closeDeleteDialog();
+		}
 	}
 </script>
 
@@ -115,18 +131,32 @@
 		</div>
 	</form>
 
-	<form
-		method="POST"
-		action="?/delete"
-		class="delete-section"
-		onsubmit={(e) => { if (!confirm('Delete this note? This cannot be undone.')) e.preventDefault(); }}
+	<div class="delete-section">
+		<button type="button" class="btn-delete" onclick={openDeleteDialog}>Delete Note</button>
+	</div>
+
+	<dialog
+		bind:this={deleteDialog}
+		class="delete-dialog"
+		oncancel={() => closeDeleteDialog()}
+		onclick={handleDeleteDialogClick}
 	>
-		<div class="delete-copy">
-			<p class="delete-eyebrow">Delete note</p>
-			<p class="delete-message">Permanently remove this note from your graph. This cannot be undone.</p>
+		<div class="delete-dialog__panel">
+			<p class="delete-dialog__eyebrow">Delete note</p>
+			<h2 class="delete-dialog__title">Delete “{note.title}”?</h2>
+			<p class="delete-dialog__message">
+				This permanently removes the note and its graph connections from Techy. This action cannot be undone.
+			</p>
+			<div class="delete-dialog__actions">
+				<form method="dialog">
+					<button type="submit" class="delete-dialog__cancel">Cancel</button>
+				</form>
+				<form method="POST" action="?/delete">
+					<button type="submit" class="delete-dialog__confirm">Delete Note</button>
+				</form>
+			</div>
 		</div>
-		<button type="submit" class="btn-delete">Delete Note</button>
-	</form>
+	</dialog>
 </div>
 
 <style>
@@ -397,60 +427,19 @@
 	}
 
 	.delete-section {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1rem 1.1rem;
-		border: 1px solid color-mix(in srgb, var(--accent-red) 18%, var(--border-soft));
-		border-radius: 12px;
-		background:
-			linear-gradient(
-				135deg,
-				color-mix(in srgb, var(--accent-red) 8%, transparent),
-				color-mix(in srgb, var(--bg-surface) 92%, transparent)
-			),
-			var(--bg-surface);
-	}
-
-	.delete-copy {
-		display: flex;
-		flex-direction: column;
-		gap: 0.18rem;
-		min-width: 0;
-	}
-
-	.delete-eyebrow,
-	.delete-message {
-		margin: 0;
-	}
-
-	.delete-eyebrow {
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--accent-red) 82%, var(--text-secondary));
-	}
-
-	.delete-message {
-		max-width: 42ch;
-		font-size: 0.84rem;
-		line-height: 1.55;
-		color: var(--text-muted);
+		border-top: 1px solid var(--border-soft);
+		padding-top: 0.75rem;
 	}
 
 	.btn-delete {
-		flex-shrink: 0;
 		background: none;
-		border: 1px solid color-mix(in srgb, var(--accent-red) 45%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent-red) 40%, transparent);
 		color: var(--accent-red);
-		padding: 0.5rem 0.95rem;
-		border-radius: 9999px;
+		padding: 0.4rem 0.85rem;
+		border-radius: 8px;
 		cursor: pointer;
 		font-size: 0.85rem;
-		font-weight: 500;
-		transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+		transition: background 150ms ease, border-color 150ms ease;
 	}
 
 	.btn-delete:hover {
@@ -458,18 +447,133 @@
 		border-color: var(--accent-red);
 	}
 
-	@media (max-width: 720px) {
-		.delete-section {
-			flex-direction: column;
+	.delete-dialog {
+		width: min(32rem, calc(100vw - 2rem));
+		padding: 0;
+		border: none;
+		background: transparent;
+	}
+
+	.delete-dialog::backdrop {
+		background: color-mix(in srgb, var(--bg-base) 62%, transparent);
+		backdrop-filter: blur(8px);
+	}
+
+	.delete-dialog__panel {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		padding: 1.4rem 1.4rem 1.2rem;
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in srgb, var(--accent-red) 6%, var(--bg-surface)),
+				var(--bg-surface)
+			);
+		border: 1px solid color-mix(in srgb, var(--accent-red) 18%, var(--border-soft));
+		border-radius: 18px;
+		box-shadow:
+			0 24px 60px color-mix(in srgb, var(--bg-base) 38%, transparent),
+			inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+	}
+
+	.delete-dialog__eyebrow,
+	.delete-dialog__title,
+	.delete-dialog__message {
+		margin: 0;
+	}
+
+	.delete-dialog__eyebrow {
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--accent-red) 76%, var(--text-secondary));
+	}
+
+	.delete-dialog__title {
+		font-size: 1.35rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		color: var(--text-primary);
+	}
+
+	.delete-dialog__message {
+		max-width: 40ch;
+		font-size: 0.95rem;
+		line-height: 1.65;
+		color: var(--text-muted);
+	}
+
+	.delete-dialog__actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		padding-top: 0.4rem;
+	}
+
+	.delete-dialog__actions form {
+		margin: 0;
+	}
+
+	.delete-dialog__cancel,
+	.delete-dialog__confirm {
+		border: none;
+		border-radius: 9999px;
+		padding: 0.65rem 1.1rem;
+		font-size: 0.88rem;
+		font-weight: 500;
+		font-family: inherit;
+		cursor: pointer;
+		transition:
+			background 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease,
+			opacity 150ms ease;
+	}
+
+	.delete-dialog__cancel {
+		background: var(--bg-raised);
+		color: var(--text-secondary);
+		border: 1px solid var(--border-soft);
+	}
+
+	.delete-dialog__cancel:hover {
+		background: var(--bg-overlay);
+		border-color: var(--border-strong);
+	}
+
+	.delete-dialog__confirm {
+		background: color-mix(in srgb, var(--accent-red) 84%, var(--bg-surface));
+		color: white;
+	}
+
+	.delete-dialog__confirm:hover {
+		opacity: 0.9;
+	}
+
+	@media (max-width: 640px) {
+		.delete-dialog {
+			width: calc(100vw - 1.25rem);
+		}
+
+		.delete-dialog__panel {
+			padding: 1.15rem 1rem 1rem;
+			border-radius: 16px;
+		}
+
+		.delete-dialog__actions {
+			flex-direction: column-reverse;
 			align-items: stretch;
 		}
 
-		.delete-message {
-			max-width: none;
+		.delete-dialog__actions form {
+			width: 100%;
 		}
 
-		.btn-delete {
-			align-self: flex-start;
+		.delete-dialog__cancel,
+		.delete-dialog__confirm {
+			width: 100%;
 		}
 	}
 </style>
