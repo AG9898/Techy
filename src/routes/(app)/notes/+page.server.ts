@@ -17,7 +17,9 @@ export const load: PageServerLoad = async () => {
 				tags: notes.tags,
 				category: notes.category,
 				status: notes.status,
-				createdAt: notes.createdAt
+				createdAt: notes.createdAt,
+				updatedAt: notes.updatedAt,
+				body: notes.body
 			})
 			.from(notes)
 			.orderBy(notes.createdAt),

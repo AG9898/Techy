@@ -1937,7 +1937,7 @@
       "id": "UI-014",
       "group_id": "UI",
       "title": "Redesign the notes page as the unified repository and search surface",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Merge browsing and search into `/notes` with a repository-style layout, integrated search bar, and mixed-density note presentation.",

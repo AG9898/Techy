@@ -138,18 +138,23 @@ Panel sections:
 ### Notes List
 
 ```
-[Page header: "Repository"  helper copy  [↑ Import] [↓ Export] ]
-[Integrated search bar]
-[Category tabs / chips]
-[Mixed-density notes layout with a few larger anchor items and lighter secondary rows]
+[Page header: "Repository"  subtitle  [↑ Import] [↓ Export] ]
+[Integrated search bar: "Search by title, tag, or category…"]
+[All Collections | cat1 | cat2 | … | Orphans (n)]
+[Featured grid: first 2 results as large excerpt cards, side-by-side]
+[Notes list: remaining results as compact single-line rows in a grouped panel]
 ```
 
 Rules:
 - `/notes` owns search, filtering, import, export, and opening existing notes
 - The old standalone `/search` route is removed after migration
-- The page should borrow the open, repository-like composition from the reference rather than reverting to a wall of uniform cards
-- Search should sit directly in the notes header region rather than living on a separate route
-- Import and export remain present, but should not dominate the composition
+- The page uses the reference's repository-like composition rather than a wall of uniform cards
+- Search lives in the notes header region and filters by title, tag, or category client-side (phase 1)
+- Import and export are subordinated to compact action buttons in the header; they do not dominate the composition
+- The first two filtered results get a featured-card treatment (large title, excerpt, badges, relative timestamp); remaining results render as compact row items
+- `NoteCard` supports a `compact` boolean prop: when true it renders as a lean horizontal row (title left, category + status dot + date right)
+- Featured cards include: category badge, tag pills (first 2), relative `updatedAt` timestamp, title (1.2rem bold), body excerpt (3-line clamp), status badge
+- The compact rows list is wrapped in a grouped panel with a soft surface background and internal padding
 
 ### Chat
 

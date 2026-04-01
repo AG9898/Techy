@@ -7,34 +7,97 @@
 	let selectedCategory = $state<string | null>(null);
 	let showOrphans = $state(false);
 	let showImport = $state(false);
+	let searchQuery = $state('');
 
-	// Show import panel automatically when the server returned results after a submission
 	const hasImportFeedback = $derived(!!(form?.importResult || form?.importError));
-
-	const categories = $derived([...new Set(data.notes.map((n) => n.category).filter(Boolean))] as string[]);
+	const categories = $derived(
+		[...new Set(data.notes.map((n) => n.category).filter(Boolean))] as string[]
+	);
 	const orphanIdSet = $derived(new Set(data.orphanIds));
 
 	const filtered = $derived(
-		showOrphans
-			? data.notes.filter((n) => orphanIdSet.has(n.id))
-			: selectedCategory
-				? data.notes.filter((n) => n.category === selectedCategory)
-				: data.notes
+		data.notes.filter((n) => {
+			if (showOrphans) return orphanIdSet.has(n.id);
+			if (selectedCategory && n.category !== selectedCategory) return false;
+			if (searchQuery) {
+				const q = searchQuery.toLowerCase();
+				return (
+					n.title.toLowerCase().includes(q) ||
+					(n.category?.toLowerCase().includes(q) ?? false) ||
+					n.tags.some((t) => t.toLowerCase().includes(q))
+				);
+			}
+			return true;
+		})
 	);
+
+	const featuredNotes = $derived(filtered.slice(0, 2));
+	const regularNotes = $derived(filtered.slice(2));
+
+	function textExcerpt(body: string, max = 160): string {
+		return body
+			.replace(/#{1,6}\s+/g, '')
+			.replace(/[*_`![\]()]/g, '')
+			.replace(/\[\[([^\]]+)\]\]/g, '$1')
+			.replace(/\n+/g, ' ')
+			.trim()
+			.slice(0, max);
+	}
+
+	function relativeDate(date: Date | null | undefined): string {
+		if (!date) return '';
+		const now = new Date();
+		const d = new Date(date);
+		const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+		if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}m ago`;
+		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+		if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+		return d.toLocaleDateString();
+	}
 </script>
 
-<div class="notes-page">
-	<div class="page-header">
-		<h1>Notes</h1>
+<div class="repo-page">
+	<!-- Page header -->
+	<div class="repo-header">
+		<div class="title-block">
+			<h1 class="repo-title">Repository</h1>
+			<p class="repo-subtitle">Browse, search, and manage your technical knowledge graph.</p>
+		</div>
 		<div class="header-actions">
-			<button class="btn-secondary" onclick={() => (showImport = !showImport)}>
-				{showImport ? 'Close Import' : '↑ Import'}
+			<button
+				class="action-btn"
+				class:active={showImport}
+				onclick={() => (showImport = !showImport)}
+			>
+				↑ Import
 			</button>
-			<a href="/notes/export" class="btn-secondary">↓ Export</a>
-			<a href="/notes/new" class="btn-primary">+ New Note</a>
+			<a href="/notes/export" class="action-btn">↓ Export</a>
 		</div>
 	</div>
 
+	<!-- Search bar -->
+	<div class="search-zone">
+		<label class="search-wrap" for="notes-search">
+			<svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+				<circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5" />
+				<path d="M13.5 13.5 L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+			</svg>
+			<input
+				id="notes-search"
+				type="search"
+				class="search-input"
+				placeholder="Search by title, tag, or category…"
+				bind:value={searchQuery}
+			/>
+			{#if searchQuery}
+				<button class="search-clear" onclick={() => (searchQuery = '')} aria-label="Clear search">
+					×
+				</button>
+			{/if}
+		</label>
+	</div>
+
+	<!-- Import panel -->
 	{#if showImport || hasImportFeedback}
 		<div class="import-panel">
 			<form method="POST" action="?/import" enctype="multipart/form-data" class="import-form">
@@ -49,13 +112,12 @@
 				/>
 				<button type="submit" class="btn-submit">Import</button>
 			</form>
-
 			{#if form?.importResult}
 				{@const result = form.importResult}
 				<div class="import-result">
 					{#if result.imported > 0}
 						<p class="result-success">
-							✓ {result.imported} note{result.imported === 1 ? '' : 's'} imported successfully.
+							✓ {result.imported} note{result.imported === 1 ? '' : 's'} imported.
 						</p>
 					{/if}
 					{#if result.errors.length > 0}
@@ -70,26 +132,32 @@
 					{/if}
 				</div>
 			{/if}
-
 			{#if form?.importError}
 				<p class="import-error">{form.importError}</p>
 			{/if}
 		</div>
 	{/if}
 
-	<div class="category-filters">
+	<!-- Category filters -->
+	<div class="filter-zone">
 		<button
 			class="chip"
 			class:active={!showOrphans && selectedCategory === null}
-			onclick={() => { showOrphans = false; selectedCategory = null; }}
+			onclick={() => {
+				showOrphans = false;
+				selectedCategory = null;
+			}}
 		>
-			All
+			All Collections
 		</button>
 		{#each categories as cat}
 			<button
 				class="chip"
 				class:active={!showOrphans && selectedCategory === cat}
-				onclick={() => { showOrphans = false; selectedCategory = cat; }}
+				onclick={() => {
+					showOrphans = false;
+					selectedCategory = cat;
+				}}
 			>
 				{cat}
 			</button>
@@ -98,82 +166,187 @@
 			<button
 				class="chip chip-orphan"
 				class:active={showOrphans}
-				onclick={() => { showOrphans = !showOrphans; selectedCategory = null; }}
+				onclick={() => {
+					showOrphans = !showOrphans;
+					selectedCategory = null;
+				}}
 			>
 				Orphans ({data.orphanIds.length})
 			</button>
 		{/if}
 	</div>
 
+	<!-- Notes content -->
 	{#if filtered.length === 0}
-		<p class="empty">No notes yet. <a href="/notes/new">Create one →</a></p>
-	{:else}
-		<div class="notes-grid">
-			{#each filtered as note}
-				<NoteCard
-					title={note.title}
-					slug={note.slug}
-					tags={note.tags}
-					category={note.category}
-					status={note.status}
-					createdAt={note.createdAt}
-				/>
-			{/each}
+		<div class="empty-state">
+			{#if searchQuery}
+				<p class="empty-text">No notes matching <em>"{searchQuery}"</em>.</p>
+			{:else}
+				<p class="empty-text">No notes yet. Start a conversation in <a href="/chat">Chat →</a></p>
+			{/if}
 		</div>
+	{:else}
+		<!-- Featured notes: first 2 get large card treatment -->
+		{#if featuredNotes.length > 0}
+			<div class="featured-grid" class:single={featuredNotes.length === 1}>
+				{#each featuredNotes as note}
+					<a href="/notes/{note.slug}" class="featured-card">
+						<div class="featured-top">
+							<div class="featured-badges">
+								{#if note.category}
+									<span class="featured-category">{note.category}</span>
+								{/if}
+								{#each note.tags.slice(0, 2) as tag}
+									<span class="featured-tag">{tag}</span>
+								{/each}
+							</div>
+							<span class="featured-age">{relativeDate(note.updatedAt ?? note.createdAt)}</span>
+						</div>
+						<h2 class="featured-title">{note.title}</h2>
+						{#if note.body}
+							{@const ex = textExcerpt(note.body)}
+							{#if ex}
+								<p class="featured-excerpt">{ex}</p>
+							{/if}
+						{/if}
+						<div class="featured-footer">
+							<span class="featured-status" data-status={note.status}>{note.status}</span>
+						</div>
+					</a>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Regular notes: compact list rows -->
+		{#if regularNotes.length > 0}
+			<div class="notes-list">
+				{#each regularNotes as note}
+					<NoteCard
+						title={note.title}
+						slug={note.slug}
+						tags={note.tags}
+						category={note.category}
+						status={note.status}
+						createdAt={note.createdAt}
+						compact={true}
+					/>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>
 
 <style>
-	.notes-page {
+	.repo-page {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 1.25rem;
 	}
-	.page-header {
+
+	/* Header */
+	.repo-header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
+		gap: 1rem;
 	}
-	h1 {
-		font-size: 1.5rem;
+	.title-block {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.repo-title {
+		font-size: 1.9rem;
 		font-weight: 700;
 		color: var(--text-primary);
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+	}
+	.repo-subtitle {
+		font-size: 0.82rem;
+		color: var(--text-muted);
+		margin: 0;
 	}
 	.header-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.4rem;
 		align-items: center;
+		flex-shrink: 0;
+		padding-top: 0.25rem;
 	}
-	.btn-secondary {
-		padding: 0.35rem 0.9rem;
-		background: var(--bg-surface);
+	.action-btn {
+		padding: 0.3rem 0.75rem;
+		background: transparent;
 		color: var(--text-muted);
 		border: 1px solid var(--border-soft);
 		border-radius: 6px;
 		text-decoration: none;
-		font-size: 0.82rem;
+		font-size: 0.78rem;
 		cursor: pointer;
 		font-family: inherit;
 		transition: color 0.15s, border-color 0.15s;
 	}
-	.btn-secondary:hover {
+	.action-btn:hover,
+	.action-btn.active {
 		color: var(--text-secondary);
 		border-color: var(--border-strong);
 	}
-	.btn-primary {
-		padding: 0.35rem 0.9rem;
-		background: var(--bg-raised);
-		color: var(--accent-primary);
+
+	/* Search */
+	.search-zone {
+		width: 100%;
+	}
+	.search-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.6rem 0.9rem;
+		background: var(--bg-surface);
 		border: 1px solid var(--border-soft);
-		border-radius: 6px;
-		text-decoration: none;
-		font-size: 0.82rem;
-		font-weight: 500;
+		border-radius: 10px;
+		cursor: text;
 		transition: border-color 0.15s;
 	}
-	.btn-primary:hover {
+	.search-wrap:focus-within {
 		border-color: var(--border-strong);
 	}
+	.search-icon {
+		width: 16px;
+		height: 16px;
+		color: var(--text-muted);
+		flex-shrink: 0;
+	}
+	.search-input {
+		flex: 1;
+		background: transparent;
+		border: none;
+		outline: none;
+		color: var(--text-primary);
+		font-size: 0.88rem;
+		font-family: inherit;
+		min-width: 0;
+	}
+	.search-input::placeholder {
+		color: var(--text-subtle);
+	}
+	.search-input::-webkit-search-cancel-button {
+		display: none;
+	}
+	.search-clear {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		font-size: 1rem;
+		cursor: pointer;
+		padding: 0 0.2rem;
+		line-height: 1;
+		font-family: inherit;
+	}
+	.search-clear:hover {
+		color: var(--text-secondary);
+	}
+
+	/* Import panel */
 	.import-panel {
 		background: var(--bg-surface);
 		border: 1px solid var(--border-soft);
@@ -230,7 +403,7 @@
 		margin-bottom: 0.2rem;
 	}
 	.err-file {
-		font-family: var(--font-mono);
+		font-family: inherit;
 		color: var(--accent-primary);
 	}
 	.result-empty {
@@ -242,18 +415,20 @@
 		font-size: 0.85rem;
 		margin: 0;
 	}
-	.category-filters {
+
+	/* Category filter chips */
+	.filter-zone {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 0.35rem;
 	}
 	.chip {
-		padding: 0.25rem 0.7rem;
-		background: var(--bg-surface);
+		padding: 0.22rem 0.65rem;
+		background: transparent;
 		color: var(--text-muted);
 		border: 1px solid var(--border-soft);
 		border-radius: 999px;
-		font-size: 0.78rem;
+		font-size: 0.76rem;
 		cursor: pointer;
 		font-family: inherit;
 		transition: color 0.15s, border-color 0.15s, background 0.15s;
@@ -265,26 +440,164 @@
 	.chip.active {
 		background: color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
 		color: var(--accent-primary);
-		border-color: var(--border-strong);
+		border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
 	}
 	.chip-orphan {
-		color: var(--text-secondary);
-		border-color: var(--border-strong);
+		color: var(--text-subtle);
 	}
 	.chip-orphan.active {
-		background: color-mix(in srgb, var(--accent-strong) 15%, var(--bg-surface));
+		background: color-mix(in srgb, var(--accent-strong) 12%, var(--bg-surface));
 		color: var(--accent-strong);
-		border-color: var(--border-strong);
+		border-color: color-mix(in srgb, var(--accent-strong) 35%, transparent);
 	}
-	.notes-grid {
+
+	/* Empty state */
+	.empty-state {
+		padding: 3rem 0;
+		text-align: center;
+	}
+	.empty-text {
+		color: var(--text-muted);
+		font-size: 0.9rem;
+		margin: 0;
+	}
+	.empty-text em {
+		font-style: normal;
+		color: var(--text-secondary);
+	}
+	.empty-text a {
+		color: var(--accent-primary);
+		text-decoration: none;
+	}
+
+	/* Featured notes grid */
+	.featured-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		grid-template-columns: repeat(2, 1fr);
 		gap: 0.75rem;
 	}
-	.empty {
-		color: var(--text-muted);
+	.featured-grid.single {
+		grid-template-columns: 1fr;
 	}
-	.empty a {
+	.featured-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		padding: 1.25rem 1.35rem;
+		background: var(--bg-surface);
+		border: 1px solid var(--border-soft);
+		border-radius: 12px;
+		text-decoration: none;
+		color: inherit;
+		transition: border-color 0.15s, background 0.15s;
+		min-height: 140px;
+	}
+	.featured-card:hover {
+		border-color: var(--border-strong);
+		background: var(--bg-raised);
+	}
+	.featured-top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.featured-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+	.featured-category {
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		color: var(--accent-primary);
+		background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+	}
+	.featured-tag {
+		font-size: 0.7rem;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		background: var(--bg-raised);
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+	}
+	.featured-age {
+		font-size: 0.72rem;
+		color: var(--text-subtle);
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+	.featured-title {
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--text-primary);
+		letter-spacing: -0.015em;
+		line-height: 1.25;
+		margin: 0;
+	}
+	.featured-excerpt {
+		font-size: 0.82rem;
+		color: var(--text-secondary);
+		line-height: 1.55;
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.featured-footer {
+		margin-top: auto;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.featured-status {
+		font-size: 0.68rem;
+		padding: 0.12rem 0.45rem;
+		border-radius: 999px;
+		font-weight: 500;
+	}
+	.featured-status[data-status='stub'] {
+		background: color-mix(in srgb, var(--graph-node-stub) 15%, transparent);
+		color: var(--graph-node-stub);
+	}
+	.featured-status[data-status='growing'] {
+		background: color-mix(in srgb, var(--graph-node-growing) 15%, transparent);
+		color: var(--graph-node-growing);
+	}
+	.featured-status[data-status='mature'] {
+		background: color-mix(in srgb, var(--graph-node-mature) 15%, transparent);
+		color: var(--graph-node-mature);
+	}
+
+	/* Regular notes list */
+	.notes-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 10px;
+		padding: 0.35rem;
+		background: var(--bg-surface);
+	}
+
+	/* Responsive */
+	@media (max-width: 640px) {
+		.featured-grid {
+			grid-template-columns: 1fr;
+		}
+		.repo-header {
+			flex-direction: column;
+		}
+		.header-actions {
+			padding-top: 0;
+		}
 	}
 </style>
