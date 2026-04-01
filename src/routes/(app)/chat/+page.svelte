@@ -429,11 +429,11 @@
 </div>
 
 <style>
-	/* ── Page shell fills the viewport below nav + page-content padding ── */
+	/* ── Page shell fills the viewport beside the left rail ── */
 	.chat-shell {
 		display: flex;
 		flex-direction: column;
-		height: calc(100vh - 60px - 4rem);
+		height: calc(100vh - 4rem);
 		min-height: 400px;
 	}
 

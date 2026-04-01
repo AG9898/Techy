@@ -5,8 +5,17 @@
 	let { children, data }: { children: import('svelte').Snippet; data: LayoutData } = $props();
 </script>
 
-<Nav session={data.session} />
+<div class="app-shell">
+	<Nav session={data.session} />
+	<main class="page-content">
+		{@render children()}
+	</main>
+</div>
 
-<main class="page-content">
-	{@render children()}
-</main>
+<style>
+	.app-shell {
+		display: flex;
+		height: 100vh;
+		overflow: hidden;
+	}
+</style>

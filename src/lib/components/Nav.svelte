@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import { Collapsible } from 'melt/builders';
 	import type { DefaultSession } from '@auth/sveltekit';
 
 	let { session }: { session: DefaultSession | null } = $props();
@@ -36,138 +38,418 @@
 		{ id: 'amber', color: '#fcd34d' },
 		{ id: 'rose', color: '#fda4af' }
 	];
+
+	// ── Route-aware collapse state ────────────────────────────────
+	// Graph page auto-tucks the rail; other pages default to expanded.
+	// User can override, but navigating to a new route resets to its default.
+	let prevPath = $state(page.url.pathname);
+	let collapsed = $state(page.url.pathname === '/');
+
+	$effect(() => {
+		const currentPath = page.url.pathname;
+		if (currentPath !== prevPath) {
+			collapsed = currentPath === '/';
+			prevPath = currentPath;
+		}
+	});
+
+	// Keep a CSS variable in sync so graph-page can offset its fixed position
+	$effect(() => {
+		if (typeof document !== 'undefined') {
+			document.documentElement.style.setProperty(
+				'--rail-w',
+				collapsed ? 'var(--rail-w-collapsed)' : 'var(--rail-w-expanded)'
+			);
+		}
+	});
+
+	// Melt Collapsible: provides aria-expanded, aria-controls, and the
+	// content id for the toggle button — accessibility without canned styles.
+	const collapsible = new Collapsible({
+		open: () => !collapsed,
+		onOpenChange: (v) => {
+			collapsed = !v;
+		}
+	});
+
+	const navLinks = [
+		{ href: '/', label: 'Graph' },
+		{ href: '/notes', label: 'Notes' },
+		{ href: '/search', label: 'Search' },
+		{ href: '/chat', label: 'Chat' }
+	];
+
+	function isActive(href: string): boolean {
+		if (href === '/') return page.url.pathname === '/';
+		return page.url.pathname.startsWith(href);
+	}
 </script>
 
-<nav class="site-nav">
-	<a href="/" class="nav-logo">Techy</a>
-
-	<div class="nav-links">
-		<a href="/">Graph</a>
-		<a href="/notes">Notes</a>
-		<a href="/search">Search</a>
-		<a href="/chat">Chat</a>
+<nav class="rail" class:collapsed aria-label="Main navigation">
+	<!-- ── Header ──────────────────────────────────────────────── -->
+	<div class="rail-header">
+		<a href="/" class="logo" aria-label="Techy home">
+			<span class="logo-mark">T</span>
+			<span class="logo-words">
+				<span class="logo-name">Techy</span>
+				<span class="logo-sub">Knowledge Graph</span>
+			</span>
+		</a>
+		<button
+			class="rail-toggle"
+			{...collapsible.trigger}
+			aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+		>
+			<svg class="chevron" class:flipped={collapsed} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<polyline points="15 18 9 12 15 6" />
+			</svg>
+		</button>
 	</div>
 
-	<div class="nav-controls">
-		<div class="theme-toggles">
-			{#each themes as t}
-				<button
-					class="theme-btn"
-					class:active={theme === t.id}
-					onclick={() => (theme = t.id)}
-					aria-label="Switch to {t.label} theme"
-				>{t.label}</button>
+	<!-- ── Primary nav ─────────────────────────────────────────── -->
+	<div class="nav-body" {...collapsible.content}>
+		<ul class="nav-list" role="list">
+			{#each navLinks as link}
+				<li>
+					<a
+						href={link.href}
+						class="nav-item"
+						class:active={isActive(link.href)}
+						title={collapsed ? link.label : undefined}
+						aria-current={isActive(link.href) ? 'page' : undefined}
+					>
+						{#if link.label === 'Graph'}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<circle cx="12" cy="5" r="2.5"/>
+								<circle cx="5" cy="19" r="2.5"/>
+								<circle cx="19" cy="19" r="2.5"/>
+								<line x1="12" y1="7.5" x2="5.8" y2="16.7"/>
+								<line x1="12" y1="7.5" x2="18.2" y2="16.7"/>
+							</svg>
+						{:else if link.label === 'Notes'}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+								<polyline points="14 2 14 8 20 8"/>
+								<line x1="16" y1="13" x2="8" y2="13"/>
+								<line x1="16" y1="17" x2="8" y2="17"/>
+							</svg>
+						{:else if link.label === 'Search'}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<circle cx="11" cy="11" r="7"/>
+								<line x1="21" y1="21" x2="16.65" y2="16.65"/>
+							</svg>
+						{:else if link.label === 'Chat'}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+							</svg>
+						{/if}
+						<span class="nav-label">{link.label}</span>
+					</a>
+				</li>
 			{/each}
-		</div>
-		<div class="accent-toggles">
-			{#each accents as a}
-				<button
-					class="accent-dot"
-					class:active={accent === a.id}
-					onclick={() => (accent = a.id)}
-					aria-label="Switch to {a.id} accent"
-					style="--dot-color: {a.color}"
-				></button>
-			{/each}
-		</div>
-	</div>
+		</ul>
 
-	<div class="nav-user">
-		{#if session?.user}
-			{#if session.user.image}
-				<img src={session.user.image} alt={session.user.name ?? 'User'} class="avatar" />
+		<!-- ── Footer controls ─────────────────────────────────── -->
+		<div class="rail-footer">
+			<!-- Theme toggle -->
+			<div class="theme-row">
+				{#each themes as t}
+					<button
+						class="theme-btn"
+						class:active={theme === t.id}
+						onclick={() => (theme = t.id)}
+						aria-label="Switch to {t.label} theme"
+						title={collapsed ? t.label : undefined}
+					>
+						{#if t.id === 'dark'}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+							</svg>
+						{:else}
+							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<circle cx="12" cy="12" r="5"/>
+								<line x1="12" y1="1" x2="12" y2="3"/>
+								<line x1="12" y1="21" x2="12" y2="23"/>
+								<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+								<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+								<line x1="1" y1="12" x2="3" y2="12"/>
+								<line x1="21" y1="12" x2="23" y2="12"/>
+								<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+								<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+							</svg>
+						{/if}
+						<span class="nav-label">{t.label}</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- Accent dots -->
+			<div class="accent-row">
+				{#each accents as a}
+					<button
+						class="accent-dot"
+						class:active={accent === a.id}
+						onclick={() => (accent = a.id)}
+						aria-label="Switch to {a.id} accent"
+						title={a.id}
+						style="--dot-color: {a.color}"
+					></button>
+				{/each}
+			</div>
+
+			<!-- Account -->
+			{#if session?.user}
+				<div class="account-row" title={collapsed && session.user.name ? session.user.name : undefined}>
+					{#if session.user.image}
+						<img
+							src={session.user.image}
+							alt={session.user.name ?? 'User'}
+							class="avatar"
+						/>
+					{/if}
+					<span class="nav-label user-name">{session.user.name ?? ''}</span>
+				</div>
+				<form method="POST" action="/auth/signout">
+					<button type="submit" class="signout-btn" title={collapsed ? 'Sign out' : undefined}>
+						<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+							<polyline points="16 17 21 12 16 7"/>
+							<line x1="21" y1="12" x2="9" y2="12"/>
+						</svg>
+						<span class="nav-label">Sign out</span>
+					</button>
+				</form>
 			{/if}
-			<form method="POST" action="/auth/signout">
-				<button type="submit" class="signout-btn">Sign out</button>
-			</form>
-		{/if}
+		</div>
 	</div>
 </nav>
 
 <style>
-	.site-nav {
+	/* ── Rail shell ───────────────────────────────────────────── */
+	.rail {
+		display: flex;
+		flex-direction: column;
+		width: var(--rail-w-expanded, 192px);
+		min-width: var(--rail-w-expanded, 192px);
+		height: 100vh;
+		background: var(--bg-surface);
+		border-right: 1px solid var(--border-soft);
+		overflow: hidden;
+		transition: width 0.2s ease, min-width 0.2s ease;
+		flex-shrink: 0;
 		position: sticky;
 		top: 0;
-		z-index: 50;
+		z-index: 40;
+	}
+
+	.rail.collapsed {
+		width: var(--rail-w-collapsed, 52px);
+		min-width: var(--rail-w-collapsed, 52px);
+	}
+
+	/* ── Header ───────────────────────────────────────────────── */
+	.rail-header {
 		display: flex;
 		align-items: center;
-		gap: 1.5rem;
-		padding: 0 1.5rem;
-		height: 60px;
-		background: var(--bg-surface);
-		border-bottom: 1px solid var(--border-soft);
+		justify-content: space-between;
+		padding: 1rem 0.75rem 0.75rem;
+		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
-	/* ── Logo ─────────────────────────────────────────────── */
-	.nav-logo {
-		font-weight: 700;
-		font-size: 1.1rem;
-		letter-spacing: -0.01em;
-		color: var(--accent-primary);
-		text-decoration: none;
-	}
-
-	/* ── Navigation links ─────────────────────────────────── */
-	.nav-links {
+	.logo {
 		display: flex;
-		gap: 0.125rem;
-		margin-left: auto;
+		align-items: center;
+		gap: 0.5rem;
+		text-decoration: none;
+		min-width: 0;
+		overflow: hidden;
 	}
 
-	.nav-links a {
+	.logo-mark {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		background: var(--accent-soft);
+		color: var(--accent-primary);
+		border-radius: 7px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+
+	.logo-words {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		transition: opacity 0.15s ease;
+		min-width: 0;
+	}
+
+	.rail.collapsed .logo-words {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.logo-name {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--text-primary);
+		white-space: nowrap;
+		letter-spacing: -0.01em;
+	}
+
+	.logo-sub {
+		font-size: 0.6rem;
+		color: var(--text-muted);
+		white-space: nowrap;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+
+	/* ── Toggle button ────────────────────────────────────────── */
+	.rail-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		background: none;
+		border: 1px solid var(--border-soft);
+		border-radius: 6px;
+		color: var(--text-muted);
+		cursor: pointer;
+		flex-shrink: 0;
+		transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+	}
+
+	.rail-toggle:hover {
+		color: var(--text-secondary);
+		border-color: var(--border-strong);
+		background: var(--bg-raised);
+	}
+
+	.chevron {
+		transition: transform 0.2s ease;
+	}
+
+	.chevron.flipped {
+		transform: rotate(180deg);
+	}
+
+	/* ── Nav body (collapsible content region) ────────────────── */
+	.nav-body {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		overflow: hidden;
+		min-height: 0;
+	}
+
+	/* ── Nav list ─────────────────────────────────────────────── */
+	.nav-list {
+		list-style: none;
+		padding: 0.5rem 0.5rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		flex-shrink: 0;
+	}
+
+	.nav-item {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding: 0.5rem 0.625rem;
+		border-radius: 8px;
 		color: var(--text-secondary);
 		text-decoration: none;
-		font-size: 0.875rem;
-		padding: 0.35rem 0.75rem;
-		border-radius: 9999px;
+		font-size: 0.8125rem;
 		transition: color 0.15s ease, background 0.15s ease;
+		white-space: nowrap;
 	}
 
-	.nav-links a:hover {
+	.nav-item:hover {
 		color: var(--text-primary);
 		background: var(--bg-raised);
 	}
 
-	/* ── Theme + accent controls ──────────────────────────── */
-	.nav-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+	.nav-item.active {
+		color: var(--accent-primary);
+		background: var(--accent-soft);
 	}
 
-	.theme-toggles {
+	/* ── Icons ────────────────────────────────────────────────── */
+	.nav-icon {
+		width: 16px;
+		height: 16px;
+		flex-shrink: 0;
+	}
+
+	/* ── Labels (fade when collapsed) ────────────────────────── */
+	.nav-label {
+		overflow: hidden;
+		white-space: nowrap;
+		transition: opacity 0.15s ease;
+	}
+
+	.rail.collapsed .nav-label {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	/* ── Rail footer ──────────────────────────────────────────── */
+	.rail-footer {
+		margin-top: auto;
+		padding: 0.75rem 0.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		border-top: 1px solid var(--border-soft);
+		flex-shrink: 0;
+	}
+
+	/* ── Theme toggle row ─────────────────────────────────────── */
+	.theme-row {
 		display: flex;
 		gap: 0.125rem;
-		padding: 0.2rem;
-		background: var(--bg-base);
-		border: 1px solid var(--border-soft);
-		border-radius: 9999px;
 	}
 
 	.theme-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		width: 100%;
+		padding: 0.4rem 0.625rem;
 		background: none;
 		border: none;
+		border-radius: 7px;
 		color: var(--text-muted);
-		padding: 0.2rem 0.55rem;
-		border-radius: 9999px;
 		cursor: pointer;
-		font-size: 0.7rem;
+		font-size: 0.8rem;
+		font-family: inherit;
+		white-space: nowrap;
 		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.theme-btn:hover {
-		color: var(--text-primary);
+		color: var(--text-secondary);
+		background: var(--bg-raised);
 	}
 
 	.theme-btn.active {
-		background: var(--bg-surface);
 		color: var(--accent-primary);
+		background: var(--accent-soft);
 	}
 
-	.accent-toggles {
+	/* ── Accent dots row ──────────────────────────────────────── */
+	.accent-row {
 		display: flex;
-		gap: 0.35rem;
+		gap: 0.375rem;
 		align-items: center;
+		padding: 0 0.625rem;
 	}
 
 	.accent-dot {
@@ -178,6 +460,7 @@
 		border: 2px solid transparent;
 		cursor: pointer;
 		padding: 0;
+		flex-shrink: 0;
 		transition: transform 0.15s ease, border-color 0.15s ease;
 	}
 
@@ -190,33 +473,48 @@
 		transform: scale(1.15);
 	}
 
-	/* ── User area ────────────────────────────────────────── */
-	.nav-user {
+	/* ── Account row ──────────────────────────────────────────── */
+	.account-row {
 		display: flex;
 		align-items: center;
-		gap: 0.625rem;
+		gap: 0.5rem;
+		padding: 0 0.25rem;
+		overflow: hidden;
 	}
 
 	.avatar {
-		width: 28px;
-		height: 28px;
+		width: 26px;
+		height: 26px;
 		border-radius: 50%;
 		border: 1.5px solid var(--border-soft);
+		flex-shrink: 0;
 	}
 
-	.signout-btn {
-		background: none;
-		border: 1px solid var(--border-soft);
-		color: var(--text-muted);
-		padding: 0.25rem 0.75rem;
-		border-radius: 9999px;
-		cursor: pointer;
+	.user-name {
 		font-size: 0.75rem;
-		transition: color 0.15s ease, border-color 0.15s ease;
+		color: var(--text-muted);
+	}
+
+	/* ── Sign out button ──────────────────────────────────────── */
+	.signout-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		width: 100%;
+		padding: 0.4rem 0.625rem;
+		background: none;
+		border: none;
+		border-radius: 7px;
+		color: var(--text-muted);
+		cursor: pointer;
+		font-size: 0.8rem;
+		font-family: inherit;
+		white-space: nowrap;
+		transition: color 0.15s ease, background 0.15s ease;
 	}
 
 	.signout-btn:hover {
-		color: var(--text-secondary);
-		border-color: var(--border-strong);
+		color: var(--accent-red);
+		background: var(--bg-raised);
 	}
 </style>

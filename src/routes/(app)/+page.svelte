@@ -19,10 +19,11 @@
 <style>
 	.graph-wrapper {
 		position: fixed;
-		top: 60px;
-		left: 0;
+		top: 0;
+		left: var(--rail-w, var(--rail-w-expanded, 192px));
 		right: 0;
 		bottom: 0;
+		transition: left 0.2s ease;
 	}
 	.empty-state {
 		display: flex;
