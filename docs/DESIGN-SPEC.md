@@ -205,10 +205,19 @@ Rules:
 ## Components
 
 ### `Nav.svelte`
-- Replace the current top nav with a collapsible left rail
-- Integrate route links, theme controls, accent controls, and account actions into the rail
-- Keep the dark/light toggle and accent dots
-- Use Melt primitives where they improve collapse, disclosure, and keyboard behavior
+
+The top nav has been replaced with a collapsible left rail (`<nav class="rail">`).
+
+**Implementation details:**
+- Rail widths are controlled by CSS variables in `app.css :root`:
+  - `--rail-w-expanded: 192px`
+  - `--rail-w-collapsed: 52px`
+  - `--rail-w: var(--rail-w-expanded)` (updated live on `document.documentElement` via a `$effect` when collapsed state changes)
+- Melt `Collapsible` builder handles open/close state and ARIA (`aria-expanded`, `aria-controls`)
+- Route-aware default: the graph page (`/`) auto-tucks the rail (starts collapsed); all other routes default to expanded
+- Nav labels (`span.nav-label`) fade out via `opacity: 0` when `.rail.collapsed`; the toggle chevron rotates 180° (`.chevron.flipped`)
+- Rail footer contains: dark/light theme toggle buttons, accent dot group (sky/mint/amber/rose), avatar + username, and sign-out form
+- Any fixed-position page that needs to offset from the rail must use `left: var(--rail-w)` — never a hardcoded pixel offset
 
 ### `ForceGraph.svelte`
 - Replace separate legend/filter overlays with one unified graph control panel

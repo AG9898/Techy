@@ -1898,7 +1898,7 @@
       "id": "UI-013",
       "group_id": "UI",
       "title": "Redesign the shared app shell into a collapsible left rail",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Replace the current sticky top nav with a route-aware left rail that can collapse, auto-tuck, and expand without compromising the graph page.",

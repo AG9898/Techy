@@ -114,6 +114,7 @@ Rules:
 - the shared app shell should use a left rail instead of a horizontal top nav
 - the rail should be collapsible and able to auto-tuck on immersive routes like the graph
 - shell behavior should preserve focus on the current page rather than constantly demanding attention
+- pages that scroll inside `.page-content` do not need to reference the rail width; only full-bleed fixed-position pages (currently only the graph) should anchor to `left: var(--rail-w)` — never a hardcoded pixel offset
 
 ### 3. Chat
 

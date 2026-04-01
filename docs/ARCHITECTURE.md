@@ -23,6 +23,28 @@ See [`docs/API.md`](API.md) for the route-by-route surface and endpoint contract
 
 ---
 
+## App Shell Layout
+
+The `(app)` route group uses a flex-row shell defined in `src/routes/(app)/+layout.svelte`:
+
+```
+.app-shell { display: flex; height: 100vh; overflow: hidden; }
+  ├── Nav.svelte        — left rail, position: sticky, height: 100vh
+  └── <main class="page-content">  — flex: 1, overflow-y: auto, padding: 2rem
+```
+
+The `--rail-w` CSS variable (set on `document.documentElement`) is the contract between the rail and any child page that needs to know the current rail width at runtime:
+
+| Variable | Value |
+|---|---|
+| `--rail-w-expanded` | `192px` |
+| `--rail-w-collapsed` | `52px` |
+| `--rail-w` | updated live to whichever state is active |
+
+Most pages scroll inside `.page-content` and never need to reference `--rail-w`. The graph page (`/`) is the current exception: it opts out of `.page-content` scroll by using `position: fixed; top: 0; left: var(--rail-w); right: 0; bottom: 0` so the D3 canvas fills the remaining viewport exactly. Any future page that needs the same full-bleed treatment must anchor to `left: var(--rail-w)`, not a hardcoded pixel value.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology | Version |
