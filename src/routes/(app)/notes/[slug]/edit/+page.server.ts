@@ -2,6 +2,7 @@ import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks, noteRevisions } from '$lib/server/db/schema.js';
 import { and, eq, like, ne } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
+import { validateNoteCategory } from '$lib/utils/note-taxonomy.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -18,6 +19,21 @@ export const actions: Actions = {
 		const [note] = await db.select().from(notes).where(eq(notes.slug, params.slug));
 		if (!note) return fail(404, { error: 'Note not found' });
 
+		const data = await request.formData();
+		const title = (data.get('title') as string)?.trim();
+		const body = (data.get('body') as string) ?? '';
+		const tagsRaw = (data.get('tags') as string) ?? '';
+		const aliasesRaw = (data.get('aliases') as string) ?? '';
+		const categoryInput = (data.get('category') as string) ?? '';
+		const status = (data.get('status') as 'stub' | 'growing' | 'mature') ?? 'stub';
+
+		if (!title) return fail(400, { error: 'Title is required' });
+
+		const categoryValidation = validateNoteCategory(categoryInput);
+		if (categoryValidation.error) {
+			return fail(400, { error: categoryValidation.error });
+		}
+
 		// Snapshot current state as a revision before applying changes
 		await db.insert(noteRevisions).values({
 			noteId: note.id,
@@ -29,16 +45,6 @@ export const actions: Actions = {
 			status: note.status
 		});
 
-		const data = await request.formData();
-		const title = (data.get('title') as string)?.trim();
-		const body = (data.get('body') as string) ?? '';
-		const tagsRaw = (data.get('tags') as string) ?? '';
-		const aliasesRaw = (data.get('aliases') as string) ?? '';
-		const category = (data.get('category') as string)?.trim() || null;
-		const status = (data.get('status') as 'stub' | 'growing' | 'mature') ?? 'stub';
-
-		if (!title) return fail(400, { error: 'Title is required' });
-
 		const tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
 		const aliases = aliasesRaw.split(',').map((a) => a.trim()).filter(Boolean);
 
@@ -46,7 +52,15 @@ export const actions: Actions = {
 
 		await db
 			.update(notes)
-			.set({ title, body, tags, aliases, category, status, updatedAt: new Date() })
+			.set({
+				title,
+				body,
+				tags,
+				aliases,
+				category: categoryValidation.category,
+				status,
+				updatedAt: new Date()
+			})
 			.where(eq(notes.id, note.id));
 
 		// Re-sync wikilinks for the edited note: delete old links then re-insert

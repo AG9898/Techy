@@ -85,7 +85,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ result });
 	} catch (err) {
 		if (err instanceof CommitError) {
-			const status = err.code === 'CONFLICT' ? 409 : 404;
+			const status =
+				err.code === 'VALIDATION' ? 400 : err.code === 'CONFLICT' ? 409 : 404;
 			return json({ error: err.message }, { status });
 		}
 		console.error('[/api/assistant/commit]', err);

@@ -1,24 +1,7 @@
 import type { ResearchContext } from '$lib/server/assistant/research.js';
+import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
-const CANONICAL_CATEGORIES = [
-	'Programming Languages',
-	'Frameworks & Libraries',
-	'Developer Tools',
-	'Platforms & Operating Systems',
-	'Cloud & Infrastructure',
-	'Databases & Storage',
-	'Networking & Protocols',
-	'Security & Identity',
-	'APIs & Integration',
-	'DevOps & Delivery',
-	'AI & Machine Learning',
-	'Data & Analytics',
-	'Hardware & Devices',
-	'Software Architecture',
-	'Concepts & Methodologies'
-] as const;
-
-const CANONICAL_CATEGORIES_TEXT = CANONICAL_CATEGORIES.join(', ');
+const CANONICAL_CATEGORIES_TEXT = CANONICAL_NOTE_CATEGORIES.join(', ');
 
 /**
  * System prompts for AI-generated notes.

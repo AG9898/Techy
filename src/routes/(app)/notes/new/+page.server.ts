@@ -2,6 +2,7 @@ import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
+import { validateNoteCategory } from '$lib/utils/note-taxonomy.js';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
 import type { Actions, PageServerLoad } from './$types.js';
@@ -20,7 +21,7 @@ export const actions: Actions = {
 		const body = (data.get('body') as string) ?? '';
 		const tagsRaw = (data.get('tags') as string) ?? '';
 		const aliasesRaw = (data.get('aliases') as string) ?? '';
-		const category = (data.get('category') as string)?.trim() || null;
+		const categoryInput = (data.get('category') as string) ?? '';
 		const status = (data.get('status') as 'stub' | 'growing' | 'mature') ?? 'stub';
 		const aiGenerated = data.get('ai_generated') === 'true';
 		const aiModel = (data.get('ai_model') as string)?.trim() || null;
@@ -28,6 +29,11 @@ export const actions: Actions = {
 
 		if (!title) {
 			return fail(400, { error: 'Title is required' });
+		}
+
+		const categoryValidation = validateNoteCategory(categoryInput);
+		if (categoryValidation.error) {
+			return fail(400, { error: categoryValidation.error });
 		}
 
 		const slug = slugify(title);
@@ -49,7 +55,18 @@ export const actions: Actions = {
 
 		const [inserted] = await db
 			.insert(notes)
-			.values({ title, slug, body, tags, aliases, category, status, aiGenerated, aiModel, aiPrompt })
+			.values({
+				title,
+				slug,
+				body,
+				tags,
+				aliases,
+				category: categoryValidation.category,
+				status,
+				aiGenerated,
+				aiModel,
+				aiPrompt
+			})
 			.returning({ id: notes.id });
 
 		// Resolve [[wikilinks]] and insert note_links rows

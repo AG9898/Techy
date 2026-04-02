@@ -243,6 +243,7 @@ Batch-import notes from uploaded Markdown files. Files must have a YAML frontmat
 
 **Behaviour:**
 - Parses `title`, `tags`, `aliases`, `category`, `status` from YAML frontmatter; falls back to first `# Heading` for title.
+- `category` must resolve to one of the canonical categories from `docs/NOTES.md`; invalid category strings are reported per file and skipped rather than persisted.
 - If a note with the same title already exists it is **updated**. Otherwise a new note is **inserted**.
 - `[[wikilinks]]` in each imported note are synced to `note_links` after all upserts complete.
 
@@ -250,14 +251,16 @@ Batch-import notes from uploaded Markdown files. Files must have a YAML frontmat
 
 **Errors:**
 - `400` — no files provided
-- Per-file validation errors for malformed markdown/frontmatter or slug/title conflicts
+- Per-file validation errors for malformed markdown/frontmatter, invalid category values, or slug/title conflicts
 
 ---
 
 ### `POST /notes/[slug]/edit?/update`
 Legacy direct update action for an existing note.
 
-**Behaviour:** Re-syncs `note_links` and preserves revision history.
+**Behaviour:**
+- Re-syncs `note_links` and preserves revision history.
+- Rejects non-canonical `category` values with `400` before any revision snapshot or note update is written.
 
 ---
 
@@ -417,7 +420,7 @@ Persist a confirmed assistant proposal.
       "body": "# SvelteKit Adapters\n\n...",
       "tags": ["framework"],
       "aliases": [],
-      "category": "Web Frameworks",
+      "category": "Frameworks & Libraries",
       "status": "growing",
       "aiGenerated": true,
       "aiModel": "claude-opus-4-6",
@@ -440,6 +443,7 @@ Persist a confirmed assistant proposal.
 
 **Behaviour:**
 - This endpoint is the assistant mutation boundary for confirmed create, update, and delete proposals.
+- Create/update drafts must use a canonical note category; non-canonical category strings are rejected with `400`.
 - `create_note` inserts the note, parses `[[wikilinks]]`, and syncs `note_links` immediately.
 - If `linkedNotePatches` are included, the commit also updates those existing note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows before returning.
 - `update_note` stores a revision snapshot before updating the note and re-syncs links.
@@ -456,7 +460,7 @@ Persist a confirmed assistant proposal.
 ```
 
 **Errors:**
-- `400` — invalid proposal shape
+- `400` — invalid proposal shape or non-canonical category in a create/update draft
 - `404` — target note not found for update/delete, or a `linkedNotePatches` target ID does not exist at commit time
 - `409` — title/slug conflict on create
 - `500` — DB or sync failure

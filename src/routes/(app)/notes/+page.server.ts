@@ -2,6 +2,7 @@ import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks } from '$lib/server/db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
+import { validateNoteCategory } from '$lib/utils/note-taxonomy.js';
 import { slugify } from '$lib/utils/slugify.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
 import { parseFrontmatter } from '$lib/utils/frontmatter.js';
@@ -101,6 +102,15 @@ export const actions: Actions = {
 			const status = (VALID_STATUSES as readonly string[]).includes(parsed.status ?? '')
 				? (parsed.status as 'stub' | 'growing' | 'mature')
 				: 'stub';
+			const categoryValidation = validateNoteCategory(parsed.category ?? null);
+
+			if (categoryValidation.error) {
+				errors.push({
+					file: file.name,
+					message: categoryValidation.error
+				});
+				continue;
+			}
 
 			validNotes.push({
 				fileName: file.name,
@@ -109,7 +119,7 @@ export const actions: Actions = {
 				body: parsed.body,
 				tags: parsed.tags,
 				aliases: parsed.aliases,
-				category: parsed.category ?? null,
+				category: categoryValidation.category,
 				status
 			});
 		}

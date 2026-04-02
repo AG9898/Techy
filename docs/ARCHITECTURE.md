@@ -176,6 +176,8 @@ The endpoint is stateless with respect to provider-managed hidden conversation m
 
 The commit path is responsible for persisting confirmed changes, taking revision snapshots before updates, syncing `note_links`, and applying any assistant-supplied reciprocal link patches to existing notes.
 
+Canonical note-category enforcement is shared across the server write layer rather than duplicated per route. Assistant commit, manual note create/edit actions, and Markdown import all validate against the same taxonomy helper before persistence, while tags remain intentionally open vocabulary.
+
 ### Live Research
 
 Live research is part of assistant orchestration for creation and comparison/update flows. Purely conversational turns may remain chat-only even when a related note exists, while still offering follow-up research or review actions. Topic reuse is treated as a runtime optimization inside the current conversation, not a durable persisted store.

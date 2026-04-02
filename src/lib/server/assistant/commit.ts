@@ -2,6 +2,7 @@ import { db } from '$lib/server/db/index.js';
 import { notes, noteLinks, noteRevisions } from '$lib/server/db/schema.js';
 import { eq, inArray } from 'drizzle-orm';
 import { slugify } from '$lib/utils/slugify.js';
+import { validateNoteCategory } from '$lib/utils/note-taxonomy.js';
 import { extractWikilinks } from '$lib/utils/wikilinks.js';
 
 // ── Domain types ──────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ export type CommitResult = CommitCreateResult | CommitUpdateResult | CommitDelet
 export class CommitError extends Error {
 	constructor(
 		message: string,
-		public readonly code: 'CONFLICT' | 'NOT_FOUND'
+		public readonly code: 'CONFLICT' | 'NOT_FOUND' | 'VALIDATION'
 	) {
 		super(message);
 		this.name = 'CommitError';
@@ -84,6 +85,11 @@ export async function commitCreate(
 	draft: NoteDraft,
 	linkedNotePatches: LinkedNotePatch[] = []
 ): Promise<CommitCreateResult> {
+	const categoryValidation = validateNoteCategory(draft.category);
+	if (categoryValidation.error) {
+		throw new CommitError(categoryValidation.error, 'VALIDATION');
+	}
+
 	const slug = slugify(draft.title);
 
 	const existing = await db.select({ id: notes.id }).from(notes).where(eq(notes.slug, slug));
@@ -113,7 +119,7 @@ export async function commitCreate(
 			body: draft.body,
 			tags: draft.tags,
 			aliases: draft.aliases,
-			category: draft.category ?? null,
+			category: categoryValidation.category,
 			status: draft.status,
 			aiGenerated: draft.aiGenerated ?? false,
 			aiModel: draft.aiModel ?? null,
@@ -146,6 +152,11 @@ export async function commitUpdate(noteId: string, draft: NoteDraft): Promise<Co
 		throw new CommitError(`Note with id "${noteId}" not found`, 'NOT_FOUND');
 	}
 
+	const categoryValidation = validateNoteCategory(draft.category);
+	if (categoryValidation.error) {
+		throw new CommitError(categoryValidation.error, 'VALIDATION');
+	}
+
 	// Snapshot current state before applying changes
 	await db.insert(noteRevisions).values({
 		noteId: note.id,
@@ -164,7 +175,7 @@ export async function commitUpdate(noteId: string, draft: NoteDraft): Promise<Co
 			body: draft.body,
 			tags: draft.tags,
 			aliases: draft.aliases,
-			category: draft.category ?? null,
+			category: categoryValidation.category,
 			status: draft.status,
 			aiGenerated: draft.aiGenerated ?? note.aiGenerated,
 			aiModel: draft.aiModel ?? note.aiModel,

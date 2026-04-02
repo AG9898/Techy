@@ -15,6 +15,12 @@ function parseInlineArray(raw: string): string[] {
 		.filter(Boolean);
 }
 
+function parseScalarValue(raw: string): string | undefined {
+	const trimmed = raw.trim();
+	if (!trimmed) return undefined;
+	return trimmed.replace(/^(['"])(.*)\1$/, '$2') || undefined;
+}
+
 export interface ParsedFrontmatter {
 	title: string | undefined;
 	tags: string[];
@@ -52,9 +58,9 @@ export function parseFrontmatter(content: string): ParsedFrontmatter | null {
 
 		if (key === 'tags') result.tags = parseInlineArray(value);
 		else if (key === 'aliases') result.aliases = parseInlineArray(value);
-		else if (key === 'title') result.title = value || undefined;
-		else if (key === 'category') result.category = value || undefined;
-		else if (key === 'status') result.status = value || undefined;
+		else if (key === 'title') result.title = parseScalarValue(value);
+		else if (key === 'category') result.category = parseScalarValue(value);
+		else if (key === 'status') result.status = parseScalarValue(value);
 	}
 
 	// Fall back to first # heading if no explicit title in frontmatter

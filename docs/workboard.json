@@ -2128,7 +2128,7 @@
       "id": "NOTES-011",
       "group_id": "NOTES",
       "title": "Canonical note taxonomy enforcement across server write paths",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Centralize the canonical category list and enforce it consistently for assistant commit, manual note create/edit, and Markdown import flows.",

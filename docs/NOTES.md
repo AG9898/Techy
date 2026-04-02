@@ -98,6 +98,8 @@ Use one or more tags per note. Tags are flexible, secondary descriptors that cap
 
 Every note must belong to exactly one category from the canonical list below. Categories are strict labels, not free-form text. Do not invent new category names, casing variants, or singular/plural variants.
 
+Application enforcement uses a shared canonical taxonomy helper. Assistant commit, manual create/edit actions, and Markdown import all normalize recognized canonical labels and reject unknown category strings before they are persisted. Tags remain open vocabulary.
+
 Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
 
 | Category | Hub note |
