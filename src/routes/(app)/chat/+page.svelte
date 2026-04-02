@@ -436,491 +436,456 @@
 </svelte:head>
 
 <div class="chat-page">
-	<header class="chat-header">
-		<div class="chat-heading">
-			<p class="eyebrow">Assistant-first surface</p>
-			<h1>Chat</h1>
-			<p class="lede">
-				Keep the conversation flowing, surface matched notes inline, and review create/update/delete
-				proposals without leaving the thread.
-			</p>
-		</div>
-		<div class="chat-summary">
-			<span class="summary-pill">Providers live</span>
-			<span class="summary-pill">Inline proposals</span>
-			<span class="summary-pill">Resolved routing</span>
-		</div>
-	</header>
-
-	<section class="chat-shell">
-		<div class="conversation-column">
-			<div class="conversation-stream" bind:this={conversationEl} aria-label="Conversation">
-				{#if displayMessages.length === 0}
-					<div class="empty-state">
-						<p class="empty-kicker">No conversation yet</p>
-						<h2>{overrideMode === 'create' ? 'Draft a note' : 'Start a thread'}</h2>
-						<p>
-							Ask a question, request a note draft, or use the compact override controls to review an
-							existing note.
-						</p>
-						<div class="empty-notes">
-							<div class="empty-note">
-								<span>Auto</span>
-								<p>Inference-first chat that chooses the route for you.</p>
-							</div>
-							<div class="empty-note">
-								<span>Create</span>
-								<p>Generate a new note draft inline before you save it.</p>
-							</div>
-							<div class="empty-note">
-								<span>Update</span>
-								<p>Pick a saved note and review it without forcing mutation.</p>
-							</div>
+	<div class="conversation-stream" class:conversation-stream--empty={displayMessages.length === 0} bind:this={conversationEl} aria-label="Conversation">
+		{#if displayMessages.length === 0}
+			<div class="empty-stage">
+				<p class="empty-brand">Techy</p>
+				<h1>{overrideMode === 'create' ? 'Draft a note' : 'Chat'}</h1>
+				<p class="empty-copy">
+					Ask a question, request a draft, or review a note from the composer below.
+				</p>
+			</div>
+		{:else}
+			{#each displayMessages as msg}
+				{#if msg.role === 'user'}
+					<article class="message message--user">
+						<div class="message-bubble message-bubble--user">
+							<p>{msg.content}</p>
 						</div>
-					</div>
+					</article>
 				{:else}
-					{#each displayMessages as msg}
-						{#if msg.role === 'user'}
-							<article class="message message--user">
-								<div class="message-bubble message-bubble--user">
-									<p>{msg.content}</p>
+					<article class="message message--assistant">
+						<div class="assistant-panel">
+							<div class="message-meta">
+								<span class="message-role">Assistant</span>
+								{#if msg.routing}
+									<span class="meta-pill">{modeLabel(msg.routing.resolvedMode)}</span>
+									<span class="meta-pill meta-pill--soft">{intentLabel(msg.routing.intent)}</span>
+									{#if msg.routing.overrideSource !== 'none'}
+										<span class="meta-pill meta-pill--accent">
+											{msg.routing.overrideSource === 'override' ? 'Manual override' : 'Legacy mode'}
+										</span>
+									{/if}
+								{/if}
+							</div>
+
+							<div class="assistant-copy">
+								<p>{msg.content}</p>
+							</div>
+
+							{#if msg.citations.length}
+								<div class="citation-row" aria-label="Assistant citations">
+									{#each msg.citations as citation}
+										<a
+											class="citation-chip"
+											href={citation.url}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											{citation.title}
+										</a>
+									{/each}
 								</div>
-							</article>
-						{:else}
-							<article class="message message--assistant">
-								<div class="assistant-panel">
-									<div class="message-meta">
-										<span class="message-role">Assistant</span>
-										{#if msg.routing}
-											<span class="meta-pill">{modeLabel(msg.routing.resolvedMode)}</span>
-											<span class="meta-pill meta-pill--soft">{intentLabel(msg.routing.intent)}</span>
-											{#if msg.routing.overrideSource !== 'none'}
-												<span class="meta-pill meta-pill--accent">
-													{msg.routing.overrideSource === 'override' ? 'Manual override' : 'Legacy mode'}
-												</span>
-											{/if}
-										{/if}
+							{/if}
+
+							{#if msg.routing?.matchedNote && msg.routing.resolvedMode === 'chat'}
+								{@const matched = noteLookupById.get(msg.routing.matchedNote.id)}
+								<div class="match-card">
+									<div class="match-card__head">
+										<div>
+											<p class="match-card__eyebrow">Matched saved note</p>
+											<h3>{matched?.title ?? msg.routing.matchedNote.title}</h3>
+										</div>
+										<a class="match-card__link" href={`/notes/${msg.routing.matchedNote.slug}`}>
+											Open note
+										</a>
 									</div>
-
-									<div class="assistant-copy">
-										<p>{msg.content}</p>
+									<p class="match-card__body">
+										{msg.routing.matchedNote.matchType === 'alias'
+											? `Alias match for “${msg.routing.matchedNote.matchedText}”.`
+											: `Exact title match for “${msg.routing.matchedNote.matchedText}”.`}
+									</p>
+									{#if matched}
+										<div class="match-card__detail-row">
+											<span class="match-detail">{noteCardLabel(matched)}</span>
+											<span class="match-detail">Updated {formatRelativeTime(matched.updatedAt)}</span>
+										</div>
+									{/if}
+									<div class="match-card__actions">
+										<button
+											type="button"
+											class="ghost-btn"
+											onclick={() => beginReview(msg.routing!.matchedNote!.id)}
+										>
+											Review note
+										</button>
+										<button
+											type="button"
+											class="ghost-btn"
+											onclick={() => beginResearch(msg.routing!.matchedNote!.title)}
+										>
+											Research follow-up
+										</button>
 									</div>
+								</div>
+							{/if}
 
-									{#if msg.citations.length}
-										<div class="citation-row" aria-label="Assistant citations">
-											{#each msg.citations as citation}
-												<a
-													class="citation-chip"
-													href={citation.url}
-													target="_blank"
-													rel="noopener noreferrer"
-												>
-													{citation.title}
-												</a>
-											{/each}
+							{#if msg.routing?.targetNote && msg.routing.resolvedMode === 'update'}
+								{@const target = noteLookupById.get(msg.routing.targetNote.id)}
+								<div class="match-card match-card--target">
+									<div class="match-card__head">
+										<div>
+											<p class="match-card__eyebrow">Review target</p>
+											<h3>{target?.title ?? msg.routing.targetNote.title}</h3>
 										</div>
-									{/if}
+										<a class="match-card__link" href={`/notes/${msg.routing.targetNote.slug}`}>
+											Open note
+										</a>
+									</div>
+									<p class="match-card__body">
+										{msg.routing.intent === 'review'
+											? 'The assistant resolved this as a review/update turn.'
+											: 'The assistant routed this turn to an existing saved note.'}
+									</p>
+								</div>
+							{/if}
 
-									{#if msg.routing?.matchedNote && msg.routing.resolvedMode === 'chat'}
-										{@const matched = noteLookupById.get(msg.routing.matchedNote.id)}
-										<div class="match-card">
-											<div class="match-card__head">
-												<div>
-													<p class="match-card__eyebrow">Matched saved note</p>
-													<h3>{matched?.title ?? msg.routing.matchedNote.title}</h3>
-												</div>
-												<a class="match-card__link" href={`/notes/${msg.routing.matchedNote.slug}`}>
-													Open note
-												</a>
-											</div>
-											<p class="match-card__body">
-												{msg.routing.matchedNote.matchType === 'alias'
-													? `Alias match for “${msg.routing.matchedNote.matchedText}”.`
-													: `Exact title match for “${msg.routing.matchedNote.matchedText}”.`}
-											</p>
-											{#if matched}
-												<div class="match-card__detail-row">
-													<span class="match-detail">{noteCardLabel(matched)}</span>
-													<span class="match-detail">Updated {formatRelativeTime(matched.updatedAt)}</span>
-												</div>
-											{/if}
-											<div class="match-card__actions">
-												<button
-													type="button"
-													class="ghost-btn"
-													onclick={() => beginReview(msg.routing!.matchedNote!.id)}
-												>
-													Review note
-												</button>
-												<button
-													type="button"
-													class="ghost-btn"
-													onclick={() => beginResearch(msg.routing!.matchedNote!.title)}
-												>
-													Research follow-up
-												</button>
-											</div>
-										</div>
-									{/if}
-
-									{#if msg.routing?.targetNote && msg.routing.resolvedMode === 'update'}
-										{@const target = noteLookupById.get(msg.routing.targetNote.id)}
-										<div class="match-card match-card--target">
-											<div class="match-card__head">
-												<div>
-													<p class="match-card__eyebrow">Review target</p>
-													<h3>{target?.title ?? msg.routing.targetNote.title}</h3>
-												</div>
-												<a class="match-card__link" href={`/notes/${msg.routing.targetNote.slug}`}>
-													Open note
-												</a>
-											</div>
-											<p class="match-card__body">
-												{msg.routing.intent === 'review'
-													? 'The assistant resolved this as a review/update turn.'
-													: 'The assistant routed this turn to an existing saved note.'}
-											</p>
-										</div>
-									{/if}
-
-									{#if msg.proposal}
-										{@const commitState = commitStates[msg.id]}
-										{#if msg.proposal.type === 'create_note' || msg.proposal.type === 'update_note'}
-											{@const draftState = draftStates[msg.id]}
-											<div class="proposal-panel">
-												<div class="proposal-head">
-													<div>
-														<p class="proposal-eyebrow">
-															{msg.proposal.type === 'create_note' ? 'Create note' : 'Update note'}
-														</p>
-														<h3>{draftState?.title ?? msg.proposal.draft?.title}</h3>
-													</div>
-													<div class="proposal-head__flags">
-														{#if msg.proposal.draft?.aiGenerated}
-															<span class="meta-pill meta-pill--accent">AI drafted</span>
-														{/if}
-														{#if msg.proposal.draft?.aiModel}
-															<span class="meta-pill meta-pill--soft">{msg.proposal.draft.aiModel}</span>
-														{/if}
-													</div>
-												</div>
-
-												{#if msg.proposal.draft?.aiPrompt}
-													<p class="proposal-note">
-														Prompted from “{msg.proposal.draft.aiPrompt}”.
-													</p>
-												{/if}
-
-												{#if msg.citations.length}
-													<div class="citation-row citation-row--proposal">
-														{#each msg.citations as citation}
-															<a
-																class="citation-chip"
-																href={citation.url}
-																target="_blank"
-																rel="noopener noreferrer"
-															>
-																{citation.title}
-															</a>
-														{/each}
-													</div>
-												{/if}
-
-												{#if draftState}
-													<div class="proposal-grid">
-														<label class="field">
-															<span>Title</span>
-															<input type="text" bind:value={draftState.title} />
-														</label>
-
-														<label class="field">
-															<span>Primary category</span>
-															<select bind:value={draftState.category}>
-																<option value="">Select a category</option>
-																{#each CANONICAL_NOTE_CATEGORIES as category}
-																	<option value={category}>{category}</option>
-																{/each}
-															</select>
-														</label>
-
-														<label class="field">
-															<span>Status</span>
-															<select bind:value={draftState.status}>
-																<option value="stub">Stub</option>
-																<option value="growing">Growing</option>
-																<option value="mature">Mature</option>
-															</select>
-														</label>
-
-														<label class="field">
-															<span>Tags</span>
-															<input type="text" bind:value={draftState.tagsText} />
-														</label>
-
-														<label class="field">
-															<span>Aliases</span>
-															<input type="text" bind:value={draftState.aliasesText} />
-														</label>
-													</div>
-
-													<label class="field field--body">
-														<span>Body</span>
-														<textarea rows="10" bind:value={draftState.body}></textarea>
-													</label>
-
-													<div class="proposal-toolbar">
-														<div class="proposal-toolbar__left">
-															<button
-																type="button"
-																class="ghost-btn"
-																onclick={() => (draftState.showPreview = !draftState.showPreview)}
-															>
-																{draftState.showPreview ? 'Hide preview' : 'Preview body'}
-															</button>
-															<button
-																type="button"
-																class="ghost-btn"
-																onclick={() => resetDraft(msg.id, msg.proposal!)}
-															>
-																Reset draft
-															</button>
-														</div>
-														<button
-															type="button"
-															class="primary-btn"
-															disabled={commitState?.status === 'pending'}
-															onclick={() => commitProposal(msg.id, msg.proposal!)}
-														>
-															{commitState?.status === 'pending'
-																? msg.proposal.type === 'create_note'
-																	? 'Saving…'
-																	: 'Applying…'
-																: msg.proposal.type === 'create_note'
-																	? 'Save note'
-																	: 'Apply update'}
-														</button>
-													</div>
-
-													{#if draftState.showPreview}
-														<div class="preview-pane">
-															{#if draftState.body.trim()}
-																{@html renderDraftPreview(draftState.body)}
-															{:else}
-																<p class="preview-empty">Nothing to preview yet.</p>
-															{/if}
-														</div>
-													{/if}
-												{/if}
-
-												{#if msg.proposal.linkedNotePatches?.length}
-													<div class="linked-patches">
-														<p class="linked-patches__label">Also updates</p>
-														<ul class="linked-patches__list">
-															{#each msg.proposal.linkedNotePatches as patch}
-																<li>{patch.title ?? patch.noteId}</li>
-															{/each}
-														</ul>
-													</div>
-												{/if}
-
-												{#if commitState?.status === 'done' && commitState.note}
-													<p class="commit-success">
-														Saved
-														<a href={`/notes/${commitState.note.slug}`}>{commitState.note.title}</a>
-													</p>
-												{:else if commitState?.status === 'error'}
-													<p class="commit-error">{commitState.error}</p>
-												{/if}
-											</div>
-										{:else if msg.proposal.type === 'delete_note'}
-											<div class="proposal-panel proposal-panel--delete">
-												<div class="proposal-head">
-													<div>
-														<p class="proposal-eyebrow">Delete note</p>
-														<h3>{msg.proposal.noteTitle ?? 'Untitled note'}</h3>
-													</div>
-													<span class="meta-pill meta-pill--danger">Confirmation required</span>
-												</div>
-
-												<p class="proposal-note">
-													This permanently removes the note and its graph connections. There is no typed
-													confirmation step, so the action stays compact and deliberate.
+							{#if msg.proposal}
+								{@const commitState = commitStates[msg.id]}
+								{#if msg.proposal.type === 'create_note' || msg.proposal.type === 'update_note'}
+									{@const draftState = draftStates[msg.id]}
+									<div class="proposal-panel">
+										<div class="proposal-head">
+											<div>
+												<p class="proposal-eyebrow">
+													{msg.proposal.type === 'create_note' ? 'Create note' : 'Update note'}
 												</p>
-
-												{#if msg.proposal.noteId}
-													<p class="proposal-note">Target id: {msg.proposal.noteId}</p>
+												<h3>{draftState?.title ?? msg.proposal.draft?.title}</h3>
+											</div>
+											<div class="proposal-head__flags">
+												{#if msg.proposal.draft?.aiGenerated}
+													<span class="meta-pill meta-pill--accent">AI drafted</span>
 												{/if}
+												{#if msg.proposal.draft?.aiModel}
+													<span class="meta-pill meta-pill--soft">{msg.proposal.draft.aiModel}</span>
+												{/if}
+											</div>
+										</div>
 
-										<div class="proposal-toolbar">
-													<div class="proposal-toolbar__left">
-														<a
-															class="ghost-btn ghost-btn--link"
-															href={
-																msg.proposal.noteId && noteLookupById.get(msg.proposal.noteId)
-																	? `/notes/${noteLookupById.get(msg.proposal.noteId)?.slug}`
-																	: '/notes'
-															}
-														>
-															Keep note
-														</a>
-													</div>
+										{#if msg.proposal.draft?.aiPrompt}
+											<p class="proposal-note">
+												Prompted from “{msg.proposal.draft.aiPrompt}”.
+											</p>
+										{/if}
+
+										{#if msg.citations.length}
+											<div class="citation-row citation-row--proposal">
+												{#each msg.citations as citation}
+													<a
+														class="citation-chip"
+														href={citation.url}
+														target="_blank"
+														rel="noopener noreferrer"
+													>
+														{citation.title}
+													</a>
+												{/each}
+											</div>
+										{/if}
+
+										{#if draftState}
+											<div class="proposal-grid">
+												<label class="field">
+													<span>Title</span>
+													<input type="text" bind:value={draftState.title} />
+												</label>
+
+												<label class="field">
+													<span>Primary category</span>
+													<select bind:value={draftState.category}>
+														<option value="">Select a category</option>
+														{#each CANONICAL_NOTE_CATEGORIES as category}
+															<option value={category}>{category}</option>
+														{/each}
+													</select>
+												</label>
+
+												<label class="field">
+													<span>Status</span>
+													<select bind:value={draftState.status}>
+														<option value="stub">Stub</option>
+														<option value="growing">Growing</option>
+														<option value="mature">Mature</option>
+													</select>
+												</label>
+
+												<label class="field">
+													<span>Tags</span>
+													<input type="text" bind:value={draftState.tagsText} />
+												</label>
+
+												<label class="field">
+													<span>Aliases</span>
+													<input type="text" bind:value={draftState.aliasesText} />
+												</label>
+											</div>
+
+											<label class="field field--body">
+												<span>Body</span>
+												<textarea rows="10" bind:value={draftState.body}></textarea>
+											</label>
+
+											<div class="proposal-toolbar">
+												<div class="proposal-toolbar__left">
 													<button
 														type="button"
-														class="danger-btn"
-														disabled={commitState?.status === 'pending'}
-														onclick={() => commitProposal(msg.id, msg.proposal!)}
+														class="ghost-btn"
+														onclick={() => (draftState.showPreview = !draftState.showPreview)}
 													>
-														{commitState?.status === 'pending' ? 'Deleting…' : 'Delete note'}
+														{draftState.showPreview ? 'Hide preview' : 'Preview body'}
+													</button>
+													<button
+														type="button"
+														class="ghost-btn"
+														onclick={() => resetDraft(msg.id, msg.proposal!)}
+													>
+														Reset draft
 													</button>
 												</div>
+												<button
+													type="button"
+													class="primary-btn"
+													disabled={commitState?.status === 'pending'}
+													onclick={() => commitProposal(msg.id, msg.proposal!)}
+												>
+													{commitState?.status === 'pending'
+														? msg.proposal.type === 'create_note'
+															? 'Saving…'
+															: 'Applying…'
+														: msg.proposal.type === 'create_note'
+															? 'Save note'
+															: 'Apply update'}
+												</button>
+											</div>
 
-												{#if commitState?.status === 'done'}
-													<p class="commit-success">Note deleted.</p>
-												{:else if commitState?.status === 'error'}
-													<p class="commit-error">{commitState.error}</p>
-												{/if}
+											{#if draftState.showPreview}
+												<div class="preview-pane">
+													{#if draftState.body.trim()}
+														{@html renderDraftPreview(draftState.body)}
+													{:else}
+														<p class="preview-empty">Nothing to preview yet.</p>
+													{/if}
+												</div>
+											{/if}
+										{/if}
+
+										{#if msg.proposal.linkedNotePatches?.length}
+											<div class="linked-patches">
+												<p class="linked-patches__label">Also updates</p>
+												<ul class="linked-patches__list">
+													{#each msg.proposal.linkedNotePatches as patch}
+														<li>{patch.title ?? patch.noteId}</li>
+													{/each}
+												</ul>
 											</div>
 										{/if}
-									{/if}
-								</div>
-							</article>
-						{/if}
-					{/each}
 
-					{#if isLoading}
-						<div class="loading-row" aria-live="polite">
-							<div class="loading-dots">
-								<span></span>
-								<span></span>
-								<span></span>
-							</div>
-							<p>Thinking…</p>
+										{#if commitState?.status === 'done' && commitState.note}
+											<p class="commit-success">
+												Saved
+												<a href={`/notes/${commitState.note.slug}`}>{commitState.note.title}</a>
+											</p>
+										{:else if commitState?.status === 'error'}
+											<p class="commit-error">{commitState.error}</p>
+										{/if}
+									</div>
+								{:else if msg.proposal.type === 'delete_note'}
+									<div class="proposal-panel proposal-panel--delete">
+										<div class="proposal-head">
+											<div>
+												<p class="proposal-eyebrow">Delete note</p>
+												<h3>{msg.proposal.noteTitle ?? 'Untitled note'}</h3>
+											</div>
+											<span class="meta-pill meta-pill--danger">Confirmation required</span>
+										</div>
+
+										<p class="proposal-note">
+											This permanently removes the note and its graph connections. There is no typed
+											confirmation step, so the action stays compact and deliberate.
+										</p>
+
+										{#if msg.proposal.noteId}
+											<p class="proposal-note">Target id: {msg.proposal.noteId}</p>
+										{/if}
+
+										<div class="proposal-toolbar">
+											<div class="proposal-toolbar__left">
+												<a
+													class="ghost-btn ghost-btn--link"
+													href={
+														msg.proposal.noteId && noteLookupById.get(msg.proposal.noteId)
+															? `/notes/${noteLookupById.get(msg.proposal.noteId)?.slug}`
+															: '/notes'
+													}
+												>
+													Keep note
+												</a>
+											</div>
+											<button
+												type="button"
+												class="danger-btn"
+												disabled={commitState?.status === 'pending'}
+												onclick={() => commitProposal(msg.id, msg.proposal!)}
+											>
+												{commitState?.status === 'pending' ? 'Deleting…' : 'Delete note'}
+											</button>
+										</div>
+
+										{#if commitState?.status === 'done'}
+											<p class="commit-success">Note deleted.</p>
+										{:else if commitState?.status === 'error'}
+											<p class="commit-error">{commitState.error}</p>
+										{/if}
+									</div>
+								{/if}
+							{/if}
 						</div>
-					{/if}
+					</article>
 				{/if}
+			{/each}
+
+			{#if isLoading}
+				<div class="loading-row" aria-live="polite">
+					<div class="loading-dots">
+						<span></span>
+						<span></span>
+						<span></span>
+					</div>
+					<p>Thinking…</p>
+				</div>
+			{/if}
+		{/if}
+	</div>
+
+	<div class="composer-dock">
+		<div class="composer-topline">
+			<div class="composer-selects">
+				<label class="select-chip" for="provider-select">
+					<span>Provider</span>
+					<select
+						id="provider-select"
+						bind:value={selectedProvider}
+						onchange={handleProviderChange}
+					>
+						{#each data.providers as provider}
+							<option value={provider.id}>{provider.label}</option>
+						{/each}
+					</select>
+				</label>
+
+				<label class="select-chip" for="model-select">
+					<span>Model</span>
+					<select id="model-select" bind:value={selectedModel}>
+						{#each currentProviderModels as model}
+							<option value={model.id}>{model.label}</option>
+						{/each}
+					</select>
+				</label>
 			</div>
 
-			<div class="composer-dock">
-				<div class="composer-topline">
-					<div class="composer-selects">
-						<label class="select-chip" for="provider-select">
-							<span>Provider</span>
-							<select
-								id="provider-select"
-								bind:value={selectedProvider}
-								onchange={handleProviderChange}
-							>
-								{#each data.providers as provider}
-									<option value={provider.id}>{provider.label}</option>
-								{/each}
-							</select>
-						</label>
-
-						<label class="select-chip" for="model-select">
-							<span>Model</span>
-							<select id="model-select" bind:value={selectedModel}>
-								{#each currentProviderModels as model}
-									<option value={model.id}>{model.label}</option>
-								{/each}
-							</select>
-						</label>
-					</div>
-
-					<div class="override-group" role="group" aria-label="Create and update overrides">
-						<button
-							type="button"
-							class="override-btn"
-							class:override-btn--active={overrideMode === null}
-							aria-pressed={overrideMode === null}
-							onclick={() => setOverride(null)}
-						>
-							Auto
-						</button>
-						<button
-							type="button"
-							class="override-btn"
-							class:override-btn--active={overrideMode === 'create'}
-							aria-pressed={overrideMode === 'create'}
-							onclick={() => setOverride('create')}
-						>
-							Create
-						</button>
-						<button
-							type="button"
-							class="override-btn"
-							class:override-btn--active={overrideMode === 'update'}
-							aria-pressed={overrideMode === 'update'}
-							onclick={() => setOverride('update')}
-						>
-							Update
-						</button>
-					</div>
-				</div>
-
-				{#if overrideMode === 'create'}
-					<p class="composer-context">Create mode stays compact. The assistant will draft a new note.</p>
-				{:else if overrideMode === 'update' && selectedNote}
-					<p class="composer-context">
-						Update mode is pinned to <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
-					</p>
-				{:else if overrideMode === 'update'}
-					<p class="composer-context">Pick a saved note before sending a review or update request.</p>
-				{:else}
-					<p class="composer-context">
-						Auto mode lets the assistant infer whether to chat, draft, or review a note.
-					</p>
-				{/if}
-
-				{#if overrideMode === 'update'}
-					<div class="note-select-row">
-						<label class="field field--select" for="note-select">
-							<span>Review target</span>
-							<select id="note-select" bind:value={selectedNoteId}>
-								<option value="">Select a saved note</option>
-								{#each data.notes as note}
-									<option value={note.id}>
-										{note.title}{note.category ? ` · ${note.category}` : ''} · {note.status}
-									</option>
-								{/each}
-							</select>
-						</label>
-					</div>
-				{/if}
-
-				<div class="composer-row">
-					<textarea
-						class="composer-input"
-						placeholder={overrideMode === 'create'
-							? 'Describe the note you want drafted…'
-							: overrideMode === 'update'
-								? 'Ask to review, revise, or fix the selected note…'
-								: 'Ask about your notes, request a draft, or start a review…'}
-						rows="3"
-						disabled={isLoading}
-						bind:value={composerValue}
-						onkeydown={(event) => {
-							if (event.key === 'Enter' && !event.shiftKey) {
-								event.preventDefault();
-								sendMessage();
-							}
-						}}
-					></textarea>
-					<button
-						type="button"
-						class="send-btn"
-						disabled={!composerValue.trim() || isLoading || (overrideMode === 'update' && !selectedNoteId)}
-						onclick={sendMessage}
-					>
-						{#if isLoading}
-							Sending…
-						{:else}
-							Send
-						{/if}
-					</button>
-				</div>
+			<div class="override-group" role="group" aria-label="Create and update overrides">
+				<button
+					type="button"
+					class="override-btn"
+					class:override-btn--active={overrideMode === null}
+					aria-pressed={overrideMode === null}
+					onclick={() => setOverride(null)}
+				>
+					Auto
+				</button>
+				<button
+					type="button"
+					class="override-btn"
+					class:override-btn--active={overrideMode === 'create'}
+					aria-pressed={overrideMode === 'create'}
+					onclick={() => setOverride('create')}
+				>
+					Create
+				</button>
+				<button
+					type="button"
+					class="override-btn"
+					class:override-btn--active={overrideMode === 'update'}
+					aria-pressed={overrideMode === 'update'}
+					onclick={() => setOverride('update')}
+				>
+					Update
+				</button>
 			</div>
 		</div>
-	</section>
+
+		{#if overrideMode === 'create'}
+			<p class="composer-context">Create mode stays compact. The assistant will draft a new note.</p>
+		{:else if overrideMode === 'update' && selectedNote}
+			<p class="composer-context">
+				Update mode is pinned to <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
+			</p>
+		{:else if overrideMode === 'update'}
+			<p class="composer-context">Pick a saved note before sending a review or update request.</p>
+		{:else}
+			<p class="composer-context">
+				Auto mode lets the assistant infer whether to chat, draft, or review a note.
+			</p>
+		{/if}
+
+		{#if overrideMode === 'update'}
+			<div class="note-select-row">
+				<label class="field field--select" for="note-select">
+					<span>Review target</span>
+					<select id="note-select" bind:value={selectedNoteId}>
+						<option value="">Select a saved note</option>
+						{#each data.notes as note}
+							<option value={note.id}>
+								{note.title}{note.category ? ` · ${note.category}` : ''} · {note.status}
+							</option>
+						{/each}
+					</select>
+				</label>
+			</div>
+		{/if}
+
+		<div class="composer-row">
+			<textarea
+				class="composer-input"
+				placeholder={overrideMode === 'create'
+					? 'Describe the note you want drafted…'
+					: overrideMode === 'update'
+						? 'Ask to review, revise, or fix the selected note…'
+						: 'Ask about your notes, request a draft, or start a review…'}
+				rows="3"
+				disabled={isLoading}
+				bind:value={composerValue}
+				onkeydown={(event) => {
+					if (event.key === 'Enter' && !event.shiftKey) {
+						event.preventDefault();
+						sendMessage();
+					}
+				}}
+			></textarea>
+			<button
+				type="button"
+				class="send-btn"
+				disabled={!composerValue.trim() || isLoading || (overrideMode === 'update' && !selectedNoteId)}
+				onclick={sendMessage}
+			>
+				{#if isLoading}
+					Sending…
+				{:else}
+					Send
+				{/if}
+			</button>
+		</div>
+	</div>
 </div>
 
 <style>
@@ -929,76 +894,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-	}
-
-	.chat-header {
-		display: flex;
-		align-items: end;
-		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 0.25rem;
-	}
-
-	.chat-heading {
-		display: grid;
-		gap: 0.35rem;
-		max-width: 52rem;
-	}
-
-	.eyebrow {
-		margin: 0;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--text-subtle);
-	}
-
-	h1 {
-		margin: 0;
-		font-size: clamp(2rem, 3vw, 2.8rem);
-		line-height: 1;
-		letter-spacing: -0.04em;
-		color: var(--text-primary);
-	}
-
-	.lede {
-		margin: 0;
-		max-width: 52rem;
-		color: var(--text-secondary);
-		font-size: 0.95rem;
-		line-height: 1.6;
-	}
-
-	.chat-summary {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		justify-content: flex-end;
-	}
-
-	.summary-pill {
-		padding: 0.45rem 0.7rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--accent-soft) 26%, var(--bg-raised));
-		border: 1px solid var(--border-soft);
-		color: var(--text-secondary);
-		font-size: 0.76rem;
-		font-weight: 600;
-	}
-
-	.chat-shell {
-		flex: 1;
-		min-height: 0;
-	}
-
-	.conversation-column {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		min-height: 0;
-		max-width: 62rem;
-		margin: 0 auto;
 	}
 
 	.conversation-stream {
@@ -1010,67 +905,47 @@
 		overflow: auto;
 		padding-right: 0.25rem;
 		scrollbar-gutter: stable;
+		max-width: 62rem;
+		width: 100%;
+		margin: 0 auto;
 	}
 
-	.empty-state {
+	.conversation-stream--empty {
+		justify-content: center;
+	}
+
+	.empty-stage {
 		display: grid;
-		gap: 0.7rem;
-		padding: 1.5rem;
-		border-radius: 1.25rem;
-		border: 1px solid var(--border-soft);
-		background:
-			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 92%, transparent), var(--bg-surface)),
-			var(--bg-surface);
+		place-items: center;
+		gap: 0.65rem;
+		min-height: 36vh;
+		text-align: center;
+		padding: 1rem 0 2rem;
 	}
 
-	.empty-kicker {
+	.empty-brand {
 		margin: 0;
 		font-size: 0.72rem;
 		font-weight: 700;
-		letter-spacing: 0.14em;
+		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--text-subtle);
 	}
 
-	.empty-state h2 {
+	.empty-stage h1 {
 		margin: 0;
-		font-size: 1.3rem;
+		font-size: clamp(2rem, 4vw, 3.25rem);
+		line-height: 1;
+		letter-spacing: -0.05em;
 		color: var(--text-primary);
 	}
 
-	.empty-state p {
+	.empty-copy {
 		margin: 0;
+		max-width: 34rem;
 		color: var(--text-secondary);
+		font-size: 0.95rem;
 		line-height: 1.6;
-	}
-
-	.empty-notes {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.75rem;
-	}
-
-	.empty-note {
-		display: grid;
-		gap: 0.35rem;
-		padding: 0.9rem;
-		border-radius: 0.95rem;
-		background: var(--bg-raised);
-		border: 1px solid var(--border-soft);
-	}
-
-	.empty-note span {
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--accent-primary);
-	}
-
-	.empty-note p {
-		font-size: 0.9rem;
-		color: var(--text-muted);
-		line-height: 1.45;
 	}
 
 	.message {
@@ -1603,16 +1478,10 @@
 	}
 
 	@media (max-width: 960px) {
-		.chat-header {
-			align-items: start;
-			flex-direction: column;
+		.empty-stage {
+			min-height: 28vh;
 		}
 
-		.chat-summary {
-			justify-content: flex-start;
-		}
-
-		.empty-notes,
 		.proposal-grid {
 			grid-template-columns: 1fr;
 		}
@@ -1627,14 +1496,8 @@
 			min-height: auto;
 		}
 
-		.chat-shell,
-		.conversation-column {
-			min-height: auto;
-		}
-
 		.message-bubble,
 		.assistant-panel,
-		.empty-state,
 		.composer-dock {
 			padding: 0.9rem;
 		}

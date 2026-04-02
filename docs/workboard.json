@@ -2441,6 +2441,42 @@
         "npm run check"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "UI-018",
+      "group_id": "UI",
+      "title": "Simplify chat shell and empty-state layout",
+      "status": "done",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Remove the current cluttered chat header and boxed empty-state card in favor of a minimal centered entry state.",
+      "description": "Refactor the top-level `/chat` presentation so it follows the calmer reference direction documented for chat. Remove the current eyebrow, descriptive lede, and summary pills. Replace the `No conversation yet` explainer card with a centered empty state that keeps only minimal Techy branding/title above the composer. The conversation area should feel open rather than wrapped in a generic dashboard shell.",
+      "acceptance_criteria": [
+        "The current eyebrow, descriptive lede, and summary pills are removed from the top of the chat page",
+        "The `No conversation yet` component and its explainer cards are removed",
+        "Empty chat presents a centered minimal entry state above the composer rather than a boxed instructional card",
+        "The main chat surface is not wrapped in a generic component shell for this pass"
+      ],
+      "depends_on": [
+        "UI-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Use `references/UI/chat-example.png` as the layout-vibe reference and `references/UI/current-chat.png` as the before-state.",
+        "Translate the reference through Techy's token system and typography instead of copying another product literally."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }
