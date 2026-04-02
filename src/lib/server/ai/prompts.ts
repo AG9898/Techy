@@ -26,6 +26,7 @@ interface RespondPromptOptions {
 	currentNoteBody?: string;
 	relatedNote?: RelatedNotePromptContext;
 	deleteTarget?: DeleteTargetPromptContext | null;
+	shouldOfferCreateProposal?: boolean;
 }
 
 /**
@@ -111,19 +112,59 @@ Global rules:
 - Conversation stays available at all times. Do not force the user into a mutation flow just because a related note exists.
 - Proposal-first behavior applies to all mutations: never imply a note has already been created, updated, or deleted.
 - Do not invent citations. Keep citations empty unless factual web citations are provided separately in context.
+- Do not include a Sources, References, Links, or Citations section in "content".
+- Keep URLs and source lists out of the prose reply body. The UI renders citations separately.
 - Use [[Note Title]] syntax for related topics by their exact saved titles when writing note bodies.
 - Do not include "aiGenerated", "aiModel", or "aiPrompt" in any draft; the server adds those.
 `.trim();
 
-const RESPOND_SYSTEM_PROMPT_CHAT_SKILL = `
+function buildCreateProposalShape(canonicalCategoriesText: string): string {
+	return `{
+  "type": "create_note",
+  "draft": {
+    "title": "<concise topic name, 2-5 words>",
+    "body": "<complete markdown note body>",
+    "tags": ["<tag1>", "<tag2>"],
+    "aliases": [],
+    "category": "<one of: ${canonicalCategoriesText}>",
+    "status": "growing"
+  },
+  "linkedNotePatches": [
+    {
+      "title": "<exact existing note title>",
+      "updatedBody": "<full updated body with the new [[Note Title]] added naturally>"
+    }
+  ]
+}`;
+}
+
+function buildChatSkillPrompt(
+	canonicalCategoriesText: string,
+	shouldOfferCreateProposal: boolean
+): string {
+	const createProposalInstructions = shouldOfferCreateProposal
+		? `
+- This turn is a topic-learning prompt without a strong related saved note match. Answer the question conversationally and also include a create_note proposal so the UI can offer an explicit add-to-notes action in the same response.
+- The create_note proposal must use this exact proposal shape:
+${buildCreateProposalShape(canonicalCategoriesText)}
+- The proposal draft must follow the shared note structure exactly:
+${buildNoteSectionStructurePrompt()}
+- Choose exactly one canonical category from this list: ${canonicalCategoriesText}.
+- Prefer existing lower-case tags already used in the graph when they fit. Only create a new tag when no current tag is a clean match.
+- Keep the conversational answer and the create_note proposal aligned on the same topic.`
+		: `
+- Answer the user's question conversationally and keep "proposal": null unless the explicit delete skill below applies.`;
+
+	return `
 Active skill: conversation.
 
 Instructions:
-- Answer the user's question conversationally and keep "proposal": null unless the explicit delete skill below applies.
+${createProposalInstructions}
 - If a strong related saved note is provided, use it to summarize what is already saved, mention that the note exists, and offer a helpful follow-up such as deeper research or a review for updates.
 - A learning prompt about an existing topic must remain conversational first. Do not switch to update_note just because a note match exists.
 - Be concise, informative, and grounded in the saved note and any supplied research context.
 `.trim();
+}
 
 function buildCreateSkillPrompt(canonicalCategoriesText: string): string {
 	return `
@@ -133,23 +174,7 @@ When the user is clearly requesting a new note about a technology or concept, re
 {
   "content": "<acknowledge the topic and summarise what the draft covers>",
   "citations": [],
-  "proposal": {
-    "type": "create_note",
-    "draft": {
-      "title": "<concise topic name, 2-5 words>",
-      "body": "<complete markdown note body>",
-      "tags": ["<tag1>", "<tag2>"],
-      "aliases": [],
-      "category": "<one of: ${canonicalCategoriesText}>",
-      "status": "growing"
-    },
-    "linkedNotePatches": [
-      {
-        "title": "<exact existing note title>",
-        "updatedBody": "<full updated body with the new [[Note Title]] added naturally>"
-      }
-    ]
-  }
+  "proposal": ${buildCreateProposalShape(canonicalCategoriesText)}
 }
 
 Rules:
@@ -253,7 +278,8 @@ export function buildRespondSystemPrompt({
 	currentNoteTitle,
 	currentNoteBody,
 	relatedNote,
-	deleteTarget
+	deleteTarget,
+	shouldOfferCreateProposal = false
 }: RespondPromptOptions): string {
 	const canonicalCategoriesText = canonicalCategories.join(', ');
 	const sections = [RESPOND_SYSTEM_PROMPT_IDENTITY];
@@ -263,7 +289,7 @@ export function buildRespondSystemPrompt({
 	} else if (mode === 'update') {
 		sections.push(buildUpdateSkillPrompt(canonicalCategoriesText));
 	} else {
-		sections.push(RESPOND_SYSTEM_PROMPT_CHAT_SKILL);
+		sections.push(buildChatSkillPrompt(canonicalCategoriesText, shouldOfferCreateProposal));
 	}
 
 	sections.push(buildDeleteSkillInstructions(deleteTarget));

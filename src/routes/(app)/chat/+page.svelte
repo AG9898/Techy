@@ -225,6 +225,10 @@
 		return marked.parse(resolved) as string;
 	}
 
+	function primaryCitations(citations: Citation[]): Citation[] {
+		return citations.slice(0, 3);
+	}
+
 	function formatRelativeTime(value: Date | string): string {
 		const time = new Date(value).getTime();
 		if (Number.isNaN(time)) return '';
@@ -473,20 +477,26 @@
 								<p>{msg.content}</p>
 							</div>
 
-							{#if msg.citations.length}
-								<div class="citation-row" aria-label="Assistant citations">
-									{#each msg.citations as citation}
-										<a
-											class="citation-chip"
-											href={citation.url}
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											{citation.title}
-										</a>
-									{/each}
-								</div>
-							{/if}
+									{#if msg.citations.length}
+										<details class="citation-disclosure">
+											<summary>
+												Sources
+												<span class="citation-count">{primaryCitations(msg.citations).length}</span>
+											</summary>
+											<div class="citation-row" aria-label="Assistant citations">
+												{#each primaryCitations(msg.citations) as citation}
+													<a
+														class="citation-chip"
+														href={citation.url}
+														target="_blank"
+														rel="noopener noreferrer"
+													>
+														{citation.title}
+													</a>
+												{/each}
+											</div>
+										</details>
+									{/if}
 
 							{#if msg.routing?.matchedNote && msg.routing.resolvedMode === 'chat'}
 								{@const matched = noteLookupById.get(msg.routing.matchedNote.id)}
@@ -579,18 +589,24 @@
 										{/if}
 
 										{#if msg.citations.length}
-											<div class="citation-row citation-row--proposal">
-												{#each msg.citations as citation}
-													<a
-														class="citation-chip"
-														href={citation.url}
-														target="_blank"
-														rel="noopener noreferrer"
-													>
-														{citation.title}
-													</a>
-												{/each}
-											</div>
+											<details class="citation-disclosure citation-disclosure--proposal">
+												<summary>
+													Sources
+													<span class="citation-count">{primaryCitations(msg.citations).length}</span>
+												</summary>
+												<div class="citation-row citation-row--proposal">
+													{#each primaryCitations(msg.citations) as citation}
+														<a
+															class="citation-chip"
+															href={citation.url}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															{citation.title}
+														</a>
+													{/each}
+												</div>
+											</details>
 										{/if}
 
 										{#if draftState}
@@ -767,126 +783,121 @@
 		{/if}
 	</div>
 
-	<div class="composer-dock">
-		<div class="composer-topline">
-			<div class="composer-selects">
-				<label class="select-chip select-chip--primary" for="model-select">
-					<span>Model</span>
-					<select id="model-select" bind:value={selectedModel}>
-						{#each currentProviderModels as model}
-							<option value={model.id}>{model.label}</option>
-						{/each}
-					</select>
-				</label>
+	<div class="composer-shell">
+		<div class="composer-dock">
+			<div class="composer-topline">
+				<div class="composer-selects">
+					<label class="select-chip select-chip--primary" for="model-select">
+						<span>Model</span>
+						<select id="model-select" bind:value={selectedModel}>
+							{#each currentProviderModels as model}
+								<option value={model.id}>{model.label}</option>
+							{/each}
+						</select>
+					</label>
 
-				<label class="select-chip select-chip--secondary" for="provider-select">
-					<span>Provider</span>
-					<select
-						id="provider-select"
-						bind:value={selectedProvider}
-						onchange={handleProviderChange}
+					<label class="select-chip select-chip--secondary" for="provider-select">
+						<span>Provider</span>
+						<select
+							id="provider-select"
+							bind:value={selectedProvider}
+							onchange={handleProviderChange}
+						>
+							{#each data.providers as provider}
+								<option value={provider.id}>{provider.label}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+
+				<div class="override-group" role="group" aria-label="Create and update overrides">
+					<button
+						type="button"
+						class="override-btn"
+						class:override-btn--active={overrideMode === null}
+						aria-pressed={overrideMode === null}
+						onclick={() => setOverride(null)}
 					>
-						{#each data.providers as provider}
-							<option value={provider.id}>{provider.label}</option>
-						{/each}
-					</select>
-				</label>
+						Auto
+					</button>
+					<button
+						type="button"
+						class="override-btn"
+						class:override-btn--active={overrideMode === 'create'}
+						aria-pressed={overrideMode === 'create'}
+						onclick={() => setOverride('create')}
+					>
+						Create
+					</button>
+					<button
+						type="button"
+						class="override-btn"
+						class:override-btn--active={overrideMode === 'update'}
+						aria-pressed={overrideMode === 'update'}
+						onclick={() => setOverride('update')}
+					>
+						Update
+					</button>
+				</div>
 			</div>
 
-		</div>
-
-		<div class="composer-toolbar">
 			{#if overrideMode === 'create'}
-				<p class="composer-context">Create mode stays compact. The assistant will draft a new note.</p>
+				<p class="composer-context">Create mode drafts a new note inline.</p>
 			{:else if overrideMode === 'update' && selectedNote}
 				<p class="composer-context">
-					Update mode is pinned to <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
+					Reviewing <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
 				</p>
 			{:else if overrideMode === 'update'}
-				<p class="composer-context">Pick a saved note before sending a review or update request.</p>
-			{:else}
-				<p class="composer-context">
-					Auto mode lets the assistant infer whether to chat, draft, or review a note.
-				</p>
+				<p class="composer-context">Pick a saved note to review before sending.</p>
 			{/if}
 
-			<div class="override-group" role="group" aria-label="Create and update overrides">
+			{#if overrideMode === 'update'}
+				<div class="note-select-row">
+					<label class="field field--select" for="note-select">
+						<span>Review target</span>
+						<select id="note-select" bind:value={selectedNoteId}>
+							<option value="">Select a saved note</option>
+							{#each data.notes as note}
+								<option value={note.id}>
+									{note.title}{note.category ? ` · ${note.category}` : ''} · {note.status}
+								</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+			{/if}
+
+			<div class="composer-row">
+				<textarea
+					class="composer-input"
+					placeholder={overrideMode === 'create'
+						? 'Describe the note you want drafted…'
+						: overrideMode === 'update'
+							? 'Ask to review, revise, or fix the selected note…'
+							: 'Ask about your notes, request a draft, or start a review…'}
+					rows="2"
+					disabled={isLoading}
+					bind:value={composerValue}
+					onkeydown={(event) => {
+						if (event.key === 'Enter' && !event.shiftKey) {
+							event.preventDefault();
+							sendMessage();
+						}
+					}}
+				></textarea>
 				<button
 					type="button"
-					class="override-btn"
-					class:override-btn--active={overrideMode === null}
-					aria-pressed={overrideMode === null}
-					onclick={() => setOverride(null)}
+					class="send-btn"
+					disabled={!composerValue.trim() || isLoading || (overrideMode === 'update' && !selectedNoteId)}
+					onclick={sendMessage}
 				>
-					Auto
-				</button>
-				<button
-					type="button"
-					class="override-btn"
-					class:override-btn--active={overrideMode === 'create'}
-					aria-pressed={overrideMode === 'create'}
-					onclick={() => setOverride('create')}
-				>
-					Create
-				</button>
-				<button
-					type="button"
-					class="override-btn"
-					class:override-btn--active={overrideMode === 'update'}
-					aria-pressed={overrideMode === 'update'}
-					onclick={() => setOverride('update')}
-				>
-					Update
+					{#if isLoading}
+						Sending…
+					{:else}
+						Send
+					{/if}
 				</button>
 			</div>
-		</div>
-
-		{#if overrideMode === 'update'}
-			<div class="note-select-row">
-				<label class="field field--select" for="note-select">
-					<span>Review target</span>
-					<select id="note-select" bind:value={selectedNoteId}>
-						<option value="">Select a saved note</option>
-						{#each data.notes as note}
-							<option value={note.id}>
-								{note.title}{note.category ? ` · ${note.category}` : ''} · {note.status}
-							</option>
-						{/each}
-					</select>
-				</label>
-			</div>
-		{/if}
-
-		<div class="composer-row">
-			<textarea
-				class="composer-input"
-				placeholder={overrideMode === 'create'
-					? 'Describe the note you want drafted…'
-					: overrideMode === 'update'
-						? 'Ask to review, revise, or fix the selected note…'
-						: 'Ask about your notes, request a draft, or start a review…'}
-				rows="3"
-				disabled={isLoading}
-				bind:value={composerValue}
-				onkeydown={(event) => {
-					if (event.key === 'Enter' && !event.shiftKey) {
-						event.preventDefault();
-						sendMessage();
-					}
-				}}
-			></textarea>
-			<button
-				type="button"
-				class="send-btn"
-				disabled={!composerValue.trim() || isLoading || (overrideMode === 'update' && !selectedNoteId)}
-				onclick={sendMessage}
-			>
-				{#if isLoading}
-					Sending…
-				{:else}
-					Send
-				{/if}
-			</button>
 		</div>
 	</div>
 </div>
@@ -896,7 +907,7 @@
 		min-height: calc(100vh - 4rem);
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.25rem;
 	}
 
 	.conversation-stream {
@@ -920,10 +931,10 @@
 	.empty-stage {
 		display: grid;
 		place-items: center;
-		gap: 0.55rem;
-		min-height: 30vh;
+		gap: 0.45rem;
+		min-height: 24vh;
 		text-align: center;
-		padding: 1rem 0 1.5rem;
+		padding: 0.75rem 0 0.9rem;
 	}
 
 	.empty-brand {
@@ -945,10 +956,10 @@
 
 	.empty-copy {
 		margin: 0;
-		max-width: 34rem;
+		max-width: 28rem;
 		color: var(--text-secondary);
-		font-size: 0.95rem;
-		line-height: 1.6;
+		font-size: 0.88rem;
+		line-height: 1.55;
 	}
 
 	.message {
@@ -1051,6 +1062,52 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.45rem;
+	}
+
+	.citation-disclosure {
+		display: grid;
+		gap: 0.6rem;
+	}
+
+	.citation-disclosure summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: fit-content;
+		cursor: pointer;
+		list-style: none;
+		color: var(--text-muted);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+	}
+
+	.citation-disclosure summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.citation-disclosure summary::before {
+		content: '▸';
+		font-size: 0.72rem;
+		color: var(--text-subtle);
+		transition: transform 150ms ease;
+	}
+
+	.citation-disclosure[open] summary::before {
+		transform: rotate(90deg);
+	}
+
+	.citation-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		padding: 0.12rem 0.35rem;
+		border-radius: 999px;
+		border: 1px solid var(--border-soft);
+		background: var(--bg-raised);
+		color: var(--text-subtle);
+		font-size: 0.72rem;
 	}
 
 	.citation-chip {
@@ -1359,81 +1416,106 @@
 		transform: none;
 	}
 
+	.composer-shell {
+		width: 100%;
+		max-width: 44rem;
+		margin: 0 auto;
+	}
+
 	.composer-dock {
 		display: grid;
-		gap: 0.85rem;
-		padding: 1rem;
-		border-radius: 1rem;
+		gap: 0.7rem;
+		padding: 0.8rem 0.85rem 0.85rem;
+		border-radius: 1.1rem;
 		border: 1px solid var(--border-soft);
 		background:
-			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 84%, transparent), var(--bg-surface)),
+			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 78%, transparent), var(--bg-surface)),
 			var(--bg-surface);
-		box-shadow: 0 12px 40px rgb(0 0 0 / 0.1);
+		box-shadow: 0 10px 26px rgb(0 0 0 / 0.08);
 	}
 
 	.composer-topline {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
+		align-items: start;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: 0.6rem;
 	}
 
 	.composer-selects {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.6rem;
-		align-items: start;
+		gap: 0.45rem;
+		align-items: center;
 	}
 
 	.select-chip {
-		display: grid;
-		gap: 0.35rem;
-		min-width: 11rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		padding: 0.28rem 0.55rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--bg-raised) 72%, var(--bg-surface));
 		color: var(--text-muted);
-		font-size: 0.72rem;
+		font-size: 0.63rem;
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 	}
 
 	.select-chip--primary {
-		min-width: 12.5rem;
+		padding-right: 0.4rem;
 	}
 
 	.select-chip--secondary {
-		min-width: 8.8rem;
 		opacity: 0.88;
+		padding-right: 0.35rem;
 	}
 
-	.select-chip--secondary select {
-		background: color-mix(in srgb, var(--bg-raised) 92%, var(--bg-surface));
+	.select-chip span {
+		white-space: nowrap;
 	}
 
 	.select-chip select {
-		padding-block: 0.7rem;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		color: var(--text-primary);
+		font-size: 0.82rem;
+		font-weight: 600;
+		padding: 0 1rem 0 0;
+		box-shadow: none;
 		text-transform: none;
 		letter-spacing: normal;
+	}
+
+	.select-chip--primary select {
+		min-width: 8.5rem;
+	}
+
+	.select-chip--secondary select {
+		min-width: 5.8rem;
+		color: var(--text-secondary);
+	}
+
+	.select-chip:focus-within {
+		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
 	}
 
 	.override-group {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.45rem;
+		gap: 0.35rem;
 	}
 
 	.composer-context {
 		margin: 0;
 		color: var(--text-muted);
-		font-size: 0.84rem;
-	}
-
-	.composer-toolbar {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
+		font-size: 0.74rem;
+		line-height: 1.45;
 	}
 
 	.composer-context a {
@@ -1445,23 +1527,48 @@
 		display: grid;
 	}
 
+	.note-select-row .field {
+		gap: 0.3rem;
+		font-size: 0.76rem;
+	}
+
+	.note-select-row .field span {
+		font-size: 0.64rem;
+		letter-spacing: 0.08em;
+	}
+
+	.note-select-row .field select {
+		padding: 0.62rem 0.75rem;
+		border-radius: 0.8rem;
+		background: color-mix(in srgb, var(--bg-raised) 48%, var(--bg-surface));
+	}
+
 	.composer-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 0.75rem;
+		gap: 0.6rem;
 		align-items: end;
 	}
 
 	.composer-input {
 		width: 100%;
-		min-height: 5.5rem;
-		padding: 0.9rem 0.95rem;
-		border-radius: 1rem;
+		min-height: 4.1rem;
+		padding: 0.78rem 0.88rem;
+		border-radius: 0.95rem;
 		border: 1px solid var(--border-soft);
 		background: var(--bg-surface);
 		color: var(--text-primary);
 		font: inherit;
 		resize: vertical;
+	}
+
+	.composer-input::placeholder {
+		color: var(--text-muted);
+	}
+
+	.send-btn {
+		min-width: 5.4rem;
+		padding: 0.72rem 0.95rem;
 	}
 
 	.loading-row {
@@ -1508,11 +1615,24 @@
 
 	@media (max-width: 960px) {
 		.empty-stage {
-			min-height: 28vh;
+			min-height: 22vh;
 		}
 
 		.proposal-grid {
 			grid-template-columns: 1fr;
+		}
+
+		.composer-shell {
+			max-width: 100%;
+		}
+
+		.composer-topline {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.override-group {
+			justify-content: flex-start;
 		}
 
 		.composer-row {
@@ -1540,12 +1660,15 @@
 		}
 
 		.select-chip {
-			min-width: 0;
+			justify-content: space-between;
+			width: 100%;
 		}
 
-		.select-chip--primary,
-		.select-chip--secondary {
+		.select-chip select,
+		.select-chip--primary select,
+		.select-chip--secondary select {
 			min-width: 0;
+			width: 100%;
 		}
 	}
 </style>

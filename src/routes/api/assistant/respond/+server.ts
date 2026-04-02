@@ -17,6 +17,11 @@ import { eq } from 'drizzle-orm';
 import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
 const MAX_PROMPT_TAGS = 40;
+const TOPIC_LEARNING_PROMPT_PATTERNS = [
+	/^\s*(what is|what are)\b/i,
+	/^\s*(tell me about|teach me about|learn about)\b/i,
+	/^\s*(explain|describe|overview of|give me an overview of)\b/i
+];
 
 function collectPromptTags(tagSets: string[][]): string[] {
 	const counts = new Map<string, number>();
@@ -208,7 +213,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				currentNoteTitle,
 				currentNoteBody,
 				relatedNote,
-				deleteTarget
+				deleteTarget,
+				shouldOfferCreateProposal(routing.latestUserMessage, routing.matchedNote)
 			);
 		} else {
 			result = await respondWithOpenAI(
@@ -222,7 +228,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				currentNoteTitle,
 				currentNoteBody,
 				relatedNote,
-				deleteTarget
+				deleteTarget,
+				shouldOfferCreateProposal(routing.latestUserMessage, routing.matchedNote)
 			);
 		}
 
@@ -334,4 +341,11 @@ function resolveDeleteTarget({
 	}
 
 	return null;
+}
+
+function shouldOfferCreateProposal(
+	latestUserMessage: string,
+	matchedNote: { id: string } | null
+): boolean {
+	return !matchedNote && TOPIC_LEARNING_PROMPT_PATTERNS.some((pattern) => pattern.test(latestUserMessage));
 }

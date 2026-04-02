@@ -120,7 +120,8 @@ export async function respondConversation(
 	currentNoteTitle?: string,
 	currentNoteBody?: string,
 	relatedNote?: RelatedNotePromptContext,
-	deleteTarget?: DeleteTargetPromptContext | null
+	deleteTarget?: DeleteTargetPromptContext | null,
+	shouldOfferCreateProposal?: boolean
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 	const systemPrompt = buildRespondSystemPrompt({
@@ -132,7 +133,8 @@ export async function respondConversation(
 		currentNoteTitle,
 		currentNoteBody,
 		relatedNote,
-		deleteTarget
+		deleteTarget,
+		shouldOfferCreateProposal
 	});
 
 	const response = await client.responses.create({

@@ -34,4 +34,19 @@ describe('buildRespondSystemPrompt', () => {
 			'Prefer evergreen explanation over release-churn or transient ecosystem updates unless `Version Notes` is genuinely warranted.'
 		);
 	});
+
+	it('instructs the assistant to keep sources out of the prose body', () => {
+		const prompt = buildRespondSystemPrompt({ mode: 'chat' });
+
+		expect(prompt).toContain('Do not include a Sources, References, Links, or Citations section in "content".');
+		expect(prompt).toContain('The UI renders citations separately.');
+	});
+
+	it('allows a conversational answer plus create proposal for eligible learning prompts', () => {
+		const prompt = buildRespondSystemPrompt({ mode: 'chat', shouldOfferCreateProposal: true });
+
+		expect(prompt).toContain('also include a create_note proposal');
+		expect(prompt).toContain('This turn is a topic-learning prompt without a strong related saved note match.');
+		expect(prompt).toContain('"type": "create_note"');
+	});
 });

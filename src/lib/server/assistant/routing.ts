@@ -37,9 +37,12 @@ interface ResolveAssistantRoutingInput {
 }
 
 const CREATE_INTENT_PATTERNS = [
-	/\b(create|draft|write|generate|make)\b.{0,40}\b(note|entry)\b/,
-	/\b(new)\b.{0,20}\b(note|entry)\b/,
-	/\badd\b.{0,20}\b(note|entry)\b/
+	/\b(create|draft|write|generate|make)\b.{0,40}\b(notes?|entry)\b/,
+	/\bnew\b.{0,20}\b(notes?|entry)\b/,
+	/\badd\b.{0,20}\b(notes?|entry)\b/,
+	/\badd\b.{0,25}\b(this|it|that)\b.{0,25}\bto\b.{0,10}\b(my\s+)?notes?\b/,
+	/\b(save|store)\b.{0,20}\b(this|it|that)\b.{0,20}\b(to|in|as)\b.{0,10}\b(my\s+)?notes?\b/,
+	/\bturn\b.{0,20}\b(this|it|that)\b.{0,20}\binto\b.{0,10}\b(a\s+)?note\b/
 ];
 
 const REVIEW_INTENT_PATTERNS = [

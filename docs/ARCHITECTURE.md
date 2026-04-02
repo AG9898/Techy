@@ -164,6 +164,7 @@ The dedicated `/notes/new` route has been removed; new-note authoring stays insi
 - resolving current note context for update flows before prompting the model
 - deriving an explicit delete target only when the user clearly asks to delete a selected or strongly matched saved note
 - deciding whether the assistant should answer conversationally only or also return a structured proposal
+- allowing eligible topic-learning prompts in inference-first chat mode to return a conversational answer plus a create-note proposal when no strong saved-note match exists
 - normalizing proposal payloads before they return to the UI
 
 Target request-time sequence:

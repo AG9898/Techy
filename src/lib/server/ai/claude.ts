@@ -209,7 +209,8 @@ export async function respondConversation(
 	currentNoteTitle?: string,
 	currentNoteBody?: string,
 	relatedNote?: RelatedNotePromptContext,
-	deleteTarget?: DeleteTargetPromptContext | null
+	deleteTarget?: DeleteTargetPromptContext | null,
+	shouldOfferCreateProposal?: boolean
 ): Promise<AssistantRespondResult> {
 	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 	const systemPrompt = buildRespondSystemPrompt({
@@ -221,7 +222,8 @@ export async function respondConversation(
 		currentNoteTitle,
 		currentNoteBody,
 		relatedNote,
-		deleteTarget
+		deleteTarget,
+		shouldOfferCreateProposal
 	});
 
 	const message = await client.messages.create({

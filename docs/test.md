@@ -26,6 +26,9 @@ The current unit tests focus on fast, deterministic modules that do not require 
   - checks required section order, approved optional-section placement, deprecated-heading rejection, and heading normalization
 - `src/lib/server/ai/prompts.test.ts`
   - verifies create/update assistant prompts both inject the same shared note-structure contract
+- `src/lib/server/assistant/routing.test.ts`
+  - verifies inference-first routing keeps plain learning prompts conversational
+  - verifies follow-up asks like `add it to notes` or `save this to my notes` route into note creation
 
 ## Shared Contract
 

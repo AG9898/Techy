@@ -136,11 +136,19 @@ Rules:
 - keep citations assistive and low-noise
 - inferred create/update behavior must not break normal conversation
 - persisted chat history should feel like a quiet notebook index, not a busy support inbox
+- default the chat entry state to inference-first `Auto`
+- reduce page-header copy to the minimum needed; avoid stacked title, eyebrow, lede, and status-pill clutter
+- keep the empty state centered and composer-led rather than explaining the product through cards
+- keep the model control inline with the composer chrome and demote provider switching to a quieter secondary control
+- style `Auto`, `Create`, and `Update` as compact skill-like toggles attached to the composer
+- avoid wrapping the main chat surface in a large generic card or dashboard shell
+- let the transcript feel flatter and more editorial than the current rounded-component treatment
 
 Recommended desktop arrangement:
 - a restrained history rail or drawer for recent chats
 - centered conversation column
-- assistant controls near the composer
+- minimal brand/title above the composer in the empty state
+- assistant controls integrated into the composer chrome
 - inline editable proposal panel for create/update
 - optional secondary context region later, but not required for the first pass
 
@@ -195,19 +203,26 @@ Rules:
 - keep the composer persistent and obvious
 - keep the chat surface unified and inference-first
 - expose create/update as compact override controls rather than the primary mental model
-- show provider/model controls without turning the toolbar into a cockpit; keep the controls compact and adjacent to the composer
+- keep the composer visually narrower and calmer than the full route width; it should feel like a centered prompt instrument, not a dashboard dock
+- show provider/model controls without turning the composer into a cockpit; keep the controls compact, smaller than the prompt field, and adjacent to it
 - let users resume prior conversations without making chat history the dominant visual element
 - render note proposals inline as editable review surfaces
 - when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
-- show citations during review without overwhelming the draft itself
+- show citations during review without overwhelming the draft itself; prefer a collapsed low-noise sources disclosure over inline source dumps
 - keep delete confirmation compact and deliberate
 - store and present the app-owned transcript as the canonical history view; do not expose provider-specific hidden memory concepts in the UI
+- favor a modern AI-chat composition with a centered entry state and composer-led control surface, translated into Techy's typography, tokens, and spacing system
+- keep the initial selected mode on `Auto`; explicit create/update remain available as hard overrides, not as the default mental model
+- keep the model default sourced from the provider registry; do not introduce hardcoded visual-only model defaults in the chat page
+- keep the chat shell in the route surface for this pass; do not introduce a wrapper component that re-boxes the full chat experience
+- avoid persistent helper copy in `Auto` mode when the compact composer layout already communicates the interaction model
 
 Avoid:
 - making the chat UI look like a separate product
 - forcing ambiguous prompts into create/update behavior without a clear signal or fallback
 - turning assistant proposals into a wall of utility panels
 - turning saved conversation history into a dense email-style list that competes with the current conversation
+- recreating the current heavy top-of-page chat header or the `No conversation yet` explainer card
 
 ---
 
