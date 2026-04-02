@@ -79,6 +79,8 @@ Use one or more tags per note. Tags are flexible, secondary descriptors that cap
 - Do not use tags as substitute categories.
 - Avoid category-shaped tags such as `programming languages` when the category already carries that meaning.
 
+Assistant proposal prompts are grounded with a bounded, deterministic snapshot of already-used lower-case graph tags so create/update drafts prefer exact existing tags before introducing new vocabulary.
+
 **Typical tag examples:**
 
 | Tag | Use for |
@@ -98,7 +100,7 @@ Use one or more tags per note. Tags are flexible, secondary descriptors that cap
 
 Every note must belong to exactly one category from the canonical list below. Categories are strict labels, not free-form text. Do not invent new category names, casing variants, or singular/plural variants.
 
-Application enforcement uses a shared canonical taxonomy helper. Assistant commit, manual create/edit actions, and Markdown import all normalize recognized canonical labels and reject unknown category strings before they are persisted. Tags remain open vocabulary.
+Application enforcement uses a shared canonical taxonomy helper. Assistant respond/commit flows, manual create/edit actions, and Markdown import all read from the same canonical category list; write paths normalize recognized canonical labels and reject unknown category strings before they are persisted. Tags remain open vocabulary.
 
 Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
 

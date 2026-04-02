@@ -2210,7 +2210,7 @@
       "id": "ASSIST-008",
       "group_id": "ASSIST",
       "title": "Assistant taxonomy context and tag-reuse grounding",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Ground assistant note proposals in the canonical category list and the graph's current tag vocabulary so the model reuses tags instead of inventing near-duplicates.",

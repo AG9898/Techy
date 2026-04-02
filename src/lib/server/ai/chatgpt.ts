@@ -114,6 +114,8 @@ export async function respondConversation(
 	mode: 'chat' | 'create' | 'update',
 	model: string,
 	researchContext?: ResearchContext,
+	canonicalCategories?: readonly string[],
+	existingTags?: string[],
 	noteTitles?: string[],
 	currentNoteTitle?: string,
 	currentNoteBody?: string,
@@ -124,6 +126,8 @@ export async function respondConversation(
 	const systemPrompt = buildRespondSystemPrompt({
 		mode,
 		researchContext,
+		canonicalCategories,
+		existingTags,
 		noteTitles,
 		currentNoteTitle,
 		currentNoteBody,

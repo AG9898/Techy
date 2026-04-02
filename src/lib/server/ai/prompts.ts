@@ -18,6 +18,8 @@ export interface DeleteTargetPromptContext {
 interface RespondPromptOptions {
 	mode: 'chat' | 'create' | 'update';
 	researchContext?: ResearchContext;
+	canonicalCategories?: readonly string[];
+	existingTags?: string[];
 	noteTitles?: string[];
 	currentNoteTitle?: string;
 	currentNoteBody?: string;
@@ -122,7 +124,8 @@ Instructions:
 - Be concise, informative, and grounded in the saved note and any supplied research context.
 `.trim();
 
-const RESPOND_SYSTEM_PROMPT_CREATE_SKILL = `
+function buildCreateSkillPrompt(canonicalCategoriesText: string): string {
+	return `
 Active skill: create note.
 
 When the user is clearly requesting a new note about a technology or concept, respond with:
@@ -136,7 +139,7 @@ When the user is clearly requesting a new note about a technology or concept, re
       "body": "<complete markdown note body>",
       "tags": ["<tag1>", "<tag2>"],
       "aliases": [],
-      "category": "<one of: ${CANONICAL_CATEGORIES_TEXT}>",
+      "category": "<one of: ${canonicalCategoriesText}>",
       "status": "growing"
     },
     "linkedNotePatches": [
@@ -151,13 +154,15 @@ When the user is clearly requesting a new note about a technology or concept, re
 Rules:
 - If the user is not clearly asking to create a note, answer conversationally with "proposal": null.
 - The body must be a proper knowledge note with markdown headings and substantive content.
-- Choose exactly one canonical category from this list: ${CANONICAL_CATEGORIES_TEXT}.
+- Choose exactly one canonical category from this list: ${canonicalCategoriesText}.
 - Prefer existing lower-case tags already used in the graph when they fit. Only create a new tag when no current tag is a clean match.
 - Do not use tags as substitute categories.
 - linkedNotePatches may only reference exact saved note titles supplied in context, and each patch must be a full replacement body rather than a diff.
 `.trim();
+}
 
-const RESPOND_SYSTEM_PROMPT_UPDATE_SKILL = `
+function buildUpdateSkillPrompt(canonicalCategoriesText: string): string {
+	return `
 Active skill: review existing note for update.
 
 MATERIALITY GATE:
@@ -182,7 +187,7 @@ When a material update is warranted, respond with:
       "body": "<complete replacement markdown body>",
       "tags": ["<tag1>", "<tag2>"],
       "aliases": [],
-      "category": "<keep the existing category unless it is genuinely wrong; if changed, use one of: ${CANONICAL_CATEGORIES_TEXT}>",
+      "category": "<keep the existing category unless it is genuinely wrong; if changed, use one of: ${canonicalCategoriesText}>",
       "status": "growing"
     },
     "linkedNotePatches": []
@@ -195,6 +200,7 @@ Rules:
 - Prefer existing lower-case tags already used in the graph when they fit.
 - linkedNotePatches must always be [] for update_note proposals.
 `.trim();
+}
 
 function buildDeleteSkillInstructions(deleteTarget?: DeleteTargetPromptContext | null): string {
 	if (!deleteTarget) {
@@ -236,18 +242,21 @@ Delete proposal shape:
 export function buildRespondSystemPrompt({
 	mode,
 	researchContext,
+	canonicalCategories = CANONICAL_NOTE_CATEGORIES,
+	existingTags,
 	noteTitles,
 	currentNoteTitle,
 	currentNoteBody,
 	relatedNote,
 	deleteTarget
 }: RespondPromptOptions): string {
+	const canonicalCategoriesText = canonicalCategories.join(', ');
 	const sections = [RESPOND_SYSTEM_PROMPT_IDENTITY];
 
 	if (mode === 'create') {
-		sections.push(RESPOND_SYSTEM_PROMPT_CREATE_SKILL);
+		sections.push(buildCreateSkillPrompt(canonicalCategoriesText));
 	} else if (mode === 'update') {
-		sections.push(RESPOND_SYSTEM_PROMPT_UPDATE_SKILL);
+		sections.push(buildUpdateSkillPrompt(canonicalCategoriesText));
 	} else {
 		sections.push(RESPOND_SYSTEM_PROMPT_CHAT_SKILL);
 	}
@@ -256,6 +265,10 @@ export function buildRespondSystemPrompt({
 
 	if (noteTitles && noteTitles.length > 0) {
 		sections.push(`Existing notes in the knowledge graph (use exact titles for linkedNotePatches):\n${noteTitles.join('\n')}`);
+	}
+
+	if (existingTags && existingTags.length > 0) {
+		sections.push(`Existing lower-case tags in the knowledge graph (prefer reusing these exact tags when they fit; only mint a new tag when none is a clean match):\n${existingTags.join(', ')}`);
 	}
 
 	if (relatedNote) {

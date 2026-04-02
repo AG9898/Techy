@@ -14,6 +14,26 @@ import type {
 import { db } from '$lib/server/db/index.js';
 import { notes } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
+import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
+
+const MAX_PROMPT_TAGS = 40;
+
+function collectPromptTags(tagSets: string[][]): string[] {
+	const counts = new Map<string, number>();
+
+	for (const tags of tagSets) {
+		for (const tag of tags) {
+			const normalized = tag.trim().toLowerCase();
+			if (!normalized) continue;
+			counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+		}
+	}
+
+	return [...counts.entries()]
+		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		.slice(0, MAX_PROMPT_TAGS)
+		.map(([tag]) => tag);
+}
 
 /**
  * POST /api/assistant/respond
@@ -84,10 +104,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Load existing notes for context injection, note matching, and patch resolution.
 	const allNotes = await db
-		.select({ id: notes.id, title: notes.title, slug: notes.slug, aliases: notes.aliases })
+		.select({ id: notes.id, title: notes.title, slug: notes.slug, aliases: notes.aliases, tags: notes.tags })
 		.from(notes);
 	const noteTitles = allNotes.map((n) => n.title);
 	const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
+	const existingTags = collectPromptTags(allNotes.map((note) => note.tags));
 	const selectedNote =
 		typeof noteId === 'string' && noteId
 			? allNotes.find((note) => note.id === noteId) ?? null
@@ -181,6 +202,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				routing.resolvedMode,
 				model,
 				researchContext,
+				CANONICAL_NOTE_CATEGORIES,
+				existingTags,
 				noteTitles,
 				currentNoteTitle,
 				currentNoteBody,
@@ -193,6 +216,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				routing.resolvedMode,
 				model,
 				researchContext,
+				CANONICAL_NOTE_CATEGORIES,
+				existingTags,
 				noteTitles,
 				currentNoteTitle,
 				currentNoteBody,
