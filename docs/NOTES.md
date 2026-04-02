@@ -231,6 +231,7 @@ Optional. Add only when a compact example explains the concept better than prose
 Assistant-generated notes should still conform to this structure, even when the draft is reviewed and saved entirely from chat.
 
 Assistant create/update prompts enforce the same skeleton explicitly: `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources` in that order, with only the approved optional sections allowed between `Key Concepts` and `Connections`. Prompts also keep `Overview` brief, use `Description` for the primary deep explanation, prefer evergreen explanation over release-churn unless `Version Notes` is warranted, and avoid deprecated default headings such as `Current Status`, `Notable Features`, `Quick Examples`, and `Industry Usage`.
+The assistant commit boundary also validates and normalizes confirmed draft bodies before persistence, so malformed section order or deprecated headings are rejected there without changing manual note-edit routes.
 
 ### Core Required Sections
 

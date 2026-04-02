@@ -2408,7 +2408,7 @@
       "id": "NOTES-013",
       "group_id": "NOTES",
       "title": "Assistant note-body structure enforcement",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Validate assistant create/update note bodies against the standardized section skeleton before persistence.",

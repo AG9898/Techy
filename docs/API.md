@@ -466,9 +466,9 @@ Persist a confirmed assistant proposal.
 **Behaviour:**
 - This endpoint is the assistant mutation boundary for confirmed create, update, and delete proposals.
 - Create/update drafts must use a canonical note category; non-canonical category strings are rejected with `400`.
-- `create_note` inserts the note, parses `[[wikilinks]]`, and syncs `note_links` immediately.
+- `create_note` validates the assistant body skeleton, normalizes approved section headings, inserts the note, parses `[[wikilinks]]`, and syncs `note_links` immediately.
 - If `linkedNotePatches` are included, the commit also updates those existing note bodies to include the new `[[wikilink]]` and re-syncs their `note_links` rows before returning.
-- `update_note` stores a revision snapshot before updating the note and re-syncs links.
+- `update_note` validates the replacement body skeleton, stores a revision snapshot before updating the note, and re-syncs links.
 - `delete_note` removes the note after explicit UI confirmation.
 
 **Response (200/201):**

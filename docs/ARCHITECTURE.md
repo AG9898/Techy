@@ -181,7 +181,7 @@ The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes 
 - update note
 - delete note
 
-The commit path is responsible for persisting confirmed changes, taking revision snapshots before updates, syncing `note_links`, and applying any assistant-supplied reciprocal link patches to existing notes.
+The commit path is responsible for persisting confirmed changes, taking revision snapshots before updates, syncing `note_links`, applying any assistant-supplied reciprocal link patches to existing notes, and validating assistant note bodies against the shared section skeleton before persistence.
 
 Canonical note-category enforcement is shared across the server write layer rather than duplicated per route. Assistant commit, manual note create/edit actions, and Markdown import all validate against the same taxonomy helper before persistence, while tags remain intentionally open vocabulary.
 
