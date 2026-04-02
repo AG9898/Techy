@@ -152,8 +152,10 @@ The assistant is the primary authoring layer over the notes system. The architec
 - validating the provider/model pair against the server allowlist
 - resolving the user's intent from the conversation and any explicit UI override
 - conservatively matching the turn to an existing note when update/review behavior is plausible
+- loading matched-note body context for note-aware conversational turns when a strong exact title or alias hit exists
 - grounding the request with live web research when the resolved intent requires it
 - resolving current note context for update flows before prompting the model
+- deriving an explicit delete target only when the user clearly asks to delete a selected or strongly matched saved note
 - deciding whether the assistant should answer conversationally only or also return a structured proposal
 - normalizing proposal payloads before they return to the UI
 
@@ -162,12 +164,12 @@ Target request-time sequence:
 2. inspect the transcript and optional override to resolve intent
 3. attempt conservative existing-note matching when update/review behavior is plausible
 4. gather live research for create/update-style turns
-5. assemble the shared system prompt plus the skill-specific routing context
+5. assemble one shared assistant-identity prompt plus layered skill-specific routing context
 6. normalize the assistant response and any proposal metadata for the UI
 
 The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint.
 
-The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes the new `override` field plus the legacy `mode` alias, inspects the latest user turn, attempts conservative exact title/alias matching against saved notes, and returns routing metadata (`overrideSource`, `matchedNote`, `targetNote`, `noteId`) alongside the assistant response so the UI can expose the resolved branch without guessing on the client.
+The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes the new `override` field plus the legacy `mode` alias, inspects the latest user turn, attempts conservative exact title/alias matching against saved notes, and returns routing metadata (`overrideSource`, `matchedNote`, `targetNote`, `noteId`) alongside the assistant response so the UI can expose the resolved branch without guessing on the client. Strong note matches do not automatically force mutation mode: in conversational routing, the respond endpoint can inject the matched note body into the shared prompt so the model can summarize what is already saved and offer follow-up research or review without emitting an update proposal.
 
 ### Commit Boundary
 
@@ -183,6 +185,8 @@ Canonical note-category enforcement is shared across the server write layer rath
 ### Live Research
 
 Live research is part of assistant orchestration for creation and comparison/update flows. Purely conversational turns may remain chat-only even when a related note exists, while still offering follow-up research or review actions. Topic reuse is treated as a runtime optimization inside the current conversation, not a durable persisted store.
+
+Delete proposals stay behind an explicit-intent gate. The shared prompt may surface `delete_note` only when the latest user turn clearly asks to delete/remove a specifically selected or strongly matched saved note; otherwise conversational turns keep `proposal: null`.
 
 ### Chat History
 

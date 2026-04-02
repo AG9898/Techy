@@ -2289,7 +2289,7 @@
       "id": "ASSIST-010",
       "group_id": "ASSIST",
       "title": "Unified prompt assembly and note-aware conversational behavior",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refactor assistant prompt construction so one shared assistant identity can converse, create, review, and delete through internal skills without exposing separate primary modes.",

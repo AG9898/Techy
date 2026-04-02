@@ -486,7 +486,7 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 - Older conversations may eventually need truncation, summarization, or retention rules to control context size and storage growth
 - Reopened conversations may rerun live research for fresh turns because the ephemeral topic cache is not persisted as durable history
 
-**Implementation note (2026-04-01):** The runtime now expresses this migration explicitly through a shared server router in `src/lib/server/assistant/routing.ts`. The preferred request field is `override`, while legacy `mode` remains a compatibility alias during migration. Exact title and exact alias matches are treated as the only auto-targetable note hits for inference-first review routing; weaker similarity stays conversational.
+**Implementation note (2026-04-01):** The runtime now expresses this migration explicitly through a shared server router in `src/lib/server/assistant/routing.ts` plus a shared prompt-assembly layer in `src/lib/server/ai/prompts.ts`. The preferred request field is `override`, while legacy `mode` remains a compatibility alias during migration. Exact title and exact alias matches are treated as the only auto-targetable note hits for inference-first review routing; weaker similarity stays conversational. Strong conversational matches can inject the saved note body into the prompt so the assistant can summarize what is already stored and offer research/review follow-ups without forcing mutation mode. Delete proposals remain explicit-intent only and require a selected or strongly matched saved note target.
 
 ---
 

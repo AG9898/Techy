@@ -387,16 +387,18 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - The assistant remains conversational regardless of the resolved intent.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
+- Prompt assembly starts from one shared assistant identity and layers routed skill instructions for conversation, create, update, and explicit-delete behavior on top.
 - The router resolves whether the turn is best treated as chat, create, or update based on the latest user turn plus any explicit override.
 - `routing.overrideSource` is `"override"`, `"mode"`, or `"none"` so the UI can tell whether the resolved branch came from the new override field, the legacy compatibility alias, or pure inference.
 - `routing.matchedNote` reports a conservative exact-match note hit from the latest user turn when one exists. `routing.targetNote` reports the effective note target for update flows, whether it came from an explicit `noteId` selection or inferred title/alias match.
 - Intent inference is conservative. Strong exact-title or alias matches may route into note-review behavior; weaker similarity should stay conversational and ask or suggest instead of silently picking a note target.
-- A prompt like "teach me about Django" should remain conversational even if a `Django` note exists. The assistant may mention the saved note and offer to research more or review it for updates.
+- A prompt like "teach me about Django" should remain conversational even if a `Django` note exists. The server injects the matched note body for that chat turn so the assistant can summarize what is already saved and offer to research more or review it for updates without forcing an `update_note` proposal.
 - When the resolved intent is create, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - For note proposals, `draft.category` is expected to be one of the canonical categories documented in [`docs/NOTES.md`](NOTES.md). The DB still stores `category` as `text`, but the product contract treats it as a controlled vocabulary.
 - For note proposals, `draft.tags` remain flexible `text[]` values, but the assistant should prefer already-established tags from the graph when they fit rather than inventing near-duplicates.
 - When the resolved intent is update, the server looks up the effective target note title and saved note body using either the selected `noteId` or a strong exact title/alias match, uses that title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
 - Update proposals are server-normalized before being returned to the client: the selected `noteId` is attached to the proposal payload and the canonical saved note title remains the update target.
+- `delete_note` proposals remain explicit-intent only. The prompt layer only exposes a delete target when the latest user turn clearly asks to delete/remove a specifically selected or strongly matched saved note.
 - Existing-note detection is proposal-first, not mutation-first. Finding a related note may change the assistant's response framing, but it never commits changes without the explicit commit step.
 - Live web research is performed for create and update-style turns, including update review flows, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.

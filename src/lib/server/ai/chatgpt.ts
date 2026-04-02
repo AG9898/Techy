@@ -4,7 +4,9 @@ import {
 	RESEARCH_SYSTEM_PROMPT,
 	NOTE_GENERATION_SYSTEM_PROMPT,
 	NOTE_RECOMMENDATIONS_SYSTEM_PROMPT,
-	buildRespondSystemPrompt
+	buildRespondSystemPrompt,
+	type DeleteTargetPromptContext,
+	type RelatedNotePromptContext
 } from './prompts.js';
 import type { ConversationMessage, AssistantRespondResult, NoteProposal } from './claude.js';
 import type { ResearchContext } from '$lib/server/assistant/research.js';
@@ -114,16 +116,20 @@ export async function respondConversation(
 	researchContext?: ResearchContext,
 	noteTitles?: string[],
 	currentNoteTitle?: string,
-	currentNoteBody?: string
+	currentNoteBody?: string,
+	relatedNote?: RelatedNotePromptContext,
+	deleteTarget?: DeleteTargetPromptContext | null
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const systemPrompt = buildRespondSystemPrompt(
+	const systemPrompt = buildRespondSystemPrompt({
 		mode,
 		researchContext,
 		noteTitles,
 		currentNoteTitle,
-		currentNoteBody
-	);
+		currentNoteBody,
+		relatedNote,
+		deleteTarget
+	});
 
 	const response = await client.responses.create({
 		model,

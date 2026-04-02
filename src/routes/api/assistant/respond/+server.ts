@@ -7,6 +7,10 @@ import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
 import { resolveAssistantRouting } from '$lib/server/assistant/routing.js';
+import type {
+	DeleteTargetPromptContext,
+	RelatedNotePromptContext
+} from '$lib/server/ai/prompts.js';
 import { db } from '$lib/server/db/index.js';
 import { notes } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -84,6 +88,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		.from(notes);
 	const noteTitles = allNotes.map((n) => n.title);
 	const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
+	const selectedNote =
+		typeof noteId === 'string' && noteId
+			? allNotes.find((note) => note.id === noteId) ?? null
+			: null;
 	const routing = resolveAssistantRouting({
 		messages: typedMessages,
 		override,
@@ -94,6 +102,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	let currentNoteTitle: string | undefined;
 	let currentNoteBody: string | undefined;
+	let relatedNote: RelatedNotePromptContext | undefined;
 	if (routing.resolvedMode === 'update') {
 		if (typeof noteId === 'string' && noteId && !allNotes.some((note) => note.id === noteId)) {
 			return json({ error: `Note not found: ${noteId}` }, { status: 400 });
@@ -116,7 +125,26 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 		currentNoteTitle = noteRow[0].title;
 		currentNoteBody = noteRow[0].body;
+	} else if (routing.resolvedMode === 'chat' && routing.matchedNote) {
+		const noteRow = await db
+			.select({ title: notes.title, body: notes.body })
+			.from(notes)
+			.where(eq(notes.id, routing.matchedNote.id))
+			.limit(1);
+		if (noteRow.length) {
+			relatedNote = {
+				title: noteRow[0].title,
+				body: noteRow[0].body,
+				matchType: routing.matchedNote.matchType
+			};
+		}
 	}
+
+	const deleteTarget = resolveDeleteTarget({
+		latestUserMessage: routing.latestUserMessage,
+		selectedNote,
+		matchedNote: routing.matchedNote
+	});
 
 	// Resolve the per-conversation topic cache from the client
 	const cache: TopicCache =
@@ -155,7 +183,9 @@ export const POST: RequestHandler = async ({ request }) => {
 				researchContext,
 				noteTitles,
 				currentNoteTitle,
-				currentNoteBody
+				currentNoteBody,
+				relatedNote,
+				deleteTarget
 			);
 		} else {
 			result = await respondWithOpenAI(
@@ -165,7 +195,9 @@ export const POST: RequestHandler = async ({ request }) => {
 				researchContext,
 				noteTitles,
 				currentNoteTitle,
-				currentNoteBody
+				currentNoteBody,
+				relatedNote,
+				deleteTarget
 			);
 		}
 
@@ -237,3 +269,44 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Assistant request failed' }, { status: 500 });
 	}
 };
+
+const EXPLICIT_DELETE_INTENT_PATTERNS = [
+	/\bdelete\b/,
+	/\bremove\b/,
+	/\berase\b/,
+	/\bdiscard\b/,
+	/\bget rid of\b/
+];
+
+function resolveDeleteTarget({
+	latestUserMessage,
+	selectedNote,
+	matchedNote
+}: {
+	latestUserMessage: string;
+	selectedNote: { id: string; title: string } | null;
+	matchedNote: { id: string; title: string; matchType: 'selected' | 'title' | 'alias' } | null;
+}): DeleteTargetPromptContext | null {
+	const normalizedMessage = latestUserMessage.trim().toLowerCase();
+	if (!normalizedMessage || !EXPLICIT_DELETE_INTENT_PATTERNS.some((pattern) => pattern.test(normalizedMessage))) {
+		return null;
+	}
+
+	if (selectedNote) {
+		return {
+			noteId: selectedNote.id,
+			title: selectedNote.title,
+			matchType: 'selected'
+		};
+	}
+
+	if (matchedNote) {
+		return {
+			noteId: matchedNote.id,
+			title: matchedNote.title,
+			matchType: matchedNote.matchType
+		};
+	}
+
+	return null;
+}

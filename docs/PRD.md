@@ -92,6 +92,8 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-30 | Chat history storage stays lean enough for Neon free-tier usage by storing canonical transcript data, proposal snapshots, and lightweight citation records only | Medium |
 | F-40 | Assistant responses may surface that a related note already exists and invite further research or review without automatically shifting the conversation into mutation mode | Medium |
 
+Implementation note: the runtime should achieve this through one shared assistant identity with internal conversation, create, update, and explicit-delete skills layered by routing context rather than by exposing separate primary assistant personas.
+
 ### UI Direction
 
 | ID | Feature | Priority |
