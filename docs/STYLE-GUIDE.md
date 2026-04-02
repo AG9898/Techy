@@ -87,7 +87,7 @@ Graph control panel guidance:
 - legend, filtering, and force-tuning controls should feel like one family of controls rather than separate floating widgets
 - persisted graph preferences should preserve user tuning without adding heavy chrome to the page
 
-### 2. Notes Search -> Note Detail
+### 2. Notes Repository -> Note Detail
 
 Desired feel:
 - readable

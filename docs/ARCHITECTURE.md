@@ -12,6 +12,8 @@ For those topics, see:
 
 Techy is a server-rendered SvelteKit 5 application backed by Neon PostgreSQL. There is no separate backend service. Request-time server work stays inside SvelteKit server modules, while the browser handles client-only graph rendering and interactive UI state.
 
+The dedicated `/search` route has been removed; browsing and search now live in `/notes`.
+
 The main architectural boundaries are:
 - SvelteKit page loads, form actions, and JSON endpoints handle product-facing server work
 - Drizzle is the persistence layer between server routes and Neon PostgreSQL

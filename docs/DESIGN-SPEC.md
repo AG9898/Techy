@@ -91,7 +91,7 @@ Rules:
 │ Left rail    │                                             │
 │ [Techy]      │  <main class="page-content">                │
 │ [Graph]      │  route-aware layout region                  │
-│ [Notes]      │  notes/search, graph, chat, note detail     │
+│ [Notes]      │  notes, graph, chat, note detail            │
 │ [Chat]       │                                             │
 │ [theme]      │                                             │
 │ [account]    │                                             │
@@ -153,7 +153,6 @@ Panel sections:
 
 Rules:
 - `/notes` owns search, filtering, import, export, and opening existing notes
-- The old standalone `/search` route is removed after migration
 - The graph empty-state CTA routes to `/chat`, not a dedicated new-note page
 - The page uses the reference's repository-like composition rather than a wall of uniform cards
 - Search lives in the notes header region and filters by title, tag, or category client-side (phase 1)

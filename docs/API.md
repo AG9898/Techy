@@ -53,7 +53,6 @@ Unified notes repository surface with integrated search, category filtering, and
 - The first implementation pass may keep filtering on the client over the loaded notes dataset.
 - `orphanIds` is server-computed from notes with no incoming and no outgoing `note_links`.
 - New note creation now originates from `/chat`; the dedicated `/notes/new` page has been removed.
-- Standalone `/search` is being retired after the notes-page migration lands.
 
 ---
 
@@ -126,13 +125,6 @@ Full content of a specific revision, rendered as HTML.
 **Errors:** `404` if slug or revisionId not found, or revisionId does not belong to this note
 
 ---
-
-### `GET /search`
-Legacy standalone search page during migration.
-
-**Notes:**
-- This route is being retired in favor of integrated repository search on `/notes`.
-- Once the notes-page migration lands, navigation and documentation should stop treating `/search` as a first-class route.
 
 ---
 

@@ -103,7 +103,7 @@ Implementation note: the runtime should achieve this through one shared assistan
 | F-22 | Use GSAP selectively for assistant/draft transitions and other meaningful motion polish | Medium |
 | F-23 | Use Space Mono as the authoritative typeface across the app shell and content surfaces | Medium |
 | F-24 | Replace the current top navigation with a collapsible left rail that can auto-tuck on immersive pages | High |
-| F-25 | Consolidate standalone search into `/notes` so browsing and search happen in one repository surface | High |
+| F-25 | Consolidate search into `/notes` so browsing and search happen in one repository surface | High |
 | F-31 | Add a unified graph control panel that persists local graph-view tuning for appearance, filters, and force behavior | High |
 
 ### Graph Controls
@@ -121,7 +121,7 @@ Implementation note: the runtime should achieve this through one shared assistan
 ## Notes on Superseded Direction
 
 - The dedicated `/notes/new` page has been removed from the app; authoring happens through `/chat`.
-- The dedicated `/search` page is being retired in favor of integrated search within `/notes`.
+- Browsing and search now live in `/notes`.
 - The “Research with AI” button on a standalone note-authoring form is no longer the intended primary creation flow.
 - The previous three-theme model (`night`, `paper`, `mist`) is being replaced by a tonal `dark/light` theme model with accent selection preserved.
 

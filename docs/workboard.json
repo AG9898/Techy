@@ -1827,7 +1827,7 @@
       "id": "UI-011",
       "group_id": "UI",
       "title": "GSAP motion polish for assistant workflow",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "feature",
       "summary": "Add restrained motion to the assistant experience where it improves continuity and focus.",
