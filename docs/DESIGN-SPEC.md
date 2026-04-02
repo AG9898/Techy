@@ -168,8 +168,8 @@ Chat is now both the conversation surface and the primary authoring surface.
 
 ```
 [ history list / drawer ........ ][Conversation column.....]
-[ recent chats / new chat ...... ][ assistant toolbar: mode toggle (Chat|Create|Update) | provider | model ]
-[ low-noise resume affordance ...][ note picker row: visible only in Update mode            ]
+[ recent chats / new chat ...... ][ assistant toolbar: provider | model | compact override controls ]
+[ low-noise resume affordance ...][ note picker row: visible only when Update is active    ]
 [ compact metadata ..............][ conversation area ....................................... ]
 [ ................................][ assistant proposal panel appears inline beneath message  ]
 [ ................................][ composer ................................................ ]
@@ -202,6 +202,7 @@ Rules:
 - Citations are visible in review, but not persisted as dedicated schema.
 - Links should be visible in the draft body using `[[wikilinks]]`.
 - If existing notes will be patched to link to the new note, that should be shown as a secondary review block in the same panel.
+- Editable proposal panels should keep the assistant reply visible so the user can review the route, the sources, and the draft together.
 
 ### Delete Confirmation
 

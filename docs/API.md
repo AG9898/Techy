@@ -150,7 +150,15 @@ Primary assistant surface for conversation and note authoring.
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string,
-  notes: { id: string, title: string, slug: string, aliases: string[] }[],
+  notes: {
+    id: string,
+    title: string,
+    slug: string,
+    aliases: string[],
+    category: string | null,
+    status: 'stub' | 'growing' | 'mature',
+    updatedAt: string
+  }[],
   conversations?: { id: string, title: string | null, updatedAt: string, lastMessagePreview?: string }[],
   activeConversation?: {
     id: string,
@@ -174,6 +182,7 @@ Primary assistant surface for conversation and note authoring.
 - The composer remains a single unified entry point rather than a primary mode switcher.
 - The UI may expose compact create/update override controls near the composer, but inference is the default routing path.
 - If the assistant detects a strong match to an existing note, the page may surface that note inline and offer research or review actions without forcing an immediate update flow.
+- The page may render create/update proposals as editable inline draft panels and delete proposals as explicit confirmation cards.
 - The page submits full conversation state to `POST /api/assistant/respond`.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
 - Respond-time prompt grounding also includes the shared canonical note-category list and a bounded deterministic list of existing lower-case note tags so create/update drafts reuse established taxonomy when possible.
@@ -187,6 +196,7 @@ Primary assistant surface for conversation and note authoring.
 - Live web citations may be shown in chat review, but are not persisted as dedicated source metadata.
 - Persisted chat history stores the app-owned transcript, not provider-managed hidden conversation state.
 - Resuming a conversation reconstructs the `messages` payload from saved chat history before calling the assistant again.
+- The response payload also includes `routing`, which exposes the resolved mode, matched note, target note, and override source so the chat UI can show the selected branch without inferring it client-side.
 
 ---
 

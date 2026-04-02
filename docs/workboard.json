@@ -1663,7 +1663,7 @@
       "id": "UI-007",
       "group_id": "UI",
       "title": "Inference-first unified chat interface",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Turn `/chat` into the single assistant surface for conversation, note-aware routing, proposal review, and note mutations.",

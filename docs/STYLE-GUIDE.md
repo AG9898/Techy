@@ -130,6 +130,7 @@ Desired feel:
 
 Rules:
 - keep the composer persistent and obvious
+- keep provider/model selectors and create/update overrides close to the composer so the thread remains the primary surface
 - keep the conversation surface clean and spacious
 - show assistant proposals as review surfaces, not separate dashboards
 - keep citations assistive and low-noise
@@ -194,7 +195,7 @@ Rules:
 - keep the composer persistent and obvious
 - keep the chat surface unified and inference-first
 - expose create/update as compact override controls rather than the primary mental model
-- show provider/model controls without turning the toolbar into a cockpit
+- show provider/model controls without turning the toolbar into a cockpit; keep the controls compact and adjacent to the composer
 - let users resume prior conversations without making chat history the dominant visual element
 - render note proposals inline as editable review surfaces
 - when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
