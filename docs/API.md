@@ -177,6 +177,7 @@ Primary assistant surface for conversation and note authoring.
 - The page submits full conversation state to `POST /api/assistant/respond`.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
 - Respond-time prompt grounding also includes the shared canonical note-category list and a bounded deterministic list of existing lower-case note tags so create/update drafts reuse established taxonomy when possible.
+- Assistant proposals must follow the standard note skeleton from `docs/NOTES.md`: `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources`, with only the approved optional sections allowed between `Key Concepts` and `Connections`.
 - The initial `/chat` selection defaults to OpenAI with `gpt-5-mini`.
 - The current OpenAI chat allowlist includes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`. The current OpenAI default is `gpt-5-mini`.
 - The current Anthropic default is `claude-haiku-4-5-20251001`.

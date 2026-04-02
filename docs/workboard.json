@@ -1621,7 +1621,7 @@
       "id": "NOTES-010",
       "group_id": "NOTES",
       "title": "Assistant delete confirmation and commit flow",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Support assistant-driven note deletion behind an explicit confirmation step in chat.",

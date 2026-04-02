@@ -273,11 +273,12 @@ Do not use these as standard headings in assistant- or human-authored notes:
 8. **Put the real explanation in Description** — use `Description` as the primary section for deeper conceptual coverage.
 9. **Use only approved optional sections** — add `Use Cases`, `Tradeoffs`, `Ecosystem`, `Version Notes`, or `Example` only when they materially improve the note.
 10. **Prefer evergreen content** — prioritize durable explanation over release-churn or transient ecosystem updates unless `Version Notes` is warranted.
-11. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
-12. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
-13. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
-14. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
-15. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
+11. **Avoid deprecated headings** — assistant drafts should not use `Current Status`, `Notable Features`, `Quick Examples`, or `Industry Usage`; the shared prompt contract normalizes toward the standard skeleton instead.
+12. **Link inline** — use `[[wikilinks]]` inside prose, not only in the Connections section.
+13. **Create immediate graph visibility** — ensure the created note’s body contains the links needed for graph edges to appear as soon as the note is saved.
+14. **Propagate relevant backlinks** — if the new note should be referenced by existing notes, the assistant should also update those note bodies so reciprocal graph connections are visible immediately after save.
+15. **Set status honestly** — `stub` for minimal drafts, `growing` for partially complete research notes, `mature` only for strong coverage.
+16. **Keep citations out of schema** — live-web sources may be shown in chat review, but they are not persisted as dedicated source metadata in this phase.
 
 ---
 
