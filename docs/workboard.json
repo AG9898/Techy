@@ -1977,7 +1977,7 @@
       "id": "UI-015",
       "group_id": "UI",
       "title": "Retire the dedicated search route and clean up navigation and docs",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Remove `/search` once `/notes` fully absorbs search responsibilities and sync the remaining product and documentation references.",
