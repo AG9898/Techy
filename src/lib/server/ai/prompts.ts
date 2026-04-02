@@ -46,11 +46,20 @@ function buildNoteSectionStructurePrompt(): string {
 Note body structure:
 - Use these required sections in this order: ${REQUIRED_NOTE_SECTIONS.join(' → ')}.
 - The body must always include all required sections.
+- Treat this as the exact working skeleton:
+  # Topic Name
+
+  ## Overview
+  ## Description
+  ## Key Concepts
+  ## Connections
+  ## Resources
 - Keep \`Overview\` brief: 2-4 sentences that orient the reader without repeating the full explanation.
 - Use \`Description\` as the primary deep-explanation section.
 - Optional sections are allowed only when they materially improve the note, and only in this order between \`Key Concepts\` and \`Connections\`: ${OPTIONAL_NOTE_SECTIONS.join(' → ')}.
+- Keep optional sections concise and skip them when they would only add churn or repetition.
 - Prefer evergreen explanation over release-churn or transient ecosystem updates unless \`Version Notes\` is genuinely warranted.
-- Do not use these deprecated default headings: ${DEPRECATED_NOTE_HEADINGS.join(', ')}.
+- Do not use these deprecated default headings anywhere in the body: ${DEPRECATED_NOTE_HEADINGS.join(', ')}.
 `.trim();
 }
 
@@ -181,7 +190,7 @@ When the user is clearly requesting a new note about a technology or concept, re
 Rules:
 - If the user is not clearly asking to create a note, answer conversationally with "proposal": null.
 - The body must be a proper knowledge note with markdown headings and substantive content.
-- The body must follow the shared note structure exactly:
+- The body must follow the shared note structure exactly. Do not omit required sections, rename them, or move optional sections outside the approved slot:
 ${buildNoteSectionStructurePrompt()}
 - Choose exactly one canonical category from this list: ${canonicalCategoriesText}.
 - Prefer existing lower-case tags already used in the graph when they fit. Only create a new tag when no current tag is a clean match.
@@ -225,7 +234,7 @@ When a material update is warranted, respond with:
 
 Rules:
 - The draft body must be a full replacement, not a diff.
-- Normalize the replacement body toward the shared note structure exactly:
+- Normalize the replacement body toward the shared note structure exactly. Preserve the required section order, keep optional sections in the approved slot only, and remove deprecated default headings from the replacement draft:
 ${buildNoteSectionStructurePrompt()}
 - Keep the existing category unless it is clearly wrong.
 - Prefer existing lower-case tags already used in the graph when they fit.

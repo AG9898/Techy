@@ -155,6 +155,7 @@ The assistant is the primary authoring layer over the notes system. The architec
 - loading matched-note body context for note-aware conversational turns when a strong exact title or alias hit exists
 - grounding create/update prompting with the shared canonical category taxonomy plus a bounded deterministic snapshot of existing lower-case note tags
 - enforcing the shared note-body skeleton so assistant drafts always use `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources` in order, with only approved optional sections allowed between `Key Concepts` and `Connections`
+- keeping `Overview` brief, treating `Description` as the primary deep-explanation section, preferring evergreen explanation over release-churn unless `Version Notes` is warranted, and rejecting deprecated default headings such as `Current Status`, `Notable Features`, `Quick Examples`, and `Industry Usage`
 - grounding the request with live web research when the resolved intent requires it
 - resolving current note context for update flows before prompting the model
 - deriving an explicit delete target only when the user clearly asks to delete a selected or strongly matched saved note
