@@ -2443,10 +2443,132 @@
       "estimate": "M"
     },
     {
+      "id": "ASSIST-012",
+      "group_id": "ASSIST",
+      "title": "Persist app-owned chat conversations and messages",
+    "status": "done",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add lean database-backed chat history storage for conversations and messages without persisting provider-side hidden memory or raw research payloads.",
+      "description": "Implement the persistence layer for chat continuity by adding the planned conversation/message storage and wiring the assistant runtime to save canonical transcript records. The stored data should be app-owned and lean: conversation metadata, user/assistant messages, lightweight citations, and proposal snapshots when present. Do not persist provider-specific conversation IDs, hidden memory handles, raw live-research payloads, or the ephemeral topic cache.",
+      "acceptance_criteria": [
+        "Database-backed chat conversation and chat message storage exists for app-owned transcript data",
+        "Assistant turns persist canonical message records with lightweight citation and proposal snapshot data when present",
+        "Provider-managed hidden memory identifiers and raw live-research payloads are not stored",
+        "The persistence shape stays lean enough for Neon free-tier usage"
+      ],
+      "depends_on": [
+        "ASSIST-010"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/assistant/conversations.ts",
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/routes/api/assistant/commit/+server.ts",
+        "drizzle/"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/schema.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Keep the stored transcript app-owned and canonical; do not model provider-specific hidden conversation state.",
+        "Persist only the data required to reopen the conversation and rebuild model context."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "ASSIST-013",
+      "group_id": "ASSIST",
+      "title": "Resume saved conversations from persisted transcript",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Expose recent conversations on `/chat`, add `/chat/[conversationId]`, and rebuild runtime context from saved messages when a thread is resumed.",
+      "description": "Implement the server-side load and routing support needed to reopen saved assistant conversations from app-owned transcript data. `/chat` should return recent conversation metadata, `/chat/[conversationId]` should load the selected transcript, and the chat runtime should rebuild the `messages` payload for subsequent assistant calls from the persisted message history instead of relying on provider-side memory.",
+      "acceptance_criteria": [
+        "`/chat` load returns recent conversation metadata alongside the existing provider and note data",
+        "`/chat/[conversationId]` loads conversation metadata plus saved messages for the selected thread",
+        "Resuming a conversation rebuilds the assistant request transcript from saved messages rather than provider-side hidden memory",
+        "Starting a new chat remains possible without deleting saved conversations"
+      ],
+      "depends_on": [
+        "ASSIST-012"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.server.ts",
+        "src/routes/(app)/chat/[conversationId]/+page.server.ts",
+        "src/routes/(app)/chat/+page.svelte",
+        "src/routes/api/assistant/respond/+server.ts",
+        "src/lib/server/assistant/conversations.ts"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Treat the saved transcript as the product source of truth when resuming a thread.",
+        "Run `npm run prepare` in this task because it introduces a new route."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-017",
+      "group_id": "UI",
+      "title": "Chat history rail and resume UI",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Add the restrained recent-conversations rail or drawer described in the chat spec so saved threads can be reopened without competing with the active conversation.",
+      "description": "Update the chat page layout to match the documented history pattern: a quiet recent-conversations rail or drawer, a visible new-chat affordance, and a conversation column that remains the primary surface. On desktop the history should read as a restrained notebook index; on mobile it should collapse into a drawer or sheet. The active-thread empty state should remain scoped to the conversation column and should not be confused with saved history.",
+      "acceptance_criteria": [
+        "Desktop chat includes a restrained recent-conversations rail or drawer with a clear new-chat affordance",
+        "Mobile chat collapses saved history into a compact drawer or sheet rather than permanently consuming space",
+        "Selecting a saved conversation restores its transcript while keeping the current thread as the dominant surface",
+        "The conversation empty state copy is clearly about the active thread, not the saved history area"
+      ],
+      "depends_on": [
+        "ASSIST-013",
+        "UI-019"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/routes/(app)/chat/+page.server.ts",
+        "src/routes/(app)/chat/[conversationId]/+page.server.ts"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Keep chat history low-noise and subordinate to the active conversation.",
+        "Implement this against the simplified composer-led chat shell from the follow-on UI tasks rather than the current heavy header layout."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
       "id": "UI-018",
       "group_id": "UI",
       "title": "Simplify chat shell and empty-state layout",
-      "status": "done",
+      "status": "todo",
       "priority": "high",
       "type": "feature",
       "summary": "Remove the current cluttered chat header and boxed empty-state card in favor of a minimal centered entry state.",
@@ -2472,6 +2594,78 @@
       "notes": [
         "Use `references/UI/chat-example.png` as the layout-vibe reference and `references/UI/current-chat.png` as the before-state.",
         "Translate the reference through Techy's token system and typography instead of copying another product literally."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-019",
+      "group_id": "UI",
+      "title": "Composer-integrated chat controls",
+      "status": "done",
+      "priority": "high",
+      "type": "feature",
+      "summary": "Move mode and model controls into the composer chrome so chat reads like a modern AI surface while staying inference-first.",
+      "description": "Replace the current separate provider/model row and override button group with composer-integrated controls. `Auto`, `Create`, and `Update` should become compact skill-like chips attached to the prompt box. The initial selected mode should remain `Auto`. Keep the model picker directly visible in the composer chrome, but demote provider switching to a quieter secondary control. When `Update` is active, show the note target picker inline under the composer before send. Preserve the current provider-registry defaults rather than introducing new hardcoded model defaults.",
+      "acceptance_criteria": [
+        "The initial selected mode is `Auto` when `/chat` loads",
+        "`Auto`, `Create`, and `Update` render as compact skill-like controls integrated with the composer",
+        "The visible model selector stays in the composer chrome and still initializes from the current server-supplied provider defaults",
+        "Provider switching remains available but no longer occupies equal visual weight with the model control",
+        "Choosing `Update` reveals an inline note target picker anchored to the composer before send"
+      ],
+      "depends_on": [
+        "UI-018"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/routes/(app)/chat/+page.server.ts"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Do not change the current provider default or provider-specific model defaults in this task.",
+        "Keep the control treatment compact enough that the composer remains the primary focal point."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "UI-020",
+      "group_id": "UI",
+      "title": "Flatten chat transcript and inline review styling",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Replace the current rounded-card transcript look with a flatter, calmer conversation treatment that keeps proposals inline.",
+      "description": "Restyle the active chat transcript so the routine conversation flow no longer reads like stacked rounded components. User and assistant messages should feel flatter and more editorial, while citations, matched-note affordances, and proposal panels remain inline and readable. Keep the proposal workflow in the route surface and do not move the core chat experience into a new wrapper component in this pass.",
+      "acceptance_criteria": [
+        "Routine chat messages no longer use the current heavy rounded component treatment",
+        "Inline proposals, citations, and matched-note affordances remain visible and usable within the thread",
+        "The transcript styling aligns with the calmer composer-led shell from the preceding chat refactor tasks",
+        "The main chat experience remains implemented in the route surface rather than being re-boxed into a wrapper component"
+      ],
+      "depends_on": [
+        "UI-019"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Keep proposal editing inline; this task changes presentation, not the proposal workflow boundary."
       ],
       "commands": [
         "npm run check"

@@ -770,7 +770,16 @@
 	<div class="composer-dock">
 		<div class="composer-topline">
 			<div class="composer-selects">
-				<label class="select-chip" for="provider-select">
+				<label class="select-chip select-chip--primary" for="model-select">
+					<span>Model</span>
+					<select id="model-select" bind:value={selectedModel}>
+						{#each currentProviderModels as model}
+							<option value={model.id}>{model.label}</option>
+						{/each}
+					</select>
+				</label>
+
+				<label class="select-chip select-chip--secondary" for="provider-select">
 					<span>Provider</span>
 					<select
 						id="provider-select"
@@ -782,16 +791,24 @@
 						{/each}
 					</select>
 				</label>
-
-				<label class="select-chip" for="model-select">
-					<span>Model</span>
-					<select id="model-select" bind:value={selectedModel}>
-						{#each currentProviderModels as model}
-							<option value={model.id}>{model.label}</option>
-						{/each}
-					</select>
-				</label>
 			</div>
+
+		</div>
+
+		<div class="composer-toolbar">
+			{#if overrideMode === 'create'}
+				<p class="composer-context">Create mode stays compact. The assistant will draft a new note.</p>
+			{:else if overrideMode === 'update' && selectedNote}
+				<p class="composer-context">
+					Update mode is pinned to <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
+				</p>
+			{:else if overrideMode === 'update'}
+				<p class="composer-context">Pick a saved note before sending a review or update request.</p>
+			{:else}
+				<p class="composer-context">
+					Auto mode lets the assistant infer whether to chat, draft, or review a note.
+				</p>
+			{/if}
 
 			<div class="override-group" role="group" aria-label="Create and update overrides">
 				<button
@@ -823,20 +840,6 @@
 				</button>
 			</div>
 		</div>
-
-		{#if overrideMode === 'create'}
-			<p class="composer-context">Create mode stays compact. The assistant will draft a new note.</p>
-		{:else if overrideMode === 'update' && selectedNote}
-			<p class="composer-context">
-				Update mode is pinned to <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
-			</p>
-		{:else if overrideMode === 'update'}
-			<p class="composer-context">Pick a saved note before sending a review or update request.</p>
-		{:else}
-			<p class="composer-context">
-				Auto mode lets the assistant infer whether to chat, draft, or review a note.
-			</p>
-		{/if}
 
 		{#if overrideMode === 'update'}
 			<div class="note-select-row">
@@ -1376,6 +1379,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.6rem;
+		align-items: start;
 	}
 
 	.select-chip {
@@ -1387,6 +1391,19 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
+	}
+
+	.select-chip--primary {
+		min-width: 12.5rem;
+	}
+
+	.select-chip--secondary {
+		min-width: 8.8rem;
+		opacity: 0.88;
+	}
+
+	.select-chip--secondary select {
+		background: color-mix(in srgb, var(--bg-raised) 92%, var(--bg-surface));
 	}
 
 	.select-chip select {
@@ -1405,6 +1422,14 @@
 		margin: 0;
 		color: var(--text-muted);
 		font-size: 0.84rem;
+	}
+
+	.composer-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
 	}
 
 	.composer-context a {
@@ -1511,6 +1536,11 @@
 		}
 
 		.select-chip {
+			min-width: 0;
+		}
+
+		.select-chip--primary,
+		.select-chip--secondary {
 			min-width: 0;
 		}
 	}
