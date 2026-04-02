@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
+	import { Select as MeltSelect } from 'melt/builders';
 	import { marked } from 'marked';
 	import type { PageData } from './$types.js';
 	import { resolveWikilinks } from '$lib/utils/wikilinks.js';
@@ -7,6 +8,7 @@
 
 	type ProviderId = 'anthropic' | 'openai';
 	type AssistantMode = 'chat' | 'create' | 'update';
+	type ComposerModeValue = 'auto' | 'create' | 'update';
 	type NoteStatus = 'stub' | 'growing' | 'mature';
 
 	interface ChatNote {
@@ -126,6 +128,44 @@
 	let draftStates = $state<Record<string, DraftEditorState>>({});
 	let conversationEl: HTMLDivElement | null = null;
 	let messageCounter = 0;
+
+	const modeOptions: Array<{ value: ComposerModeValue; label: string }> = [
+		{ value: 'auto', label: 'Auto' },
+		{ value: 'create', label: 'Create' },
+		{ value: 'update', label: 'Update' }
+	];
+
+	const providerSelect = new MeltSelect<ProviderId>({
+		value: () => selectedProvider,
+		onValueChange: (value) => {
+			if (!value) return;
+			selectedProvider = value;
+			handleProviderChange();
+		}
+	});
+
+	const modelSelect = new MeltSelect<string>({
+		value: () => selectedModel,
+		onValueChange: (value) => {
+			if (!value) return;
+			selectedModel = value;
+		}
+	});
+
+	const modeSelect = new MeltSelect<ComposerModeValue>({
+		value: () => (overrideMode ?? 'auto') as ComposerModeValue,
+		onValueChange: (value) => {
+			if (!value) return;
+			setOverride(value === 'auto' ? null : value);
+		}
+	});
+
+	const noteTargetSelect = new MeltSelect<string>({
+		value: () => selectedNoteId,
+		onValueChange: (value) => {
+			selectedNoteId = value ?? '';
+		}
+	});
 
 	const currentProviderModels = $derived(
 		data.providers.find((provider) => provider.id === selectedProvider)?.models ?? []
@@ -259,6 +299,22 @@
 		if (mode === 'create') return 'Create';
 		if (mode === 'update') return 'Update';
 		return 'Chat';
+	}
+
+	function currentModeLabel(): string {
+		return modeOptions.find((option) => option.value === (overrideMode ?? 'auto'))?.label ?? 'Auto';
+	}
+
+	function currentProviderLabel(): string {
+		return data.providers.find((provider) => provider.id === selectedProvider)?.label ?? 'Provider';
+	}
+
+	function currentModelLabel(): string {
+		return currentProviderModels.find((model) => model.id === selectedModel)?.label ?? 'Model';
+	}
+
+	function currentNoteTargetLabel(): string {
+		return selectedNote?.title ?? 'Select a saved note';
 	}
 
 	function intentLabel(intent: RoutingState['intent']): string {
@@ -787,57 +843,77 @@
 		<div class="composer-dock">
 			<div class="composer-topline">
 				<div class="composer-selects">
-					<label class="select-chip select-chip--primary" for="model-select">
-						<span>Model</span>
-						<select id="model-select" bind:value={selectedModel}>
+					<div class="select-wrap">
+						<div class="select-chip select-chip--primary">
+							<span>Model</span>
+							<button type="button" class="composer-select-trigger" {...modelSelect.trigger}>
+								<span class="composer-select-value">{currentModelLabel()}</span>
+								<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+							</button>
+						</div>
+						<div class="composer-select-menu" {...modelSelect.content}>
 							{#each currentProviderModels as model}
-								<option value={model.id}>{model.label}</option>
+								<div
+									class="composer-select-option"
+									class:composer-select-option--selected={modelSelect.isSelected(model.id)}
+									{...modelSelect.getOption(model.id, model.label)}
+								>
+									<span>{model.label}</span>
+									{#if modelSelect.isSelected(model.id)}
+										<span class="composer-select-check" aria-hidden="true">•</span>
+									{/if}
+								</div>
 							{/each}
-						</select>
-					</label>
+						</div>
+					</div>
 
-					<label class="select-chip select-chip--secondary" for="provider-select">
-						<span>Provider</span>
-						<select
-							id="provider-select"
-							bind:value={selectedProvider}
-							onchange={handleProviderChange}
-						>
+					<div class="select-wrap">
+						<div class="select-chip select-chip--secondary">
+							<span>Provider</span>
+							<button type="button" class="composer-select-trigger" {...providerSelect.trigger}>
+								<span class="composer-select-value">{currentProviderLabel()}</span>
+								<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+							</button>
+						</div>
+						<div class="composer-select-menu" {...providerSelect.content}>
 							{#each data.providers as provider}
-								<option value={provider.id}>{provider.label}</option>
+								<div
+									class="composer-select-option"
+									class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
+									{...providerSelect.getOption(provider.id, provider.label)}
+								>
+									<span>{provider.label}</span>
+									{#if providerSelect.isSelected(provider.id)}
+										<span class="composer-select-check" aria-hidden="true">•</span>
+									{/if}
+								</div>
 							{/each}
-						</select>
-					</label>
+						</div>
+					</div>
 				</div>
 
-				<div class="override-group" role="group" aria-label="Create and update overrides">
-					<button
-						type="button"
-						class="override-btn"
-						class:override-btn--active={overrideMode === null}
-						aria-pressed={overrideMode === null}
-						onclick={() => setOverride(null)}
-					>
-						Auto
-					</button>
-					<button
-						type="button"
-						class="override-btn"
-						class:override-btn--active={overrideMode === 'create'}
-						aria-pressed={overrideMode === 'create'}
-						onclick={() => setOverride('create')}
-					>
-						Create
-					</button>
-					<button
-						type="button"
-						class="override-btn"
-						class:override-btn--active={overrideMode === 'update'}
-						aria-pressed={overrideMode === 'update'}
-						onclick={() => setOverride('update')}
-					>
-						Update
-					</button>
+				<div class="select-wrap select-wrap--mode">
+					<div class="select-chip select-chip--mode">
+						<span>Mode</span>
+						<button type="button" class="composer-select-trigger" {...modeSelect.trigger}>
+							<span class="composer-select-value">{currentModeLabel()}</span>
+							<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+						</button>
+					</div>
+					<div class="composer-select-menu composer-select-menu--mode" {...modeSelect.content}>
+						{#each modeOptions as option}
+							<div
+								class="composer-select-option"
+								class:composer-select-option--selected={modeSelect.isSelected(option.value)}
+								{...modeSelect.getOption(option.value, option.label)}
+							>
+								<span>{option.label}</span>
+								{#if modeSelect.isSelected(option.value)}
+									<span class="composer-select-check" aria-hidden="true">•</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
 				</div>
 			</div>
 
@@ -853,17 +929,43 @@
 
 			{#if overrideMode === 'update'}
 				<div class="note-select-row">
-					<label class="field field--select" for="note-select">
+					<div class="field field--select">
 						<span>Review target</span>
-						<select id="note-select" bind:value={selectedNoteId}>
-							<option value="">Select a saved note</option>
-							{#each data.notes as note}
-								<option value={note.id}>
-									{note.title}{note.category ? ` · ${note.category}` : ''} · {note.status}
-								</option>
-							{/each}
-						</select>
-					</label>
+						<div class="select-wrap select-wrap--full">
+							<button
+								type="button"
+								class="note-select-trigger"
+								{...noteTargetSelect.trigger}
+							>
+								<span class="composer-select-value">{currentNoteTargetLabel()}</span>
+								<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+							</button>
+							<div class="composer-select-menu composer-select-menu--note" {...noteTargetSelect.content}>
+								<div
+									class="composer-select-option"
+									class:composer-select-option--selected={noteTargetSelect.isSelected('')}
+									{...noteTargetSelect.getOption('', 'Select a saved note')}
+								>
+									<span>Select a saved note</span>
+								</div>
+								{#each data.notes as note}
+									<div
+										class="composer-select-option composer-select-option--stacked"
+										class:composer-select-option--selected={noteTargetSelect.isSelected(note.id)}
+										{...noteTargetSelect.getOption(
+											note.id,
+											`${note.title}${note.category ? ` · ${note.category}` : ''} · ${note.status}`
+										)}
+									>
+										<span>{note.title}</span>
+										<span class="composer-select-meta">
+											{note.category ? `${note.category} · ` : ''}{note.status}
+										</span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
 				</div>
 			{/if}
 
@@ -1248,8 +1350,7 @@
 
 	.field input,
 	.field select,
-	.field textarea,
-	.select-chip select {
+	.field textarea {
 		width: 100%;
 		border: 1px solid var(--border-soft);
 		border-radius: 0.85rem;
@@ -1266,7 +1367,6 @@
 	.field input:focus,
 	.field select:focus,
 	.field textarea:focus,
-	.select-chip select:focus,
 	.composer-input:focus {
 		outline: none;
 		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
@@ -1474,41 +1574,153 @@
 		padding-right: 0.35rem;
 	}
 
+	.select-chip--mode {
+		padding-right: 0.4rem;
+	}
+
 	.select-chip span {
 		white-space: nowrap;
 	}
 
-	.select-chip select {
+	.select-wrap {
+		position: relative;
+	}
+
+	.select-wrap--mode {
+		margin-left: auto;
+	}
+
+	.select-wrap--full {
+		width: 100%;
+	}
+
+	.composer-select-trigger,
+	.note-select-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.45rem;
 		min-width: 0;
 		border: 0;
 		background: transparent;
 		color: var(--text-primary);
 		font-size: 0.82rem;
 		font-weight: 600;
-		padding: 0 1rem 0 0;
+		padding: 0;
 		box-shadow: none;
 		text-transform: none;
 		letter-spacing: normal;
+		cursor: pointer;
 	}
 
-	.select-chip--primary select {
+	.composer-select-trigger:focus,
+	.note-select-trigger:focus {
+		outline: none;
+	}
+
+	.composer-select-value {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.composer-select-chevron {
+		flex: 0 0 auto;
+		font-size: 0.7rem;
+		color: var(--text-subtle);
+		transform: translateY(-0.02rem);
+		transition: transform 150ms ease;
+	}
+
+	.select-chip:has([aria-expanded='true']) .composer-select-chevron,
+	.note-select-trigger:has(+ [data-open]) .composer-select-chevron {
+		transform: rotate(180deg);
+	}
+
+	.composer-select-menu {
+		width: max-content;
+		min-width: max(100%, 10.5rem);
+		max-width: min(18rem, calc(100vw - 2rem));
+		padding: 0.3rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.95rem;
+		background: color-mix(in srgb, var(--bg-overlay) 90%, var(--bg-surface));
+		color: var(--text-primary);
+		box-shadow: 0 18px 38px rgb(0 0 0 / 0.22);
+		backdrop-filter: blur(10px);
+		z-index: 40;
+	}
+
+	.composer-select-menu--mode {
+		min-width: max(100%, 8.5rem);
+	}
+
+	.composer-select-menu--note {
+		width: 100%;
+		min-width: 100%;
+		max-width: min(100%, 32rem);
+		max-height: min(20rem, 55vh);
+		overflow: auto;
+	}
+
+	.composer-select-option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.55rem 0.65rem;
+		border-radius: 0.72rem;
+		color: var(--text-secondary);
+		font-size: 0.84rem;
+		cursor: pointer;
+		transition:
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.composer-select-option[data-highlighted],
+	.composer-select-option:hover {
+		background: color-mix(in srgb, var(--accent-soft) 24%, var(--bg-raised));
+		color: var(--text-primary);
+	}
+
+	.composer-select-option--selected {
+		background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-raised));
+		color: var(--accent-primary);
+	}
+
+	.composer-select-option--stacked {
+		display: grid;
+		justify-content: stretch;
+		gap: 0.18rem;
+	}
+
+	.composer-select-meta {
+		color: var(--text-muted);
+		font-size: 0.72rem;
+	}
+
+	.composer-select-check {
+		flex: 0 0 auto;
+		color: var(--accent-primary);
+		font-size: 0.95rem;
+		line-height: 1;
+	}
+
+	.select-chip--primary .composer-select-trigger {
 		min-width: 8.5rem;
 	}
 
-	.select-chip--secondary select {
+	.select-chip--secondary .composer-select-trigger {
 		min-width: 5.8rem;
 		color: var(--text-secondary);
 	}
 
-	.select-chip:focus-within {
+	.select-chip:focus-within,
+	.select-chip:has([aria-expanded='true']) {
 		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
-	}
-
-	.override-group {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
 	}
 
 	.composer-context {
@@ -1537,10 +1749,31 @@
 		letter-spacing: 0.08em;
 	}
 
-	.note-select-row .field select {
+	.note-select-trigger {
+		width: 100%;
 		padding: 0.62rem 0.75rem;
+		border: 1px solid var(--border-soft);
 		border-radius: 0.8rem;
 		background: color-mix(in srgb, var(--bg-raised) 48%, var(--bg-surface));
+	}
+
+	.note-select-trigger:focus,
+	.note-select-trigger:has(+ [data-open]) {
+		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+	}
+
+	.field select option {
+		background: var(--bg-overlay);
+		color: var(--text-primary);
+	}
+
+	:global(html[data-theme='dark']) .field select {
+		color-scheme: dark;
+	}
+
+	:global(html[data-theme='light']) .field select {
+		color-scheme: light;
 	}
 
 	.composer-row {
@@ -1631,8 +1864,8 @@
 			align-items: stretch;
 		}
 
-		.override-group {
-			justify-content: flex-start;
+		.select-wrap--mode {
+			margin-left: 0;
 		}
 
 		.composer-row {
@@ -1652,7 +1885,6 @@
 		}
 
 		.composer-selects,
-		.override-group,
 		.match-card__actions,
 		.proposal-toolbar {
 			flex-direction: column;
@@ -1664,11 +1896,24 @@
 			width: 100%;
 		}
 
-		.select-chip select,
-		.select-chip--primary select,
-		.select-chip--secondary select {
+		.select-wrap,
+		.select-wrap--mode {
+			width: 100%;
+			margin-left: 0;
+		}
+
+		.composer-select-trigger,
+		.select-chip--primary .composer-select-trigger,
+		.select-chip--secondary .composer-select-trigger {
 			min-width: 0;
 			width: 100%;
+		}
+
+		.composer-select-menu,
+		.composer-select-menu--mode,
+		.composer-select-menu--note {
+			min-width: min(100%, calc(100vw - 2rem));
+			max-width: min(100%, calc(100vw - 2rem));
 		}
 	}
 </style>

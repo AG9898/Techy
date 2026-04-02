@@ -189,8 +189,9 @@ Chat layout rules:
 - Remove non-essential top-of-page copy and status pills; the page should not open with a heavy header block.
 - The composer should sit in a centered narrow column rather than stretching like a full-width dashboard dock.
 - The conversation text bar should be materially smaller than the current wide dock treatment: reduced width, reduced height, reduced padding, and a calmer send affordance.
+- The composer controls should prefer headless custom dropdowns over browser-native select menus where the native rendering breaks token contrast or readability.
 - The model selector should stay visible in the composer chrome, while provider switching becomes a quieter secondary control.
-- `Auto`, `Create`, and `Update` should read like compact skill toggles attached to the composer rather than a separate toolbar, and should be visually smaller than the main prompt surface.
+- `Auto`, `Create`, and `Update` should be exposed through a compact mode selector in the composer chrome rather than a separate toolbar of pills.
 - The update target picker should appear only when `Update` is active, anchored directly under the composer.
 - The main chat surface should not be wrapped in a generic dashboard-style container component; the conversation area itself stays visually open.
 - Chat should follow the modern AI-reference layout rhythm from `references/UI/chat-example.png`, translated through Techy's tokens and type system rather than copied literally.
@@ -263,13 +264,14 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface
-- Three-mode toggle: Chat | Create | Update (segmented button group in toolbar)
+- Compact mode selector: Auto | Create | Update
 - A recent-conversations list or drawer allows the user to resume an older chat without leaving the chat surface
-- In Update mode, a full-width note-picker `<select>` appears below the toolbar for choosing the note to review
+- In Update mode, a full-width note picker appears below the composer chrome for choosing the note to review
 - Send is disabled in Update mode until a note is selected
 - Add provider/model selection controls
 - Composer chrome is constrained to a centered narrow width on desktop rather than spanning the full conversation column
 - Model remains the primary visible selector; provider stays visible but smaller and quieter
+- Composer control popovers should use Techy surface/background tokens instead of relying on browser-native select menu colors
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
 - Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility
