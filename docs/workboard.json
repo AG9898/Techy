@@ -2642,7 +2642,7 @@
       "id": "UI-020",
       "group_id": "UI",
       "title": "Flatten chat transcript and inline review styling",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Replace the current rounded-card transcript look with a flatter, calmer conversation treatment that keeps proposals inline.",

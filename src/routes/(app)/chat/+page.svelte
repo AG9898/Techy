@@ -904,11 +904,11 @@
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.15rem;
 		overflow: auto;
 		padding-right: 0.25rem;
 		scrollbar-gutter: stable;
-		max-width: 62rem;
+		max-width: 68rem;
 		width: 100%;
 		margin: 0 auto;
 	}
@@ -920,10 +920,10 @@
 	.empty-stage {
 		display: grid;
 		place-items: center;
-		gap: 0.65rem;
-		min-height: 36vh;
+		gap: 0.55rem;
+		min-height: 30vh;
 		text-align: center;
-		padding: 1rem 0 2rem;
+		padding: 1rem 0 1.5rem;
 	}
 
 	.empty-brand {
@@ -954,15 +954,17 @@
 	.message {
 		display: flex;
 		flex-direction: column;
+		max-width: 100%;
 	}
 
 	.message-bubble {
-		max-width: 48rem;
-		padding: 0.95rem 1.05rem;
-		border-radius: 1rem;
+		max-width: 50rem;
+		padding: 0.1rem 0;
+		border-radius: 0;
 		border: 1px solid var(--border-soft);
-		background: var(--bg-surface);
-		box-shadow: 0 10px 30px rgb(0 0 0 / 0.08);
+		border-width: 0 0 1px;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.message-bubble p,
@@ -977,20 +979,21 @@
 
 	.message-bubble--user {
 		margin-left: auto;
-		background: color-mix(in srgb, var(--accent-soft) 24%, var(--bg-surface));
-		border-color: color-mix(in srgb, var(--accent-strong) 18%, var(--border-soft));
+		padding: 0.8rem 0.95rem;
+		border-width: 1px;
+		border-color: color-mix(in srgb, var(--accent-strong) 16%, var(--border-soft));
+		border-radius: 0.95rem;
+		background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-surface));
 		color: var(--text-primary);
 	}
 
 	.assistant-panel {
 		display: grid;
-		gap: 0.9rem;
-		padding: 1rem;
-		border-radius: 1.25rem;
-		border: 1px solid var(--border-soft);
-		background:
-			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 80%, transparent), var(--bg-surface)),
-			var(--bg-surface);
+		gap: 0.8rem;
+		padding: 0.2rem 0 1rem;
+		border-top: 1px solid var(--border-soft);
+		border-radius: 0;
+		background: transparent;
 	}
 
 	.message-meta {
@@ -1014,13 +1017,13 @@
 
 	.message-role {
 		padding: 0.3rem 0.6rem;
-		color: var(--text-primary);
-		background: var(--bg-raised);
+		color: var(--text-muted);
+		background: transparent;
 	}
 
 	.meta-pill {
 		padding: 0.3rem 0.55rem;
-		background: var(--bg-raised);
+		background: color-mix(in srgb, var(--bg-raised) 60%, transparent);
 		color: var(--text-muted);
 	}
 
@@ -1077,9 +1080,10 @@
 		display: grid;
 		gap: 0.85rem;
 		padding: 1rem;
-		border-radius: 1rem;
+		border-radius: 0.9rem;
 		border: 1px solid var(--border-soft);
-		background: var(--bg-raised);
+		background: color-mix(in srgb, var(--bg-raised) 72%, var(--bg-surface));
+		box-shadow: none;
 	}
 
 	.match-card--target {
@@ -1117,7 +1121,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0.42rem 0.7rem;
-		border-radius: 999px;
+		border-radius: 0.7rem;
 		border: 1px solid var(--border-soft);
 		background: var(--bg-surface);
 		color: var(--accent-primary);
@@ -1141,7 +1145,7 @@
 		display: inline-flex;
 		align-items: center;
 		padding: 0.3rem 0.55rem;
-		border-radius: 999px;
+		border-radius: 0.65rem;
 		background: var(--bg-surface);
 		border: 1px solid var(--border-soft);
 		color: var(--text-muted);
@@ -1223,7 +1227,7 @@
 	}
 
 	.preview-pane {
-		border-radius: 1rem;
+		border-radius: 0.9rem;
 		border: 1px solid var(--border-soft);
 		background: var(--bg-surface);
 		padding: 1rem;
@@ -1359,7 +1363,7 @@
 		display: grid;
 		gap: 0.85rem;
 		padding: 1rem;
-		border-radius: 1.25rem;
+		border-radius: 1rem;
 		border: 1px solid var(--border-soft);
 		background:
 			linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 84%, transparent), var(--bg-surface)),
