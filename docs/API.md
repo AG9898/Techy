@@ -150,7 +150,7 @@ Primary assistant surface for conversation and note authoring.
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string,
-  notes: { id: string, title: string, slug: string }[],
+  notes: { id: string, title: string, slug: string, aliases: string[] }[],
   conversations?: { id: string, title: string | null, updatedAt: string, lastMessagePreview?: string }[],
   activeConversation?: {
     id: string,
@@ -218,7 +218,7 @@ Resume a previously saved assistant conversation.
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string,
-  notes: { id: string, title: string, slug: string }[]
+  notes: { id: string, title: string, slug: string, aliases: string[] }[]
 }
 ```
 
@@ -308,7 +308,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
   "messages": [
     { "role": "user", "content": "Create a note about SvelteKit adapters" }
   ],
-  "intentOverride": "create",
+  "override": "create",
   "provider": "anthropic",
   "model": "claude-opus-4-6",
   "topicCache": {
@@ -325,12 +325,12 @@ Target direction: the assistant resolves intent server-side from the conversatio
 | Field | Required | Description |
 |-------|----------|-------------|
 | `messages` | yes | Full conversation transcript for the active chat runtime; may be rebuilt from saved history when resuming |
-| `intentOverride` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
+| `override` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
 | `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
-| `noteId` | conditional | UUID of the note to compare; required when the resolved intent is `"update"`. The server resolves the selected note title/body from this ID and uses that note as the grounding target for research and comparison. |
-| `mode` | temporary | Legacy compatibility field during migration. Its semantics match `intentOverride` and it should be retired once the unified chat router ships. |
+| `noteId` | conditional | UUID of the selected note to compare. Required only when the resolved intent is `"update"` and no strong exact title/alias note match can be resolved from the latest user turn. |
+| `mode` | temporary | Legacy compatibility field during migration. Its semantics match `override`, and when both are present `override` wins. |
 
 **Response (200):**
 ```json
@@ -342,9 +342,14 @@ Target direction: the assistant resolves intent server-side from the conversatio
     ]
   },
   "routing": {
-    "resolvedIntent": "create",
-    "intentSource": "override",
-    "matchedNote": null
+    "intent": "create",
+    "resolvedMode": "create",
+    "override": "create",
+    "overrideSource": "override",
+    "matchedNote": null,
+    "targetNote": null,
+    "noteId": null,
+    "latestUserMessage": "Create a note about SvelteKit adapters"
   },
   "proposal": {
     "type": "create_note",
@@ -382,13 +387,15 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - The assistant remains conversational regardless of the resolved intent.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
-- The router resolves whether the turn is best treated as chat, create, or update based on the conversation plus any explicit override.
+- The router resolves whether the turn is best treated as chat, create, or update based on the latest user turn plus any explicit override.
+- `routing.overrideSource` is `"override"`, `"mode"`, or `"none"` so the UI can tell whether the resolved branch came from the new override field, the legacy compatibility alias, or pure inference.
+- `routing.matchedNote` reports a conservative exact-match note hit from the latest user turn when one exists. `routing.targetNote` reports the effective note target for update flows, whether it came from an explicit `noteId` selection or inferred title/alias match.
 - Intent inference is conservative. Strong exact-title or alias matches may route into note-review behavior; weaker similarity should stay conversational and ask or suggest instead of silently picking a note target.
 - A prompt like "teach me about Django" should remain conversational even if a `Django` note exists. The assistant may mention the saved note and offer to research more or review it for updates.
 - When the resolved intent is create, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - For note proposals, `draft.category` is expected to be one of the canonical categories documented in [`docs/NOTES.md`](NOTES.md). The DB still stores `category` as `text`, but the product contract treats it as a controlled vocabulary.
 - For note proposals, `draft.tags` remain flexible `text[]` values, but the assistant should prefer already-established tags from the graph when they fit rather than inventing near-duplicates.
-- When the resolved intent is update, the server looks up the selected note title and saved note body by `noteId`, uses the note title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
+- When the resolved intent is update, the server looks up the effective target note title and saved note body using either the selected `noteId` or a strong exact title/alias match, uses that title as the research topic, and injects both title and saved body into the system prompt alongside live research context. Empty saved bodies are still passed through explicitly so the assistant can treat them as incomplete notes rather than asking the user to restate the note.
 - Update proposals are server-normalized before being returned to the client: the selected `noteId` is attached to the proposal payload and the canonical saved note title remains the update target.
 - Existing-note detection is proposal-first, not mutation-first. Finding a related note may change the assistant's response framing, but it never commits changes without the explicit commit step.
 - Live web research is performed for create and update-style turns, including update review flows, so the comparison is always grounded in current information.
@@ -400,7 +407,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - `topicCache` is an ephemeral optimization and is not intended to be the persisted source of truth for chat history.
 
 **Errors:**
-- `400` — invalid body, missing messages, invalid resolved intent / override, invalid provider/model combination, or missing/invalid `noteId` for update mode
+- `400` — invalid body, missing messages, invalid provider/model combination, invalid selected `noteId`, or update routing with neither a selected note nor a strong exact match
 - `401` — invalid or missing provider API key
 - `429` — provider rate limit exceeded
 - `500` — assistant orchestration or provider failure

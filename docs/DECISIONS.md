@@ -486,6 +486,8 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 - Older conversations may eventually need truncation, summarization, or retention rules to control context size and storage growth
 - Reopened conversations may rerun live research for fresh turns because the ephemeral topic cache is not persisted as durable history
 
+**Implementation note (2026-04-01):** The runtime now expresses this migration explicitly through a shared server router in `src/lib/server/assistant/routing.ts`. The preferred request field is `override`, while legacy `mode` remains a compatibility alias during migration. Exact title and exact alias matches are treated as the only auto-targetable note hits for inference-first review routing; weaker similarity stays conversational.
+
 ---
 
 ## ADR-022: Theme-specific accent palettes over one shared accent hex set

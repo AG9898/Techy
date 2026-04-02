@@ -6,7 +6,7 @@ import { asc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async () => {
 	const notesList = await db
-		.select({ id: notes.id, title: notes.title, slug: notes.slug })
+		.select({ id: notes.id, title: notes.title, slug: notes.slug, aliases: notes.aliases })
 		.from(notes)
 		.orderBy(asc(notes.title));
 

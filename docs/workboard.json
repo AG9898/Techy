@@ -2250,7 +2250,7 @@
       "id": "ASSIST-009",
       "group_id": "ASSIST",
       "title": "Inference-first assistant intent routing and note matching",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Resolve conversational, create, and review/update behavior on the server from the transcript and optional overrides instead of requiring the client to choose a mode on every turn.",

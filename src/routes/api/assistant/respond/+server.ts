@@ -6,6 +6,7 @@ import { respondConversation as respondWithOpenAI } from '$lib/server/ai/chatgpt
 import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
+import { resolveAssistantRouting } from '$lib/server/assistant/routing.js';
 import { db } from '$lib/server/db/index.js';
 import { notes } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -13,7 +14,7 @@ import { eq } from 'drizzle-orm';
 /**
  * POST /api/assistant/respond
  *
- * Unified assistant endpoint. Accepts a conversation, provider/model choice, and mode.
+ * Unified assistant endpoint. Accepts a conversation, provider/model choice, and optional routing override.
  * Performs live web research before calling the LLM, using the per-conversation topicCache
  * to avoid re-researching the same topic within a session.
  * Returns a conversational reply plus an optional structured note proposal.
@@ -30,7 +31,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Request body must be a JSON object' }, { status: 400 });
 	}
 
-	const { messages, mode, provider, model, topicCache, noteId } = body as Record<string, unknown>;
+	const { messages, mode, override, provider, model, topicCache, noteId } = body as Record<
+		string,
+		unknown
+	>;
 
 	// Validate messages
 	if (!Array.isArray(messages) || messages.length === 0) {
@@ -52,8 +56,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	// Validate mode
-	if (mode !== 'chat' && mode !== 'create' && mode !== 'update') {
+	if (override !== undefined && override !== 'chat' && override !== 'create' && override !== 'update') {
+		return json({ error: 'override must be "chat", "create", or "update"' }, { status: 400 });
+	}
+
+	if (mode !== undefined && mode !== 'chat' && mode !== 'create' && mode !== 'update') {
 		return json({ error: 'mode must be "chat", "create", or "update"' }, { status: 400 });
 	}
 
@@ -69,31 +76,47 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 
-	// Validate noteId for update mode
+	const typedMessages = messages as ConversationMessage[];
+
+	// Load existing notes for context injection, note matching, and patch resolution.
+	const allNotes = await db
+		.select({ id: notes.id, title: notes.title, slug: notes.slug, aliases: notes.aliases })
+		.from(notes);
+	const noteTitles = allNotes.map((n) => n.title);
+	const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
+	const routing = resolveAssistantRouting({
+		messages: typedMessages,
+		override,
+		legacyMode: mode,
+		noteId,
+		notes: allNotes
+	});
+
 	let currentNoteTitle: string | undefined;
 	let currentNoteBody: string | undefined;
-	if (mode === 'update') {
-		if (typeof noteId !== 'string' || !noteId) {
-			return json({ error: 'noteId is required for mode "update"' }, { status: 400 });
+	if (routing.resolvedMode === 'update') {
+		if (typeof noteId === 'string' && noteId && !allNotes.some((note) => note.id === noteId)) {
+			return json({ error: `Note not found: ${noteId}` }, { status: 400 });
 		}
+
+		if (!routing.noteId) {
+			return json(
+				{ error: 'Update routing requires either a selected note or a strong note match' },
+				{ status: 400 }
+			);
+		}
+
 		const noteRow = await db
 			.select({ title: notes.title, body: notes.body })
 			.from(notes)
-			.where(eq(notes.id, noteId))
+			.where(eq(notes.id, routing.noteId))
 			.limit(1);
 		if (!noteRow.length) {
-			return json({ error: `Note not found: ${noteId}` }, { status: 400 });
+			return json({ error: `Note not found: ${routing.noteId}` }, { status: 400 });
 		}
 		currentNoteTitle = noteRow[0].title;
 		currentNoteBody = noteRow[0].body;
 	}
-
-	const typedMessages = messages as ConversationMessage[];
-
-	// Load existing notes for context injection and patch resolution
-	const allNotes = await db.select({ id: notes.id, title: notes.title }).from(notes);
-	const noteTitles = allNotes.map((n) => n.title);
-	const titleToId = new Map(allNotes.map((n) => [n.title, n.id]));
 
 	// Resolve the per-conversation topic cache from the client
 	const cache: TopicCache =
@@ -103,8 +126,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// In update mode, always research the selected note title rather than the user's free-form request.
 	// This keeps "review this note" style prompts grounded on the chosen note.
-	const lastUserMsg = [...typedMessages].reverse().find((m) => m.role === 'user');
-	const rawTopic = mode === 'update' ? (currentNoteTitle ?? '') : (lastUserMsg?.content ?? '');
+	const rawTopic =
+		routing.resolvedMode === 'update'
+			? (currentNoteTitle ?? '')
+			: routing.latestUserMessage;
 	const key = topicKey(rawTopic);
 
 	// Look up or perform live web research; always research for both modes so
@@ -125,7 +150,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (provider === 'anthropic') {
 			result = await respondWithClaude(
 				typedMessages,
-				mode,
+				routing.resolvedMode,
 				model,
 				researchContext,
 				noteTitles,
@@ -135,7 +160,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		} else {
 			result = await respondWithOpenAI(
 				typedMessages,
-				mode,
+				routing.resolvedMode,
 				model,
 				researchContext,
 				noteTitles,
@@ -149,16 +174,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			(result.proposal?.type === 'create_note' || result.proposal?.type === 'update_note') &&
 			result.proposal.draft
 		) {
-			const lastMsg = [...typedMessages].reverse().find((m) => m.role === 'user');
 			result.proposal.draft.aiGenerated = true;
 			result.proposal.draft.aiModel = model;
-			result.proposal.draft.aiPrompt = lastMsg?.content ?? '';
+			result.proposal.draft.aiPrompt = routing.latestUserMessage;
 		}
 
 		// Normalize update proposals against the selected note so commit always has the DB target.
 		// Keep the canonical saved title stable even if the model drifts on casing or wording.
-		if (result.proposal?.type === 'update_note' && currentNoteTitle && typeof noteId === 'string') {
-			result.proposal.noteId = noteId;
+		if (result.proposal?.type === 'update_note' && currentNoteTitle && routing.noteId) {
+			result.proposal.noteId = routing.noteId;
 			result.proposal.noteTitle = currentNoteTitle;
 			if (result.proposal.draft) {
 				result.proposal.draft.title = currentNoteTitle;
@@ -188,7 +212,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({
 			assistantMessage: result.assistantMessage,
 			proposal: result.proposal ?? null,
-			topicCache: cache
+			topicCache: cache,
+			routing
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);

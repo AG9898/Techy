@@ -167,6 +167,8 @@ Target request-time sequence:
 
 The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint.
 
+The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes the new `override` field plus the legacy `mode` alias, inspects the latest user turn, attempts conservative exact title/alias matching against saved notes, and returns routing metadata (`overrideSource`, `matchedNote`, `targetNote`, `noteId`) alongside the assistant response so the UI can expose the resolved branch without guessing on the client.
+
 ### Commit Boundary
 
 `POST /api/assistant/commit` is the mutation boundary for assistant-confirmed proposals:
