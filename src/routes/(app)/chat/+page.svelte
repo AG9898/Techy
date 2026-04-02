@@ -3,6 +3,7 @@
 	import { marked } from 'marked';
 	import type { PageData } from './$types.js';
 	import { resolveWikilinks } from '$lib/utils/wikilinks.js';
+	import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
 	type ProviderId = 'anthropic' | 'openai';
 	type AssistantMode = 'chat' | 'create' | 'update';
@@ -633,8 +634,13 @@
 														</label>
 
 														<label class="field">
-															<span>Category</span>
-															<input type="text" bind:value={draftState.category} />
+															<span>Primary category</span>
+															<select bind:value={draftState.category}>
+																<option value="">Select a category</option>
+																{#each CANONICAL_NOTE_CATEGORIES as category}
+																	<option value={category}>{category}</option>
+																{/each}
+															</select>
 														</label>
 
 														<label class="field">

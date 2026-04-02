@@ -2,6 +2,7 @@
 	import type { PageData, ActionData } from './$types.js';
 	import { marked } from 'marked';
 	import { untrack } from 'svelte';
+	import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -9,6 +10,7 @@
 	let bodyValue = $state(untrack(() => data.note.body));
 	let showPreview = $state(false);
 	let tagsValue = $state(untrack(() => data.note.tags.join(', ')));
+	let categoryValue = $state(untrack(() => data.note.category ?? ''));
 	let deleteDialog: HTMLDialogElement | null = $state(null);
 
 	const tagOptions = $derived.by(() => {
@@ -67,8 +69,13 @@
 
 			<div class="fields-row">
 				<label>
-					<span class="field-label">Category</span>
-					<input type="text" name="category" value={note.category ?? ''} />
+					<span class="field-label">Primary category</span>
+					<select name="category" bind:value={categoryValue}>
+						<option value="">Select a category</option>
+						{#each CANONICAL_NOTE_CATEGORIES as category}
+							<option value={category}>{category}</option>
+						{/each}
+					</select>
 				</label>
 
 				<label>

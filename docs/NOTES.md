@@ -129,6 +129,7 @@ Hub notes contain minimal prose and mostly `[[links]]` to topic notes within the
 - Prefer the most specific canonical category available.
 - If a topic spans multiple areas, keep one primary category and express the rest through tags and `[[wikilinks]]`.
 - Never collapse categories into generic buckets such as `Programming` or `Software`.
+- Manual note edit surfaces and assistant proposal drafts should present the canonical list as a controlled selector, not a free-text field.
 
 **Migration guidance from the old list:**
 

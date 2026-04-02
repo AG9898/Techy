@@ -2172,7 +2172,7 @@
       "id": "UI-016",
       "group_id": "UI",
       "title": "Controlled category selection in note authoring surfaces",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Replace free-text category entry in manual note authoring with a controlled selector backed by the canonical taxonomy.",
