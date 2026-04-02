@@ -2091,7 +2091,7 @@
       "id": "GRAPH-009",
       "group_id": "GRAPH",
       "title": "Add Obsidian-style graph tuning controls for appearance and physics",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Expose live graph tuning controls for node sizing, line thickness, text fade, and D3 force behavior inside the unified panel.",

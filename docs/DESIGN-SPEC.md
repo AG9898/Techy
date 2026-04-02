@@ -239,12 +239,13 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - A single `.controls-dock` at bottom-right replaces the old separate legend (bottom-left) and filter (bottom-right) overlays
 - The trigger button (`controls-trigger`) shows a sliders icon and "Graph controls" label; coloured accent + badge when active filters are set
 - The panel is collapsed by default (`controlsOpen = false`) and expands above the trigger on click
-- Panel sections: **Appearance** (colour-mode toggle Status/Category + legend dots + size hint), **Filters** (category + status checkboxes), **Physics** (link distance, repulsion, collision padding sliders), **Reset to defaults** button
-- Physics controls live-tune the D3 simulation via module-level refs (`simRef`, `linkForceRef`, `chargeForceRef`) and a single `$effect` that tracks the three reactive state values
-- `getRadius` and `degreeMap` are module-level so they are accessible from the physics `$effect`
+- Panel sections: **Appearance** (colour-mode toggle Status/Category, legend dots, degree-based node-scale multiplier, visible link thickness, zoom-threshold text fade), **Filters** (category + status checkboxes), **Physics** (link distance, repulsion, collision spacing, centering strength, velocity decay, alpha decay), **Reset to defaults** button
+- Appearance-only controls update the existing SVG selections live without rebuilding the graph; visible edge thickness is decoupled from the transparent edge hit-zone width so edge drilldown remains usable at all supported stroke widths
+- Physics controls live-tune the D3 simulation via module-level refs (`simRef`, `linkForceRef`, `chargeForceRef`, `centerXForceRef`, `centerYForceRef`) and a single `$effect` that tracks the simulation-facing state values
+- `getRadius` and `degreeMap` are module-level so they are accessible from the physics `$effect`, while label opacity is driven by the current zoom scale and the user-defined fade threshold
 - Edge drilldown remains a separate bottom-center overlay and is not absorbed into the control panel
 - `graph-container` uses `height: 100%` to fill the fixed-position `graph-wrapper` from `+page.svelte`
-- Graph-view settings (`colorMode`, `hiddenCategories`, `hiddenStatuses`, `linkDistance`, `chargeStrength`, `collisionPadding`) persist to `localStorage` under key `techy:graph-settings`; loaded at init via `loadGraphSettings()` with per-field validation and clamping; written back by a dedicated `$effect`; `controlsOpen` is transient and excluded
+- Graph-view settings (`colorMode`, `hiddenCategories`, `hiddenStatuses`, `nodeScale`, `linkThickness`, `textFadeThreshold`, `linkDistance`, `chargeStrength`, `collisionPadding`, `centeringStrength`, `velocityDecay`, `alphaDecay`) persist to `localStorage` under key `techy:graph-settings`; loaded at init via `loadGraphSettings()` with per-field validation and clamping; written back by a dedicated `$effect`; `controlsOpen` is transient and excluded
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface

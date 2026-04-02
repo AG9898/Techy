@@ -59,10 +59,27 @@
 		colorMode: 'status' as 'status' | 'category',
 		hiddenCategories: [] as string[],
 		hiddenStatuses: [] as string[],
+		nodeScale: 1,
+		linkThickness: 1.5,
+		textFadeThreshold: 0.95,
 		linkDistance: 80,
 		chargeStrength: 200,
-		collisionPadding: 5
+		collisionPadding: 5,
+		centeringStrength: 0.08,
+		velocityDecay: 0.4,
+		alphaDecay: 0.0228
 	};
+
+	function clampNumber(
+		value: unknown,
+		min: number,
+		max: number,
+		fallback: number
+	): number {
+		return typeof value === 'number' && Number.isFinite(value)
+			? Math.max(min, Math.min(max, value))
+			: fallback;
+	}
 
 	function loadGraphSettings(): typeof DEFAULT_SETTINGS {
 		if (!browser) return { ...DEFAULT_SETTINGS };
@@ -85,18 +102,45 @@
 					(p.hiddenStatuses as unknown[]).every((x) => typeof x === 'string')
 						? (p.hiddenStatuses as string[])
 						: DEFAULT_SETTINGS.hiddenStatuses,
-				linkDistance:
-					typeof p.linkDistance === 'number' && Number.isFinite(p.linkDistance)
-						? Math.max(30, Math.min(300, p.linkDistance))
-						: DEFAULT_SETTINGS.linkDistance,
-				chargeStrength:
-					typeof p.chargeStrength === 'number' && Number.isFinite(p.chargeStrength)
-						? Math.max(50, Math.min(600, p.chargeStrength))
-						: DEFAULT_SETTINGS.chargeStrength,
-				collisionPadding:
-					typeof p.collisionPadding === 'number' && Number.isFinite(p.collisionPadding)
-						? Math.max(0, Math.min(30, p.collisionPadding))
-						: DEFAULT_SETTINGS.collisionPadding
+				nodeScale: clampNumber(p.nodeScale, 0.6, 2.4, DEFAULT_SETTINGS.nodeScale),
+				linkThickness: clampNumber(
+					p.linkThickness,
+					1,
+					6,
+					DEFAULT_SETTINGS.linkThickness
+				),
+				textFadeThreshold: clampNumber(
+					p.textFadeThreshold,
+					0.4,
+					2.2,
+					DEFAULT_SETTINGS.textFadeThreshold
+				),
+				linkDistance: clampNumber(p.linkDistance, 30, 300, DEFAULT_SETTINGS.linkDistance),
+				chargeStrength: clampNumber(
+					p.chargeStrength,
+					50,
+					600,
+					DEFAULT_SETTINGS.chargeStrength
+				),
+				collisionPadding: clampNumber(
+					p.collisionPadding,
+					0,
+					30,
+					DEFAULT_SETTINGS.collisionPadding
+				),
+				centeringStrength: clampNumber(
+					p.centeringStrength,
+					0,
+					0.3,
+					DEFAULT_SETTINGS.centeringStrength
+				),
+				velocityDecay: clampNumber(
+					p.velocityDecay,
+					0.1,
+					0.9,
+					DEFAULT_SETTINGS.velocityDecay
+				),
+				alphaDecay: clampNumber(p.alphaDecay, 0.005, 0.1, DEFAULT_SETTINGS.alphaDecay)
 			};
 		} catch {
 			return { ...DEFAULT_SETTINGS };
@@ -115,28 +159,51 @@
 	let hiddenCategories = $state<string[]>(_init.hiddenCategories);
 	let hiddenStatuses = $state<string[]>(_init.hiddenStatuses);
 
+	// Appearance state
+	let nodeScale = $state(_init.nodeScale);
+	let linkThickness = $state(_init.linkThickness);
+	let textFadeThreshold = $state(_init.textFadeThreshold);
+
 	// Physics state
 	let linkDistance = $state(_init.linkDistance);
 	let chargeStrength = $state(_init.chargeStrength); // user-facing positive; applied as negative internally
 	let collisionPadding = $state(_init.collisionPadding);
+	let centeringStrength = $state(_init.centeringStrength);
+	let velocityDecay = $state(_init.velocityDecay);
+	let alphaDecay = $state(_init.alphaDecay);
+	let zoomScale = $state(1);
 
 	// D3 selections — assigned in onMount, read in $effect
 	let nodeSelection: d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown> | null = null;
 	let linkSelection: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown> | null = null;
 	let linkHitSelection: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown> | null =
 		null;
+	let labelSelection: d3.Selection<SVGTextElement, GraphNode, SVGGElement, unknown> | null = null;
 
 	// Simulation refs for live physics tuning
 	let simRef: d3.Simulation<GraphNode, GraphLink> | null = null;
 	let linkForceRef: d3.ForceLink<GraphNode, GraphLink> | null = null;
 	let chargeForceRef: d3.ForceManyBody<GraphNode> | null = null;
+	let centerXForceRef: d3.ForceX<GraphNode> | null = null;
+	let centerYForceRef: d3.ForceY<GraphNode> | null = null;
 
 	// Degree map for node radius — populated in onMount
 	let degreeMap: Map<string, number> = new Map();
 
-	function getRadius(id: string): number {
+	function getBaseRadius(id: string): number {
 		const degree = degreeMap.get(id) ?? 0;
 		return Math.max(6, Math.min(20, 6 + Math.sqrt(degree) * 2));
+	}
+
+	function getRadius(id: string): number {
+		return getBaseRadius(id) * nodeScale;
+	}
+
+	function getLabelOpacity(scale: number, threshold: number): number {
+		const fadeWindow = 0.3;
+		if (scale >= threshold) return 1;
+		if (scale <= threshold - fadeWindow) return 0;
+		return (scale - (threshold - fadeWindow)) / fadeWindow;
 	}
 
 	// Edge drilldown state
@@ -198,15 +265,39 @@
 		});
 	});
 
+	$effect(() => {
+		const scale = nodeScale;
+		nodeSelection?.select('circle').attr('r', (d) => getBaseRadius(d.id) * scale);
+		if (!simRef) return;
+		simRef.force('collision', d3.forceCollide<GraphNode>((n) => getRadius(n.id) + collisionPadding));
+		simRef.alpha(0.18).restart();
+	});
+
+	$effect(() => {
+		linkSelection?.attr('stroke-width', linkThickness);
+		linkHitSelection?.attr('stroke-width', Math.max(12, linkThickness + 8));
+	});
+
+	$effect(() => {
+		labelSelection?.attr('opacity', getLabelOpacity(zoomScale, textFadeThreshold));
+	});
+
 	// Physics tuning — reads reactive state before guard so tracking is established on first run
 	$effect(() => {
 		const d = linkDistance;
 		const s = chargeStrength;
 		const cp = collisionPadding;
-		if (!simRef || !linkForceRef || !chargeForceRef) return;
+		const cs = centeringStrength;
+		const vd = velocityDecay;
+		const ad = alphaDecay;
+		if (!simRef || !linkForceRef || !chargeForceRef || !centerXForceRef || !centerYForceRef) return;
 		linkForceRef.distance(d);
 		chargeForceRef.strength(-s);
+		centerXForceRef.strength(cs);
+		centerYForceRef.strength(cs);
 		simRef.force('collision', d3.forceCollide<GraphNode>((n) => getRadius(n.id) + cp));
+		simRef.velocityDecay(vd);
+		simRef.alphaDecay(ad);
 		simRef.alpha(0.3).restart();
 	});
 
@@ -219,9 +310,15 @@
 				colorMode,
 				hiddenCategories,
 				hiddenStatuses,
+				nodeScale,
+				linkThickness,
+				textFadeThreshold,
 				linkDistance,
 				chargeStrength,
-				collisionPadding
+				collisionPadding,
+				centeringStrength,
+				velocityDecay,
+				alphaDecay
 			})
 		);
 	});
@@ -229,12 +326,18 @@
 	let activeFilters = $derived(hiddenCategories.length + hiddenStatuses.length);
 
 	function resetDefaults() {
-		colorMode = 'status';
-		hiddenCategories = [];
-		hiddenStatuses = [];
-		linkDistance = 80;
-		chargeStrength = 200;
-		collisionPadding = 5;
+		colorMode = DEFAULT_SETTINGS.colorMode;
+		hiddenCategories = [...DEFAULT_SETTINGS.hiddenCategories];
+		hiddenStatuses = [...DEFAULT_SETTINGS.hiddenStatuses];
+		nodeScale = DEFAULT_SETTINGS.nodeScale;
+		linkThickness = DEFAULT_SETTINGS.linkThickness;
+		textFadeThreshold = DEFAULT_SETTINGS.textFadeThreshold;
+		linkDistance = DEFAULT_SETTINGS.linkDistance;
+		chargeStrength = DEFAULT_SETTINGS.chargeStrength;
+		collisionPadding = DEFAULT_SETTINGS.collisionPadding;
+		centeringStrength = DEFAULT_SETTINGS.centeringStrength;
+		velocityDecay = DEFAULT_SETTINGS.velocityDecay;
+		alphaDecay = DEFAULT_SETTINGS.alphaDecay;
 	}
 
 	onMount(() => {
@@ -282,6 +385,7 @@
 				.scaleExtent([0.1, 4])
 				.on('zoom', (event) => {
 					g.attr('transform', event.transform);
+					zoomScale = event.transform.k;
 				})
 		);
 
@@ -300,17 +404,22 @@
 			.distance(linkDistance);
 
 		const chargeForce = d3.forceManyBody<GraphNode>().strength(-chargeStrength);
+		const centerXForce = d3.forceX<GraphNode>(width / 2).strength(centeringStrength);
+		const centerYForce = d3.forceY<GraphNode>(height / 2).strength(centeringStrength);
 
 		const simulation = d3
 			.forceSimulation<GraphNode>(simNodes)
 			.force('link', linkForce)
 			.force('charge', chargeForce)
-			.force('center', d3.forceCenter(width / 2, height / 2))
+			.force('x', centerXForce)
+			.force('y', centerYForce)
 			.force('collision', d3.forceCollide<GraphNode>((d) => getRadius(d.id) + collisionPadding));
 
 		simRef = simulation;
 		linkForceRef = linkForce;
 		chargeForceRef = chargeForce;
+		centerXForceRef = centerXForce;
+		centerYForceRef = centerYForce;
 
 		linkSelection = g
 			.append('g')
@@ -318,7 +427,8 @@
 			.data(simLinks)
 			.join('line')
 			.attr('stroke', 'var(--graph-link)')
-			.attr('stroke-width', 1.5)
+			.attr('stroke-width', linkThickness)
+			.attr('stroke-linecap', 'round')
 			.attr('marker-end', 'url(#arrow)');
 
 		// Wider transparent hit zones for edge clicks
@@ -328,7 +438,7 @@
 			.data(simLinks)
 			.join('line')
 			.attr('stroke', 'transparent')
-			.attr('stroke-width', 12)
+			.attr('stroke-width', Math.max(12, linkThickness + 8))
 			.attr('cursor', 'pointer')
 			.on('click', (event, d) => {
 				event.stopPropagation();
@@ -399,7 +509,10 @@
 			.attr('y', 4)
 			.attr('font-size', '11px')
 			.attr('fill', 'var(--text-secondary)')
+			.attr('opacity', getLabelOpacity(zoomScale, textFadeThreshold))
 			.attr('pointer-events', 'none');
+
+		labelSelection = nodeSelection.select<SVGTextElement>('text');
 
 		nodeSelection.append('title').text((d) => `${d.title} [${d.status}]`);
 
@@ -497,6 +610,51 @@
 						</span>
 						<span>size = link count</span>
 					</div>
+					<div class="setting-row">
+						<div class="setting-copy">
+							<span class="setting-label">Node scale</span>
+							<span class="setting-help">Multiplier on degree-based sizing</span>
+						</div>
+						<input
+							type="range"
+							min="0.6"
+							max="2.4"
+							step="0.05"
+							bind:value={nodeScale}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{nodeScale.toFixed(2)}x</span>
+					</div>
+					<div class="setting-row">
+						<div class="setting-copy">
+							<span class="setting-label">Link thickness</span>
+							<span class="setting-help">Visible edge stroke only</span>
+						</div>
+						<input
+							type="range"
+							min="1"
+							max="6"
+							step="0.25"
+							bind:value={linkThickness}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{linkThickness.toFixed(2)}</span>
+					</div>
+					<div class="setting-row">
+						<div class="setting-copy">
+							<span class="setting-label">Text fade</span>
+							<span class="setting-help">Zoom level where labels fully appear</span>
+						</div>
+						<input
+							type="range"
+							min="0.4"
+							max="2.2"
+							step="0.05"
+							bind:value={textFadeThreshold}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{textFadeThreshold.toFixed(2)}x</span>
+					</div>
 				</div>
 
 				<div class="panel-divider"></div>
@@ -584,6 +742,42 @@
 							class="physics-slider"
 						/>
 						<span class="physics-val">{collisionPadding}</span>
+					</div>
+					<div class="physics-row">
+						<span class="physics-label">Centering</span>
+						<input
+							type="range"
+							min="0"
+							max="0.3"
+							step="0.01"
+							bind:value={centeringStrength}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{centeringStrength.toFixed(2)}</span>
+					</div>
+					<div class="physics-row">
+						<span class="physics-label">Velocity decay</span>
+						<input
+							type="range"
+							min="0.1"
+							max="0.9"
+							step="0.01"
+							bind:value={velocityDecay}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{velocityDecay.toFixed(2)}</span>
+					</div>
+					<div class="physics-row">
+						<span class="physics-label">Alpha decay</span>
+						<input
+							type="range"
+							min="0.005"
+							max="0.1"
+							step="0.001"
+							bind:value={alphaDecay}
+							class="physics-slider"
+						/>
+						<span class="physics-val">{alphaDecay.toFixed(3)}</span>
 					</div>
 				</div>
 
@@ -778,7 +972,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0;
-		min-width: 210px;
+		min-width: 292px;
 		max-height: calc(100vh - 6rem);
 		overflow-y: auto;
 	}
@@ -896,6 +1090,31 @@
 		border-top: 1px solid var(--border-soft);
 	}
 
+	.setting-row {
+		display: grid;
+		grid-template-columns: minmax(0, 108px) 1fr 42px;
+		align-items: center;
+		gap: 0.45rem;
+		margin-top: 0.35rem;
+	}
+
+	.setting-copy {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.setting-label {
+		font-size: 0.72rem;
+		color: var(--text-secondary);
+	}
+
+	.setting-help {
+		font-size: 0.62rem;
+		color: var(--text-subtle);
+		line-height: 1.25;
+	}
+
 	.size-hint-bubbles {
 		display: flex;
 		align-items: center;
@@ -946,7 +1165,7 @@
 	/* Physics */
 	.physics-row {
 		display: grid;
-		grid-template-columns: 82px 1fr 28px;
+		grid-template-columns: 92px 1fr 42px;
 		align-items: center;
 		gap: 0.4rem;
 	}
