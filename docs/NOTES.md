@@ -102,6 +102,8 @@ Every note must belong to exactly one category from the canonical list below. Ca
 
 Application enforcement uses a shared canonical taxonomy helper. Assistant respond/commit flows, manual create/edit actions, and Markdown import all read from the same canonical category list; write paths normalize recognized canonical labels and reject unknown category strings before they are persisted. Tags remain open vocabulary.
 
+For existing rows that predate the canonical list, run the repo-local cleanup script intentionally with `npm run normalize:note-categories -- --apply`. The script rewrites only safe legacy category labels, leaves note bodies and tags untouched, and reports ambiguous or unknown labels for manual review instead of guessing.
+
 Hub notes are index/connection points for each category — create the hub note if one doesn’t exist.
 
 | Category | Hub note |

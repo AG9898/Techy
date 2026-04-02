@@ -21,6 +21,7 @@ The main architectural boundaries are:
 - Auth.js owns OAuth/session handling, while route protection is enforced in the app shell
 - D3 graph rendering stays client-only and consumes pre-fetched graph data from server load
 - SvelteKit server modules read app secrets through `$env/dynamic/private`, while non-app CLI/config files such as `drizzle.config.ts` continue to use plain Node env access
+- one-off operator maintenance scripts live in `scripts/` and run outside request handling; they may reuse the shared DB schema and taxonomy helpers, but they are not part of normal app traffic
 
 See [`docs/API.md`](API.md) for the route-by-route surface and endpoint contracts.
 

@@ -128,6 +128,18 @@ Use `npm run test:watch` while iterating locally.
 
 ---
 
+## 9. Normalize Legacy Note Categories
+
+Use the repo-local backfill script only when you intentionally want to clean up older note rows that were saved before the canonical category taxonomy landed:
+
+```bash
+npm run normalize:note-categories -- --apply
+```
+
+The command is a dry run unless `--apply` is provided. It rewrites only safe legacy category labels, keeps tags and bodies unchanged, and prints ambiguous or unknown categories for manual review.
+
+---
+
 ## Frontend Styling Notes
 
 - Tailwind is configured through the Vite plugin in `vite.config.ts`

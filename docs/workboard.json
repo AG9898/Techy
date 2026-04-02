@@ -2370,7 +2370,7 @@
       "id": "NOTES-012",
       "group_id": "NOTES",
       "title": "Backfill existing note categories to the canonical taxonomy",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Normalize already-saved note categories to the new canonical list and surface any rows that still need manual review.",
