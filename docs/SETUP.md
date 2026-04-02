@@ -118,6 +118,14 @@ Visit http://localhost:5173. You'll be redirected to the standalone `/signin` pa
 npm run check
 ```
 
+## 8. Run Unit Tests
+
+```bash
+npm run test
+```
+
+Use `npm run test:watch` while iterating locally.
+
 ---
 
 ## Frontend Styling Notes
@@ -208,5 +216,6 @@ Opens Drizzle Studio at http://local.drizzle.studio — a GUI for browsing and e
 - [`docs/schema.md`](schema.md) — Database tables, relationships, and persistence boundaries
 - [`docs/API.md`](API.md) — All routes, form actions, and API endpoints
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — System design and data flow
+- [`docs/test.md`](test.md) — Test commands, scope, and CI pipeline
 - [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) — High-level UI direction, theming, and motion rules
 - [`docs/DECISIONS.md`](DECISIONS.md) — Why the stack was chosen

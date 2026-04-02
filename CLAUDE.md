@@ -21,6 +21,7 @@ Techy is a **personal, single-user tech knowledge graph** web app. It stores str
 | `docs/STYLE-GUIDE.md` | High-level visual direction, page composition, theming, and motion rules for UI work |
 | `docs/DECISIONS.md` | Why specific technologies were chosen — check before proposing alternatives |
 | `docs/SETUP.md` | How to run the project, env vars, migration commands |
+| `docs/test.md` | Test commands, current coverage, and CI pipeline expectations |
 | `docs/workboard.json` | Current task list with status, acceptance criteria, and file references |
 
 ---
@@ -44,6 +45,7 @@ Techy is a **personal, single-user tech knowledge graph** web app. It stores str
    - `docs/STYLE-GUIDE.md` — changed visual direction, theming rules, page composition, or motion guidance
    - `docs/DECISIONS.md` — made a non-obvious tech choice (add an ADR)
    - `docs/PRD.md` — added a feature or changed requirements
+   - `docs/test.md` — changed test commands, coverage scope, or CI verification flow
 3. Run `npm run check` and confirm 0 errors before declaring done.
 
 ### When writing code
@@ -71,6 +73,7 @@ Read `docs/NOTES.md` for the full authoring guide. Quick rules:
 
 ```bash
 npm run dev          # Start dev server
+npm run test         # Run unit tests
 npm run check        # TypeScript + Svelte type check (must pass before done)
 npm run prepare      # Regenerate $types.js after adding routes
 npm run db:generate  # Generate Drizzle migration SQL

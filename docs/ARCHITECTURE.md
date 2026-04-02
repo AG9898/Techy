@@ -176,6 +176,7 @@ Target request-time sequence:
 The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint.
 
 The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes the new `override` field plus the legacy `mode` alias, inspects the latest user turn, attempts conservative exact title/alias matching against saved notes, and returns routing metadata (`overrideSource`, `matchedNote`, `targetNote`, `noteId`) alongside the assistant response so the UI can expose the resolved branch without guessing on the client. Strong note matches do not automatically force mutation mode: in conversational routing, the respond endpoint can inject the matched note body into the shared prompt so the model can summarize what is already saved and offer follow-up research or review without emitting an update proposal.
+The note-section contract itself lives in `src/lib/utils/note-structure.ts`, which is imported by both the prompt builder and the assistant commit validator so the allowed sections and validation messages do not drift.
 
 ### Commit Boundary
 
@@ -185,6 +186,7 @@ The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes 
 - delete note
 
 The commit path is responsible for persisting confirmed changes, taking revision snapshots before updates, syncing `note_links`, applying any assistant-supplied reciprocal link patches to existing notes, and validating assistant note bodies against the shared section skeleton before persistence.
+That shared contract is pinned by unit tests in `src/lib/utils/note-structure.test.ts` and `src/lib/server/ai/prompts.test.ts`, which run in CI before type checking and build verification.
 
 Canonical note-category enforcement is shared across the server write layer rather than duplicated per route. Assistant commit, manual note create/edit actions, and Markdown import all validate against the same taxonomy helper before persistence, while tags remain intentionally open vocabulary.
 

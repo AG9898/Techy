@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Unit tests
+        run: npm run test
+
       # Dummy values satisfy $env/static/private at build time.
       # Real secrets are never required to build — if this fails,
       # a server-only module has leaked into the client bundle.

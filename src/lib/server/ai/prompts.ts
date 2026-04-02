@@ -1,21 +1,8 @@
 import type { ResearchContext } from '$lib/server/assistant/research.js';
 import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
+import { buildNoteSectionStructurePrompt } from '$lib/utils/note-structure.js';
 
 const CANONICAL_CATEGORIES_TEXT = CANONICAL_NOTE_CATEGORIES.join(', ');
-const REQUIRED_NOTE_SECTIONS = ['Overview', 'Description', 'Key Concepts', 'Connections', 'Resources'];
-const OPTIONAL_NOTE_SECTIONS = [
-	'Use Cases',
-	'Tradeoffs',
-	'Ecosystem',
-	'Version Notes',
-	'Example'
-];
-const DEPRECATED_NOTE_HEADINGS = [
-	'Current Status',
-	'Notable Features',
-	'Quick Examples',
-	'Industry Usage'
-];
 
 export interface RelatedNotePromptContext {
 	title: string;
@@ -39,28 +26,6 @@ interface RespondPromptOptions {
 	currentNoteBody?: string;
 	relatedNote?: RelatedNotePromptContext;
 	deleteTarget?: DeleteTargetPromptContext | null;
-}
-
-function buildNoteSectionStructurePrompt(): string {
-	return `
-Note body structure:
-- Use these required sections in this order: ${REQUIRED_NOTE_SECTIONS.join(' → ')}.
-- The body must always include all required sections.
-- Treat this as the exact working skeleton:
-  # Topic Name
-
-  ## Overview
-  ## Description
-  ## Key Concepts
-  ## Connections
-  ## Resources
-- Keep \`Overview\` brief: 2-4 sentences that orient the reader without repeating the full explanation.
-- Use \`Description\` as the primary deep-explanation section.
-- Optional sections are allowed only when they materially improve the note, and only in this order between \`Key Concepts\` and \`Connections\`: ${OPTIONAL_NOTE_SECTIONS.join(' → ')}.
-- Keep optional sections concise and skip them when they would only add churn or repetition.
-- Prefer evergreen explanation over release-churn or transient ecosystem updates unless \`Version Notes\` is genuinely warranted.
-- Do not use these deprecated default headings anywhere in the body: ${DEPRECATED_NOTE_HEADINGS.join(', ')}.
-`.trim();
 }
 
 /**

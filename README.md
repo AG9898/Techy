@@ -1,42 +1,20 @@
-# sv
+# Techy
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Techy is a personal, single-user tech knowledge graph built with SvelteKit, TypeScript, Drizzle, Neon PostgreSQL, Auth.js, and D3.
 
-## Creating a project
+## Core Docs
 
-If you're seeing this, you've probably already done this step. Congrats!
+- [`docs/SETUP.md`](docs/SETUP.md) — local setup, env vars, migrations, and run commands
+- [`docs/test.md`](docs/test.md) — test commands, current coverage, and CI pipeline
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system structure and runtime boundaries
+- [`docs/API.md`](docs/API.md) — routes, form actions, and JSON endpoints
+- [`docs/NOTES.md`](docs/NOTES.md) — note schema, authoring rules, and wikilinks
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Common Commands
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.13.0 create --template minimal --types ts --install npm Techy
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
+npm run test
+npm run check
 npm run build
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
