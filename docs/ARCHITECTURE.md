@@ -145,6 +145,7 @@ Auth remains session-based and request-scoped:
 ## Assistant Architecture
 
 The assistant is the primary authoring layer over the notes system. The architecture is split into two request-time concerns: orchestration and commit.
+The dedicated `/notes/new` route has been removed; new-note authoring stays inside `/chat`.
 
 ### Orchestration
 

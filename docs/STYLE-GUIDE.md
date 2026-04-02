@@ -218,6 +218,7 @@ Notes should still feel like the reading and browsing half of the same world est
 Rules:
 - the `/notes` page should combine search and browsing into one coherent surface
 - the search bar should read as part of the page composition, not as a separate utility module
+- empty states that invite note creation should point users into `/chat`, since it is the primary authoring surface
 - favor zones, staggered emphasis, and editorial spacing over uniform card grids
 - note detail prioritizes comfortable reading width and hierarchy
 - metadata stays integrated near the title

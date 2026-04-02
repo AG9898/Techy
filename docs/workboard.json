@@ -1708,7 +1708,7 @@
       "id": "UI-008",
       "group_id": "UI",
       "title": "Remove dedicated new-note route and legacy creation entry points",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Remove `/notes/new` and clean up all product entry points that still assume a separate new-note page.",

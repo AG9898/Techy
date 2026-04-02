@@ -154,6 +154,7 @@ Panel sections:
 Rules:
 - `/notes` owns search, filtering, import, export, and opening existing notes
 - The old standalone `/search` route is removed after migration
+- The graph empty-state CTA routes to `/chat`, not a dedicated new-note page
 - The page uses the reference's repository-like composition rather than a wall of uniform cards
 - Search lives in the notes header region and filters by title, tag, or category client-side (phase 1)
 - Import and export are subordinated to compact action buttons in the header; they do not dominate the composition

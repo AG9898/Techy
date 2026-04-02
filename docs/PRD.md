@@ -61,7 +61,7 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 
 | ID | Feature | Priority |
 |----|---------|----------|
-| F-09 | `/chat` becomes the sole note-authoring surface for new notes | High |
+| F-09 | `/chat` becomes the sole note-authoring surface for new notes; the dedicated `/notes/new` page is removed | High |
 | F-10 | Assistant supports conversation, note creation, and note review/update in one chat interface through inferred skills with explicit overrides available when needed | High |
 | F-11 | Assistant-generated note drafts are structured, editable, and require confirmation before save | High |
 | F-12 | Assistant-driven note creation fills `title`, `body`, `tags`, `aliases`, `category`, `status`, AI metadata, and wikilinks | High |
@@ -120,7 +120,7 @@ Implementation note: the runtime should achieve this through one shared assistan
 
 ## Notes on Superseded Direction
 
-- The dedicated `/notes/new` page is being retired from the product direction.
+- The dedicated `/notes/new` page has been removed from the app; authoring happens through `/chat`.
 - The dedicated `/search` page is being retired in favor of integrated search within `/notes`.
 - The “Research with AI” button on a standalone note-authoring form is no longer the intended primary creation flow.
 - The previous three-theme model (`night`, `paper`, `mist`) is being replaced by a tonal `dark/light` theme model with accent selection preserved.

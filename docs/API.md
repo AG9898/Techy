@@ -52,7 +52,7 @@ Unified notes repository surface with integrated search, category filtering, and
 - `/notes` is the unified browsing, search, and management surface for existing notes.
 - The first implementation pass may keep filtering on the client over the loaded notes dataset.
 - `orphanIds` is server-computed from notes with no incoming and no outgoing `note_links`.
-- New note creation is no longer expected to originate from a dedicated `/notes/new` page.
+- New note creation now originates from `/chat`; the dedicated `/notes/new` page has been removed.
 - Standalone `/search` is being retired after the notes-page migration lands.
 
 ---
@@ -181,6 +181,7 @@ Primary assistant surface for conversation and note authoring.
 - Starting a new chat does not require deleting older conversations.
 - The composer remains a single unified entry point rather than a primary mode switcher.
 - The UI may expose compact create/update override controls near the composer, but inference is the default routing path.
+- `/chat` is the sole note-authoring entry point for new notes; there is no dedicated new-note page.
 - If the assistant detects a strong match to an existing note, the page may surface that note inline and offer research or review actions without forcing an immediate update flow.
 - The page may render create/update proposals as editable inline draft panels and delete proposals as explicit confirmation cards.
 - The page submits full conversation state to `POST /api/assistant/respond`.

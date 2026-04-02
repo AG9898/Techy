@@ -9,7 +9,7 @@
 	{#if data.nodes.length === 0}
 		<div class="empty-state">
 			<p>No notes yet.</p>
-			<a href="/notes/new">Create your first note →</a>
+			<a href="/chat">Start in Chat →</a>
 		</div>
 	{:else}
 		<ForceGraph nodes={data.nodes} links={data.links} />
