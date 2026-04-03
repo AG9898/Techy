@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { tick, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { Select as MeltSelect } from 'melt/builders';
 	import { marked } from 'marked';
 	import type { PageData } from './$types.js';
+	import { loadGsap, prefersReducedMotion } from '$lib/client/motion';
 	import { resolveWikilinks } from '$lib/utils/wikilinks.js';
 	import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
@@ -110,6 +111,7 @@
 	}
 
 	type DisplayMessage = UserMessage | AssistantMessage;
+	type ElementRefMap<T extends HTMLElement = HTMLElement> = Map<string, T>;
 
 	const { data }: { data: PageData } = $props();
 
@@ -128,6 +130,12 @@
 	let draftStates = $state<Record<string, DraftEditorState>>({});
 	let conversationEl: HTMLDivElement | null = null;
 	let messageCounter = 0;
+	let didMount = false;
+
+	const assistantPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
+	const proposalPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
+	const previewPaneRefs: ElementRefMap<HTMLDivElement> = new Map();
+	const commitFeedbackRefs: ElementRefMap<HTMLParagraphElement> = new Map();
 
 	const modeOptions: Array<{ value: ComposerModeValue; label: string }> = [
 		{ value: 'auto', label: 'Auto' },
@@ -185,6 +193,31 @@
 		}
 		return map;
 	});
+
+	onMount(() => {
+		didMount = true;
+	});
+
+	function bindElementToMap<T extends HTMLElement>(
+		node: T,
+		params: { id: string; map: ElementRefMap<T> }
+	) {
+		let current = params;
+		current.map.set(current.id, node);
+
+		return {
+			update(next: typeof current) {
+				if (next.id === current.id && next.map === current.map) return;
+
+				current.map.delete(current.id);
+				next.map.set(next.id, node);
+				current = next;
+			},
+			destroy() {
+				current.map.delete(current.id);
+			}
+		};
+	}
 
 	function nextMessageId(prefix: string): string {
 		messageCounter += 1;
@@ -333,6 +366,140 @@
 		if (conversationEl) conversationEl.scrollTop = conversationEl.scrollHeight;
 	}
 
+	async function animateAssistantMessage(messageId: string) {
+		if (!didMount || prefersReducedMotion()) return;
+
+		const panel = assistantPanelRefs.get(messageId);
+		if (!panel) return;
+
+		const gsap = await loadGsap();
+		if (!gsap) return;
+
+		const proposal = proposalPanelRefs.get(messageId);
+		const timeline = gsap.timeline({
+			defaults: { duration: 0.22, ease: 'power2.out' }
+		});
+
+		timeline.fromTo(
+			panel,
+			{ autoAlpha: 0, y: 14 },
+			{ autoAlpha: 1, y: 0, clearProps: 'opacity,transform' }
+		);
+
+		if (proposal) {
+			timeline.fromTo(
+				proposal,
+				{ autoAlpha: 0, y: 10, scale: 0.985 },
+				{
+					autoAlpha: 1,
+					y: 0,
+					scale: 1,
+					duration: 0.2,
+					clearProps: 'opacity,transform'
+				},
+				0.06
+			);
+		}
+	}
+
+	async function animateCommitState(messageId: string, status: CommitState['status']) {
+		if (prefersReducedMotion()) return;
+
+		const gsap = await loadGsap();
+		if (!gsap) return;
+
+		const proposal = proposalPanelRefs.get(messageId);
+		if (!proposal) return;
+
+		if (status === 'pending') {
+			gsap.fromTo(
+				proposal,
+				{ scale: 1 },
+				{
+					scale: 0.992,
+					duration: 0.12,
+					repeat: 1,
+					yoyo: true,
+					ease: 'power1.inOut',
+					clearProps: 'transform'
+				}
+			);
+			return;
+		}
+
+		const feedback = commitFeedbackRefs.get(messageId);
+		if (!feedback) return;
+
+		gsap.fromTo(
+			feedback,
+			{ autoAlpha: 0, y: 8 },
+			{ autoAlpha: 1, y: 0, duration: 0.18, ease: 'power2.out', clearProps: 'opacity,transform' }
+		);
+	}
+
+	async function toggleDraftPreview(messageId: string, draftState: DraftEditorState) {
+		const shouldOpen = !draftState.showPreview;
+
+		if (shouldOpen) {
+			draftState.showPreview = true;
+			await tick();
+
+			if (prefersReducedMotion()) return;
+
+			const pane = previewPaneRefs.get(messageId);
+			if (!pane) return;
+
+			const gsap = await loadGsap();
+			if (!gsap) return;
+
+			gsap.killTweensOf(pane);
+			gsap.fromTo(
+				pane,
+				{ height: 0, autoAlpha: 0, y: -8, overflow: 'hidden' },
+				{
+					height: 'auto',
+					autoAlpha: 1,
+					y: 0,
+					duration: 0.2,
+					ease: 'power2.out',
+					clearProps: 'height,opacity,transform,overflow'
+				}
+			);
+			return;
+		}
+
+		if (prefersReducedMotion()) {
+			draftState.showPreview = false;
+			return;
+		}
+
+		const pane = previewPaneRefs.get(messageId);
+		if (!pane) {
+			draftState.showPreview = false;
+			return;
+		}
+
+		const gsap = await loadGsap();
+		if (!gsap) {
+			draftState.showPreview = false;
+			return;
+		}
+
+		gsap.killTweensOf(pane);
+		await new Promise<void>((resolve) => {
+			gsap.to(pane, {
+				height: 0,
+				autoAlpha: 0,
+				y: -8,
+				overflow: 'hidden',
+				duration: 0.16,
+				ease: 'power2.in',
+				onComplete: resolve
+			});
+		});
+		draftState.showPreview = false;
+	}
+
 	function beginReview(noteId: string) {
 		updateSelectedNote(noteId);
 		composerValue = composerValue || 'Review this note for gaps, corrections, and next steps.';
@@ -355,6 +522,8 @@
 	async function commitProposal(messageId: string, proposal: NoteProposal) {
 		const payload = buildCommitProposal(messageId, proposal);
 		commitStates = { ...commitStates, [messageId]: { status: 'pending' } };
+		await tick();
+		void animateCommitState(messageId, 'pending');
 
 		try {
 			const response = await fetch('/api/assistant/commit', {
@@ -372,16 +541,22 @@
 					...commitStates,
 					[messageId]: { status: 'done', note: result.note, noteId: result.noteId }
 				};
+				await tick();
+				void animateCommitState(messageId, 'done');
 				return;
 			}
 
 			const error = (body as { error?: string }).error ?? 'Commit failed';
 			commitStates = { ...commitStates, [messageId]: { status: 'error', error } };
+			await tick();
+			void animateCommitState(messageId, 'error');
 		} catch {
 			commitStates = {
 				...commitStates,
 				[messageId]: { status: 'error', error: 'Network error' }
 			};
+			await tick();
+			void animateCommitState(messageId, 'error');
 		}
 	}
 
@@ -456,6 +631,9 @@
 				) {
 					registerProposalDraft(assistantMessage.id, assistantMessage.proposal);
 				}
+
+				await tick();
+				void animateAssistantMessage(assistantMessage.id);
 			} else {
 				const err = await response.json().catch(() => ({}));
 				const errMessage: string =
@@ -515,7 +693,10 @@
 					</article>
 				{:else}
 					<article class="message message--assistant">
-						<div class="assistant-panel">
+						<div
+							class="assistant-panel"
+							use:bindElementToMap={{ id: msg.id, map: assistantPanelRefs }}
+						>
 							<div class="message-meta">
 								<span class="message-role">Assistant</span>
 								{#if msg.routing}
@@ -620,7 +801,10 @@
 								{@const commitState = commitStates[msg.id]}
 								{#if msg.proposal.type === 'create_note' || msg.proposal.type === 'update_note'}
 									{@const draftState = draftStates[msg.id]}
-									<div class="proposal-panel">
+									<div
+										class="proposal-panel"
+										use:bindElementToMap={{ id: msg.id, map: proposalPanelRefs }}
+									>
 										<div class="proposal-head">
 											<div>
 												<p class="proposal-eyebrow">
@@ -712,7 +896,7 @@
 													<button
 														type="button"
 														class="ghost-btn"
-														onclick={() => (draftState.showPreview = !draftState.showPreview)}
+														onclick={() => toggleDraftPreview(msg.id, draftState)}
 													>
 														{draftState.showPreview ? 'Hide preview' : 'Preview body'}
 													</button>
@@ -741,7 +925,10 @@
 											</div>
 
 											{#if draftState.showPreview}
-												<div class="preview-pane">
+												<div
+													class="preview-pane"
+													use:bindElementToMap={{ id: msg.id, map: previewPaneRefs }}
+												>
 													{#if draftState.body.trim()}
 														{@html renderDraftPreview(draftState.body)}
 													{:else}
@@ -763,16 +950,27 @@
 										{/if}
 
 										{#if commitState?.status === 'done' && commitState.note}
-											<p class="commit-success">
+											<p
+												class="commit-success"
+												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+											>
 												Saved
 												<a href={`/notes/${commitState.note.slug}`}>{commitState.note.title}</a>
 											</p>
 										{:else if commitState?.status === 'error'}
-											<p class="commit-error">{commitState.error}</p>
+											<p
+												class="commit-error"
+												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+											>
+												{commitState.error}
+											</p>
 										{/if}
 									</div>
 								{:else if msg.proposal.type === 'delete_note'}
-									<div class="proposal-panel proposal-panel--delete">
+									<div
+										class="proposal-panel proposal-panel--delete"
+										use:bindElementToMap={{ id: msg.id, map: proposalPanelRefs }}
+									>
 										<div class="proposal-head">
 											<div>
 												<p class="proposal-eyebrow">Delete note</p>
@@ -814,9 +1012,19 @@
 										</div>
 
 										{#if commitState?.status === 'done'}
-											<p class="commit-success">Note deleted.</p>
+											<p
+												class="commit-success"
+												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+											>
+												Note deleted.
+											</p>
 										{:else if commitState?.status === 'error'}
-											<p class="commit-error">{commitState.error}</p>
+											<p
+												class="commit-error"
+												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+											>
+												{commitState.error}
+											</p>
 										{/if}
 									</div>
 								{/if}
@@ -1914,6 +2122,29 @@
 		.composer-select-menu--note {
 			min-width: min(100%, calc(100vw - 2rem));
 			max-width: min(100%, calc(100vw - 2rem));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.citation-disclosure summary::before,
+		.citation-chip,
+		.field input,
+		.field select,
+		.field textarea,
+		.primary-btn,
+		.danger-btn,
+		.ghost-btn,
+		.send-btn,
+		.composer-select-chevron,
+		.composer-select-option,
+		.loading-dots span {
+			transition: none;
+		}
+
+		.loading-dots span {
+			animation: none;
+			opacity: 0.75;
+			transform: none;
 		}
 	}
 </style>

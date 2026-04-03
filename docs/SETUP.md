@@ -146,7 +146,7 @@ The command is a dry run unless `--apply` is provided. It rewrites only safe leg
 - Global Tailwind import and shared theme tokens live in `src/app.css`
 - Root layout imports `src/app.css` from `src/routes/+layout.svelte`
 - Melt UI is available for new interactive UI work; it does not provide Techy's final visual styling on its own
-- GSAP is installed and available for selective motion work, but it is not wired into any component by default
+- GSAP is installed and currently wired into restrained chat and nav motion; keep any new usage scoped to meaningful state transitions
 
 ---
 

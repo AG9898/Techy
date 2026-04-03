@@ -248,6 +248,8 @@ Rules:
 
 GSAP may be used, but motion must stay restrained and meaningful.
 
+Current use should stay focused on assistant continuity in `/chat` and small shell/theme cues in the left rail, not expand into general page decoration.
+
 Good uses:
 - proposal panel enter/exit
 - assistant message reveal

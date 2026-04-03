@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import type { DefaultSession } from '@auth/sveltekit';
+	import { loadGsap, prefersReducedMotion } from '$lib/client/motion';
 
 	let { session }: { session: DefaultSession | null } = $props();
 
@@ -54,6 +56,8 @@
 
 	let railEl = $state<HTMLElement | null>(null);
 	let railMode = $state<RailMode>('route-default');
+	let railMotionReady = false;
+	let lastVisualCollapseState = false;
 
 	const railContentId = 'main-navigation-content';
 	const isPinned = $derived(railMode === 'pinned');
@@ -65,6 +69,11 @@
 	);
 	const visuallyCollapsed = $derived(!visuallyExpanded);
 
+	onMount(() => {
+		lastVisualCollapseState = visuallyCollapsed;
+		railMotionReady = true;
+	});
+
 	// Keep a CSS variable in sync so graph-page can offset its fixed position
 	$effect(() => {
 		if (typeof document !== 'undefined') {
@@ -73,6 +82,16 @@
 				visuallyCollapsed ? 'var(--rail-w-collapsed)' : 'var(--rail-w-expanded)'
 			);
 		}
+	});
+
+	$effect(() => {
+		if (!railEl || !railMotionReady) return;
+
+		const collapsed = visuallyCollapsed;
+		if (collapsed === lastVisualCollapseState) return;
+
+		lastVisualCollapseState = collapsed;
+		void animateRailTransition(collapsed);
 	});
 
 	const navLinks = [
@@ -122,6 +141,99 @@
 		if (event.key !== 'Escape' || railMode !== 'temporary') return;
 
 		collapseRail();
+	}
+
+	function railWidthValue(variableName: '--rail-w-expanded' | '--rail-w-collapsed', fallback: string) {
+		if (typeof window === 'undefined') return fallback;
+
+		return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim() || fallback;
+	}
+
+	async function animateRailTransition(collapsed: boolean) {
+		if (!railEl || prefersReducedMotion()) return;
+
+		const gsap = await loadGsap();
+		if (!gsap) return;
+
+		const currentWidth = railEl.getBoundingClientRect().width;
+		const targetWidth = railWidthValue(
+			collapsed ? '--rail-w-collapsed' : '--rail-w-expanded',
+			collapsed ? '52px' : '192px'
+		);
+
+		gsap.killTweensOf(railEl);
+		gsap.fromTo(
+			railEl,
+			{ width: currentWidth, minWidth: currentWidth },
+			{
+				width: targetWidth,
+				minWidth: targetWidth,
+				duration: 0.24,
+				ease: 'power2.out',
+				clearProps: 'width,minWidth'
+			}
+		);
+
+		if (!collapsed) {
+			const labels = railEl.querySelectorAll<HTMLElement>('.nav-label');
+			gsap.fromTo(
+				labels,
+				{ autoAlpha: 0, x: -8 },
+				{
+					autoAlpha: 1,
+					x: 0,
+					duration: 0.18,
+					delay: 0.05,
+					stagger: 0.012,
+					ease: 'power2.out',
+					clearProps: 'opacity,transform'
+				}
+			);
+		}
+	}
+
+	async function animateShellFeedback(source: HTMLElement | null) {
+		if (!railEl || prefersReducedMotion()) return;
+
+		const gsap = await loadGsap();
+		if (!gsap) return;
+
+		if (source) {
+			gsap.fromTo(
+				source,
+				{ scale: 0.94 },
+				{
+					scale: 1.04,
+					duration: 0.12,
+					repeat: 1,
+					yoyo: true,
+					ease: 'power1.inOut',
+					clearProps: 'transform'
+				}
+			);
+		}
+
+		gsap.fromTo(
+			railEl,
+			{ filter: 'brightness(1.03) saturate(1.04)' },
+			{ filter: 'brightness(1) saturate(1)', duration: 0.22, ease: 'power2.out', clearProps: 'filter' }
+		);
+	}
+
+	function selectTheme(nextTheme: Theme, event: MouseEvent) {
+		if (theme === nextTheme) return;
+
+		theme = nextTheme;
+		const source = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+		void animateShellFeedback(source);
+	}
+
+	function selectAccent(nextAccent: Accent, event: MouseEvent) {
+		if (accent === nextAccent) return;
+
+		accent = nextAccent;
+		const source = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+		void animateShellFeedback(source);
 	}
 </script>
 
@@ -234,7 +346,7 @@
 					<button
 						class="theme-btn"
 						class:active={theme === t.id}
-						onclick={() => (theme = t.id)}
+						onclick={(event) => selectTheme(t.id, event)}
 						aria-label="Switch to {t.label} theme"
 						title={visuallyCollapsed ? t.label : undefined}
 					>
@@ -267,7 +379,7 @@
 						<button
 							class="accent-dot"
 							class:active={accent === a.id}
-							onclick={() => (accent = a.id)}
+							onclick={(event) => selectAccent(a.id, event)}
 							aria-label="Switch to {a.id} accent"
 							title={a.id}
 							style="--dot-color: {a.color}"
@@ -314,7 +426,6 @@
 		background: var(--bg-surface);
 		border-right: 1px solid var(--border-soft);
 		overflow: hidden;
-		transition: width 0.2s ease, min-width 0.2s ease;
 		flex-shrink: 0;
 		position: sticky;
 		top: 0;
@@ -648,5 +759,19 @@
 	.signout-btn:hover {
 		color: var(--accent-red);
 		background: var(--bg-raised);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.logo-words,
+		.rail-toggle,
+		.chevron,
+		.pin-icon,
+		.nav-item,
+		.nav-label,
+		.theme-btn,
+		.accent-dot,
+		.signout-btn {
+			transition: none;
+		}
 	}
 </style>

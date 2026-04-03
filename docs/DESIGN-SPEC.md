@@ -9,7 +9,7 @@ Techy should feel like a soft, graph-centered private knowledge tool rather than
 Current implementation direction:
 - Tailwind CSS v4 remains the styling foundation
 - Melt UI is the preferred primitive layer for interactive controls and review affordances
-- GSAP is available for selective motion where it improves continuity or focus
+- GSAP is available for selective motion where it improves continuity or focus, and is currently used for assistant transcript/proposal states plus subtle rail/theme feedback
 - Visual styling remains custom to Techy
 - New UI should avoid a wall of interchangeable cards and instead prefer a few clear surfaces
 
@@ -323,6 +323,8 @@ GSAP should be limited to a few meaningful transitions:
 - proposal panel reveal/collapse
 - confirmation-state transitions
 - subtle theme toggle choreography, if used
+
+Current implementation applies this to new assistant replies and proposal-state transitions in `/chat`, plus explicit rail/theme feedback in `Nav.svelte`.
 
 Avoid decorative motion loops or broad page-wide animation.
 
