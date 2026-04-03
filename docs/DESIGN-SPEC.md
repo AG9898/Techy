@@ -135,6 +135,8 @@ Rules:
 - The panel should feel like a soft instrument dock, not a dashboard sidebar
 - The panel replaces the old separate legend and filter overlays
 - Reset restores the documented default graph preset rather than clearing the graph into an undefined state
+- Category colouring is the documented default and reset state, while the status/category toggle remains available for manual switching
+- Hovering a node should spotlight that node, preserve only its directly linked same-category neighbors, and fade unrelated nodes, labels, and links
 
 Panel sections:
 - `Appearance` includes node sizing, link thickness, and text fade controls
@@ -276,13 +278,14 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - A single `.controls-dock` at bottom-right replaces the old separate legend (bottom-left) and filter (bottom-right) overlays
 - The trigger button (`controls-trigger`) shows a sliders icon and "Graph controls" label; coloured accent + badge when active filters are set
 - The panel is collapsed by default (`controlsOpen = false`) and expands above the trigger on click
-- Panel sections: **Appearance** (colour-mode toggle Status/Category, legend dots, degree-based node-scale multiplier, visible link thickness, zoom-threshold text fade), **Filters** (category + status checkboxes), **Physics** (link distance, repulsion, collision spacing, centering strength, velocity decay, alpha decay), **Reset to defaults** button
+- Panel sections: **Appearance** (colour-mode toggle Status/Category with Category as the default/reset mode, legend dots, degree-based node-scale multiplier, visible link thickness, zoom-threshold text fade), **Filters** (category + status checkboxes), **Physics** (link distance, repulsion, collision spacing, centering strength, velocity decay, alpha decay), **Reset to defaults** button
 - Appearance-only controls update the existing SVG selections live without rebuilding the graph; visible edge thickness is decoupled from the transparent edge hit-zone width so edge drilldown remains usable at all supported stroke widths
+- Hover focus is client-only and derived from the loaded graph: the hovered node gets the strongest emphasis, directly linked neighbors in the same category stay readable, and all other nodes, labels, and links fade until hover ends
 - Physics controls live-tune the D3 simulation via module-level refs (`simRef`, `linkForceRef`, `chargeForceRef`, `centerXForceRef`, `centerYForceRef`) and a single `$effect` that tracks the simulation-facing state values
 - `getRadius` and `degreeMap` are module-level so they are accessible from the physics `$effect`, while label opacity is driven by the current zoom scale and the user-defined fade threshold
 - Edge drilldown remains a separate bottom-center overlay and is not absorbed into the control panel
 - `graph-container` uses `height: 100%` to fill the fixed-position `graph-wrapper` from `+page.svelte`
-- Graph-view settings (`colorMode`, `hiddenCategories`, `hiddenStatuses`, `nodeScale`, `linkThickness`, `textFadeThreshold`, `linkDistance`, `chargeStrength`, `collisionPadding`, `centeringStrength`, `velocityDecay`, `alphaDecay`) persist to `localStorage` under key `techy:graph-settings`; loaded at init via `loadGraphSettings()` with per-field validation and clamping; written back by a dedicated `$effect`; `controlsOpen` is transient and excluded
+- Graph-view settings (`colorMode`, `hiddenCategories`, `hiddenStatuses`, `nodeScale`, `linkThickness`, `textFadeThreshold`, `linkDistance`, `chargeStrength`, `collisionPadding`, `centeringStrength`, `velocityDecay`, `alphaDecay`) persist to `localStorage` under key `techy:graph-settings`; loaded at init via `loadGraphSettings()` with per-field validation and clamping; written back by a dedicated `$effect`; `controlsOpen` is transient and excluded; existing saved `colorMode` values are preserved, while fresh/default state resolves to `category`
 - Future motion can use GSAP selectively for graph state transitions, but only if it improves clarity
 
 ### `Chat` surface

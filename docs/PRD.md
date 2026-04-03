@@ -116,6 +116,7 @@ Implementation note: the runtime should achieve this through one shared assistan
 | F-34 | Graph controls persist as local browser preferences rather than account-level or database-backed settings | High |
 | F-35 | The panel allows live tuning of node sizing, line thickness, text fade behavior, color/filter state, and force interaction | High |
 | F-36 | The panel includes a reset action that restores a documented default graph preset | Medium |
+| F-37 | The graph defaults to category-based colouring and hovering a node focuses its directly linked same-category neighborhood while fading unrelated graph elements | Medium |
 
 ---
 

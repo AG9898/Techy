@@ -26,6 +26,12 @@
 		growing: 'var(--graph-node-growing)',
 		mature: 'var(--graph-node-mature)'
 	};
+	const UNCATEGORIZED_COLOR = 'var(--text-muted)';
+	const DIMMED_NODE_OPACITY = 0.16;
+	const DIMMED_LABEL_OPACITY = 0.12;
+	const DIMMED_LINK_OPACITY = 0.08;
+	const PRESERVED_NEIGHBOR_OPACITY = 0.9;
+	const PRESERVED_LINK_OPACITY = 0.78;
 
 	// Stable category colour palette (tailwind-400 range, works on dark/light)
 	const CATEGORY_PALETTE = [
@@ -56,7 +62,7 @@
 	const STORAGE_KEY = 'techy:graph-settings';
 
 	const DEFAULT_SETTINGS = {
-		colorMode: 'status' as 'status' | 'category',
+		colorMode: 'category' as 'status' | 'category',
 		hiddenCategories: [] as string[],
 		hiddenStatuses: [] as string[],
 		nodeScale: 1,
@@ -172,6 +178,7 @@
 	let velocityDecay = $state(_init.velocityDecay);
 	let alphaDecay = $state(_init.alphaDecay);
 	let zoomScale = $state(1);
+	let focusedNodeId = $state<string | null>(null);
 
 	// D3 selections — assigned in onMount, read in $effect
 	let nodeSelection: d3.Selection<SVGGElement, GraphNode, SVGGElement, unknown> | null = null;
@@ -189,6 +196,8 @@
 
 	// Degree map for node radius — populated in onMount
 	let degreeMap: Map<string, number> = new Map();
+	let nodeMap: Map<string, GraphNode> = new Map();
+	let neighborMap: Map<string, Set<string>> = new Map();
 
 	function getBaseRadius(id: string): number {
 		const degree = degreeMap.get(id) ?? 0;
@@ -197,6 +206,95 @@
 
 	function getRadius(id: string): number {
 		return getBaseRadius(id) * nodeScale;
+	}
+
+	function getNodeId(node: string | GraphNode): string {
+		return typeof node === 'string' ? node : node.id;
+	}
+
+	function getNodeFill(
+		node: GraphNode,
+		mode: 'status' | 'category',
+		catMap: Record<string, string>
+	): string {
+		if (mode === 'category') {
+			return node.category ? (catMap[node.category] ?? UNCATEGORIZED_COLOR) : UNCATEGORIZED_COLOR;
+		}
+		return statusColor[node.status] ?? 'var(--graph-node-stub)';
+	}
+
+	function getHighlightedNeighborIds(focusedId: string | null): Set<string> {
+		if (!focusedId) return new Set();
+		const focusedNode = nodeMap.get(focusedId);
+		if (!focusedNode) return new Set();
+		const highlighted = new Set<string>();
+		const focusedCategory = focusedNode.category;
+		for (const neighborId of neighborMap.get(focusedId) ?? []) {
+			const neighbor = nodeMap.get(neighborId);
+			if (neighbor && neighbor.category === focusedCategory) {
+				highlighted.add(neighborId);
+			}
+		}
+		return highlighted;
+	}
+
+	function isEmphasizedLink(
+		link: GraphLink,
+		focusedId: string | null,
+		highlightedNeighborIds: Set<string>
+	): boolean {
+		if (!focusedId) return true;
+		const sourceId = getNodeId(link.source);
+		const targetId = getNodeId(link.target);
+		return (
+			(sourceId === focusedId && highlightedNeighborIds.has(targetId)) ||
+			(targetId === focusedId && highlightedNeighborIds.has(sourceId))
+		);
+	}
+
+	function applyVisualState() {
+		if (!nodeSelection || !labelSelection || !linkSelection || !linkHitSelection) return;
+
+		const mode = colorMode;
+		const catMap = categoryColorMap;
+		const baseLabelOpacity = getLabelOpacity(zoomScale, textFadeThreshold);
+		const focusedId = focusedNodeId;
+		const highlightedNeighborIds = getHighlightedNeighborIds(focusedId);
+		const focusActive = focusedId !== null;
+
+		nodeSelection
+			.select('circle')
+			.attr('fill', (d: GraphNode) => getNodeFill(d, mode, catMap))
+			.attr('r', (d: GraphNode) => getRadius(d.id) + (d.id === focusedId ? 3 : 0))
+			.attr('opacity', (d: GraphNode) => {
+				if (!focusActive || d.id === focusedId) return 1;
+				return highlightedNeighborIds.has(d.id) ? PRESERVED_NEIGHBOR_OPACITY : DIMMED_NODE_OPACITY;
+			})
+			.attr('stroke', (d: GraphNode) =>
+				d.id === focusedId ? 'var(--graph-focus)' : 'var(--bg-surface)'
+			)
+			.attr('stroke-width', (d: GraphNode) => (d.id === focusedId ? 2.5 : 2));
+
+		labelSelection.attr('opacity', (d: GraphNode) => {
+			if (!focusActive || d.id === focusedId) return baseLabelOpacity;
+			return highlightedNeighborIds.has(d.id)
+				? baseLabelOpacity * PRESERVED_NEIGHBOR_OPACITY
+				: baseLabelOpacity * DIMMED_LABEL_OPACITY;
+		});
+
+		linkSelection.attr('opacity', (d: GraphLink) =>
+			!focusActive
+				? 1
+				: isEmphasizedLink(d, focusedId, highlightedNeighborIds)
+					? PRESERVED_LINK_OPACITY
+					: DIMMED_LINK_OPACITY
+		);
+
+		linkHitSelection
+			.attr('opacity', 1)
+			.attr('pointer-events', (d: GraphLink) =>
+				focusActive && !isEmphasizedLink(d, focusedId, highlightedNeighborIds) ? 'none' : 'stroke'
+			);
 	}
 
 	function getLabelOpacity(scale: number, threshold: number): number {
@@ -254,32 +352,26 @@
 	});
 
 	$effect(() => {
-		if (!nodeSelection) return;
-		const mode = colorMode;
-		const catMap = categoryColorMap;
-		nodeSelection.select('circle').attr('fill', (d: GraphNode) => {
-			if (mode === 'category') {
-				return catMap[d.category ?? ''] ?? '#64748b';
-			}
-			return statusColor[d.status] ?? 'var(--graph-node-stub)';
-		});
+		colorMode;
+		categoryColorMap;
+		nodeScale;
+		zoomScale;
+		textFadeThreshold;
+		focusedNodeId;
+		applyVisualState();
 	});
 
 	$effect(() => {
-		const scale = nodeScale;
-		nodeSelection?.select('circle').attr('r', (d) => getBaseRadius(d.id) * scale);
+		nodeScale;
 		if (!simRef) return;
 		simRef.force('collision', d3.forceCollide<GraphNode>((n) => getRadius(n.id) + collisionPadding));
 		simRef.alpha(0.18).restart();
 	});
 
 	$effect(() => {
-		linkSelection?.attr('stroke-width', linkThickness);
-		linkHitSelection?.attr('stroke-width', Math.max(12, linkThickness + 8));
-	});
-
-	$effect(() => {
-		labelSelection?.attr('opacity', getLabelOpacity(zoomScale, textFadeThreshold));
+		const thickness = linkThickness;
+		linkSelection?.attr('stroke-width', thickness);
+		linkHitSelection?.attr('stroke-width', Math.max(12, thickness + 8));
 	});
 
 	// Physics tuning — reads reactive state before guard so tracking is established on first run
@@ -346,12 +438,18 @@
 
 		// Compute degree (incoming + outgoing) for each node from link props
 		degreeMap = new Map<string, number>();
+		nodeMap = new Map();
+		neighborMap = new Map();
 		for (const n of nodes) degreeMap.set(n.id, 0);
 		for (const l of links) {
-			const src = l.source as string;
-			const tgt = l.target as string;
+			const src = getNodeId(l.source);
+			const tgt = getNodeId(l.target);
 			degreeMap.set(src, (degreeMap.get(src) ?? 0) + 1);
 			degreeMap.set(tgt, (degreeMap.get(tgt) ?? 0) + 1);
+			if (!neighborMap.has(src)) neighborMap.set(src, new Set());
+			if (!neighborMap.has(tgt)) neighborMap.set(tgt, new Set());
+			neighborMap.get(src)?.add(tgt);
+			neighborMap.get(tgt)?.add(src);
 		}
 
 		const svg = d3
@@ -397,6 +495,7 @@
 		// Deep-copy nodes/links so D3 can mutate them
 		const simNodes: GraphNode[] = nodes.map((n) => ({ ...n }));
 		const simLinks: GraphLink[] = links.map((l) => ({ ...l }));
+		nodeMap = new Map(simNodes.map((node) => [node.id, node]));
 
 		const linkForce = d3
 			.forceLink<GraphNode, GraphLink>(simLinks)
@@ -458,23 +557,11 @@
 				event.stopPropagation();
 				goto(`/notes/${d.slug}`);
 			})
-			.on('mouseenter', function (_, d) {
-				d3.select(this)
-					.select('circle')
-					.transition()
-					.duration(150)
-					.attr('r', getRadius(d.id) + 3)
-					.attr('stroke', 'var(--graph-focus)')
-					.attr('stroke-width', 2.5);
+			.on('mouseenter', (_, d) => {
+				focusedNodeId = d.id;
 			})
-			.on('mouseleave', function (_, d) {
-				d3.select(this)
-					.select('circle')
-					.transition()
-					.duration(150)
-					.attr('r', getRadius(d.id))
-					.attr('stroke', 'var(--bg-surface)')
-					.attr('stroke-width', 2);
+			.on('mouseleave', () => {
+				focusedNodeId = null;
 			})
 			.call(
 				d3
@@ -498,7 +585,7 @@
 		nodeSelection
 			.append('circle')
 			.attr('r', (d) => getRadius(d.id))
-			.attr('fill', (d) => statusColor[d.status] ?? 'var(--graph-node-stub)')
+			.attr('fill', (d) => getNodeFill(d, colorMode, categoryColorMap))
 			.attr('stroke', 'var(--bg-surface)')
 			.attr('stroke-width', 2);
 
@@ -513,6 +600,8 @@
 			.attr('pointer-events', 'none');
 
 		labelSelection = nodeSelection.select<SVGTextElement>('text');
+		applyFilters(hiddenCategories, hiddenStatuses);
+		applyVisualState();
 
 		nodeSelection.append('title').text((d) => `${d.title} [${d.status}]`);
 
@@ -547,8 +636,7 @@
 				<a href="/notes/{selectedEdge.source.slug}" class="edge-note-link">
 					<span
 						class="edge-note-dot"
-						style="background: {statusColor[selectedEdge.source.status] ??
-							'var(--graph-node-stub)'}"
+						style="background: {getNodeFill(selectedEdge.source, colorMode, categoryColorMap)}"
 					></span>
 					{selectedEdge.source.title}
 				</a>
@@ -556,8 +644,7 @@
 				<a href="/notes/{selectedEdge.target.slug}" class="edge-note-link">
 					<span
 						class="edge-note-dot"
-						style="background: {statusColor[selectedEdge.target.status] ??
-							'var(--graph-node-stub)'}"
+						style="background: {getNodeFill(selectedEdge.target, colorMode, categoryColorMap)}"
 					></span>
 					{selectedEdge.target.title}
 				</a>
