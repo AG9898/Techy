@@ -127,6 +127,7 @@
 	let conversationHistory = $state<{ role: 'user' | 'assistant'; content: string }[]>([]);
 	let displayMessages = $state<DisplayMessage[]>([]);
 	let commitStates = $state<Record<string, CommitState>>({});
+	let compactSuccessStates = $state<Record<string, boolean>>({});
 	let draftStates = $state<Record<string, DraftEditorState>>({});
 	let conversationEl: HTMLDivElement | null = null;
 	let messageCounter = 0;
@@ -135,7 +136,7 @@
 	const assistantPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const proposalPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const previewPaneRefs: ElementRefMap<HTMLDivElement> = new Map();
-	const commitFeedbackRefs: ElementRefMap<HTMLParagraphElement> = new Map();
+	const commitFeedbackRefs: ElementRefMap<HTMLElement> = new Map();
 
 	const modeOptions: Array<{ value: ComposerModeValue; label: string }> = [
 		{ value: 'auto', label: 'Auto' },
@@ -437,6 +438,39 @@
 		);
 	}
 
+	async function collapseCreateProposal(messageId: string) {
+		if (compactSuccessStates[messageId]) return;
+
+		if (prefersReducedMotion()) {
+			compactSuccessStates = { ...compactSuccessStates, [messageId]: true };
+			await tick();
+			void animateCommitState(messageId, 'done');
+			return;
+		}
+
+		const proposal = proposalPanelRefs.get(messageId);
+		const gsap = await loadGsap();
+
+		if (proposal && gsap) {
+			gsap.killTweensOf(proposal);
+			await new Promise<void>((resolve) => {
+				gsap.to(proposal, {
+					height: 0,
+					autoAlpha: 0,
+					y: -10,
+					overflow: 'hidden',
+					duration: 0.2,
+					ease: 'power2.in',
+					onComplete: resolve
+				});
+			});
+		}
+
+		compactSuccessStates = { ...compactSuccessStates, [messageId]: true };
+		await tick();
+		void animateCommitState(messageId, 'done');
+	}
+
 	async function toggleDraftPreview(messageId: string, draftState: DraftEditorState) {
 		const shouldOpen = !draftState.showPreview;
 
@@ -533,18 +567,22 @@
 			});
 			const body = await response.json();
 
-			if (response.ok) {
-				const result = (body as {
-					result: { type: string; note?: CommitResultNote; noteId?: string };
+				if (response.ok) {
+					const result = (body as {
+						result: { type: string; note?: CommitResultNote; noteId?: string };
 				}).result;
-				commitStates = {
-					...commitStates,
-					[messageId]: { status: 'done', note: result.note, noteId: result.noteId }
-				};
-				await tick();
-				void animateCommitState(messageId, 'done');
-				return;
-			}
+					commitStates = {
+						...commitStates,
+						[messageId]: { status: 'done', note: result.note, noteId: result.noteId }
+					};
+					if (payload.type === 'create_note') {
+						await collapseCreateProposal(messageId);
+					} else {
+						await tick();
+						void animateCommitState(messageId, 'done');
+					}
+					return;
+				}
 
 			const error = (body as { error?: string }).error ?? 'Commit failed';
 			commitStates = { ...commitStates, [messageId]: { status: 'error', error } };
@@ -801,171 +839,192 @@
 								{@const commitState = commitStates[msg.id]}
 								{#if msg.proposal.type === 'create_note' || msg.proposal.type === 'update_note'}
 									{@const draftState = draftStates[msg.id]}
-									<div
-										class="proposal-panel"
-										use:bindElementToMap={{ id: msg.id, map: proposalPanelRefs }}
-									>
-										<div class="proposal-head">
-											<div>
-												<p class="proposal-eyebrow">
-													{msg.proposal.type === 'create_note' ? 'Create note' : 'Update note'}
+									{@const showCompactCreateSuccess =
+										msg.proposal.type === 'create_note' &&
+										commitState?.status === 'done' &&
+										commitState.note &&
+										compactSuccessStates[msg.id]}
+									{#if showCompactCreateSuccess}
+										{@const successfulNote = commitState?.note}
+										<div
+											class="commit-card"
+											use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+										>
+											<p class="commit-card__eyebrow">Create note complete</p>
+											{#if successfulNote}
+												<p class="commit-success">
+													Saved
+													<a href={`/notes/${successfulNote.slug}`}>{successfulNote.title}</a>
 												</p>
-												<h3>{draftState?.title ?? msg.proposal.draft?.title}</h3>
-											</div>
-											<div class="proposal-head__flags">
-												{#if msg.proposal.draft?.aiGenerated}
-													<span class="meta-pill meta-pill--accent">AI drafted</span>
-												{/if}
-												{#if msg.proposal.draft?.aiModel}
-													<span class="meta-pill meta-pill--soft">{msg.proposal.draft.aiModel}</span>
-												{/if}
-											</div>
+											{/if}
 										</div>
-
-										{#if msg.proposal.draft?.aiPrompt}
-											<p class="proposal-note">
-												Prompted from “{msg.proposal.draft.aiPrompt}”.
-											</p>
-										{/if}
-
-										{#if msg.citations.length}
-											<details class="citation-disclosure citation-disclosure--proposal">
-												<summary>
-													Sources
-													<span class="citation-count">{primaryCitations(msg.citations).length}</span>
-												</summary>
-												<div class="citation-row citation-row--proposal">
-													{#each primaryCitations(msg.citations) as citation}
-														<a
-															class="citation-chip"
-															href={citation.url}
-															target="_blank"
-															rel="noopener noreferrer"
-														>
-															{citation.title}
-														</a>
-													{/each}
+									{:else}
+										<div
+											class="proposal-panel"
+											use:bindElementToMap={{ id: msg.id, map: proposalPanelRefs }}
+										>
+											<div class="proposal-head">
+												<div>
+													<p class="proposal-eyebrow">
+														{msg.proposal.type === 'create_note' ? 'Create note' : 'Update note'}
+													</p>
+													<h3>{draftState?.title ?? msg.proposal.draft?.title}</h3>
 												</div>
-											</details>
-										{/if}
-
-										{#if draftState}
-											<div class="proposal-grid">
-												<label class="field">
-													<span>Title</span>
-													<input type="text" bind:value={draftState.title} />
-												</label>
-
-												<label class="field">
-													<span>Primary category</span>
-													<select bind:value={draftState.category}>
-														<option value="">Select a category</option>
-														{#each CANONICAL_NOTE_CATEGORIES as category}
-															<option value={category}>{category}</option>
-														{/each}
-													</select>
-												</label>
-
-												<label class="field">
-													<span>Status</span>
-													<select bind:value={draftState.status}>
-														<option value="stub">Stub</option>
-														<option value="growing">Growing</option>
-														<option value="mature">Mature</option>
-													</select>
-												</label>
-
-												<label class="field">
-													<span>Tags</span>
-													<input type="text" bind:value={draftState.tagsText} />
-												</label>
-
-												<label class="field">
-													<span>Aliases</span>
-													<input type="text" bind:value={draftState.aliasesText} />
-												</label>
-											</div>
-
-											<label class="field field--body">
-												<span>Body</span>
-												<textarea rows="10" bind:value={draftState.body}></textarea>
-											</label>
-
-											<div class="proposal-toolbar">
-												<div class="proposal-toolbar__left">
-													<button
-														type="button"
-														class="ghost-btn"
-														onclick={() => toggleDraftPreview(msg.id, draftState)}
-													>
-														{draftState.showPreview ? 'Hide preview' : 'Preview body'}
-													</button>
-													<button
-														type="button"
-														class="ghost-btn"
-														onclick={() => resetDraft(msg.id, msg.proposal!)}
-													>
-														Reset draft
-													</button>
-												</div>
-												<button
-													type="button"
-													class="primary-btn"
-													disabled={commitState?.status === 'pending'}
-													onclick={() => commitProposal(msg.id, msg.proposal!)}
-												>
-													{commitState?.status === 'pending'
-														? msg.proposal.type === 'create_note'
-															? 'Saving…'
-															: 'Applying…'
-														: msg.proposal.type === 'create_note'
-															? 'Save note'
-															: 'Apply update'}
-												</button>
-											</div>
-
-											{#if draftState.showPreview}
-												<div
-													class="preview-pane"
-													use:bindElementToMap={{ id: msg.id, map: previewPaneRefs }}
-												>
-													{#if draftState.body.trim()}
-														{@html renderDraftPreview(draftState.body)}
-													{:else}
-														<p class="preview-empty">Nothing to preview yet.</p>
+												<div class="proposal-head__flags">
+													{#if msg.proposal.draft?.aiGenerated}
+														<span class="meta-pill meta-pill--accent">AI drafted</span>
+													{/if}
+													{#if msg.proposal.draft?.aiModel}
+														<span class="meta-pill meta-pill--soft">{msg.proposal.draft.aiModel}</span>
 													{/if}
 												</div>
-											{/if}
-										{/if}
-
-										{#if msg.proposal.linkedNotePatches?.length}
-											<div class="linked-patches">
-												<p class="linked-patches__label">Also updates</p>
-												<ul class="linked-patches__list">
-													{#each msg.proposal.linkedNotePatches as patch}
-														<li>{patch.title ?? patch.noteId}</li>
-													{/each}
-												</ul>
 											</div>
-										{/if}
 
-										{#if commitState?.status === 'done' && commitState.note}
-											<p
-												class="commit-success"
-												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
-											>
-												Saved
-												<a href={`/notes/${commitState.note.slug}`}>{commitState.note.title}</a>
-											</p>
-										{:else if commitState?.status === 'error'}
-											<p
-												class="commit-error"
-												use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
-											>
-												{commitState.error}
-											</p>
-										{/if}
-									</div>
+											{#if msg.proposal.draft?.aiPrompt}
+												<p class="proposal-note">
+													Prompted from “{msg.proposal.draft.aiPrompt}”.
+												</p>
+											{/if}
+
+											{#if msg.citations.length}
+												<details class="citation-disclosure citation-disclosure--proposal">
+													<summary>
+														Sources
+														<span class="citation-count">{primaryCitations(msg.citations).length}</span>
+													</summary>
+													<div class="citation-row citation-row--proposal">
+														{#each primaryCitations(msg.citations) as citation}
+															<a
+																class="citation-chip"
+																href={citation.url}
+																target="_blank"
+																rel="noopener noreferrer"
+															>
+																{citation.title}
+															</a>
+														{/each}
+													</div>
+												</details>
+											{/if}
+
+											{#if draftState}
+												<div class="proposal-grid">
+													<label class="field">
+														<span>Title</span>
+														<input type="text" bind:value={draftState.title} />
+													</label>
+
+													<label class="field">
+														<span>Primary category</span>
+														<select bind:value={draftState.category}>
+															<option value="">Select a category</option>
+															{#each CANONICAL_NOTE_CATEGORIES as category}
+																<option value={category}>{category}</option>
+															{/each}
+														</select>
+													</label>
+
+													<label class="field">
+														<span>Status</span>
+														<select bind:value={draftState.status}>
+															<option value="stub">Stub</option>
+															<option value="growing">Growing</option>
+															<option value="mature">Mature</option>
+														</select>
+													</label>
+
+													<label class="field">
+														<span>Tags</span>
+														<input type="text" bind:value={draftState.tagsText} />
+													</label>
+
+													<label class="field">
+														<span>Aliases</span>
+														<input type="text" bind:value={draftState.aliasesText} />
+													</label>
+												</div>
+
+												<label class="field field--body">
+													<span>Body</span>
+													<textarea rows="10" bind:value={draftState.body}></textarea>
+												</label>
+
+												<div class="proposal-toolbar">
+													<div class="proposal-toolbar__left">
+														<button
+															type="button"
+															class="ghost-btn"
+															onclick={() => toggleDraftPreview(msg.id, draftState)}
+														>
+															{draftState.showPreview ? 'Hide preview' : 'Preview body'}
+														</button>
+														<button
+															type="button"
+															class="ghost-btn"
+															onclick={() => resetDraft(msg.id, msg.proposal!)}
+														>
+															Reset draft
+														</button>
+													</div>
+													<button
+														type="button"
+														class="primary-btn"
+														disabled={commitState?.status === 'pending'}
+														onclick={() => commitProposal(msg.id, msg.proposal!)}
+													>
+														{commitState?.status === 'pending'
+															? msg.proposal.type === 'create_note'
+																? 'Saving…'
+																: 'Applying…'
+															: msg.proposal.type === 'create_note'
+																? 'Save note'
+																: 'Apply update'}
+													</button>
+												</div>
+
+												{#if draftState.showPreview}
+													<div
+														class="preview-pane"
+														use:bindElementToMap={{ id: msg.id, map: previewPaneRefs }}
+													>
+														{#if draftState.body.trim()}
+															{@html renderDraftPreview(draftState.body)}
+														{:else}
+															<p class="preview-empty">Nothing to preview yet.</p>
+														{/if}
+													</div>
+												{/if}
+											{/if}
+
+											{#if msg.proposal.linkedNotePatches?.length}
+												<div class="linked-patches">
+													<p class="linked-patches__label">Also updates</p>
+													<ul class="linked-patches__list">
+														{#each msg.proposal.linkedNotePatches as patch}
+															<li>{patch.title ?? patch.noteId}</li>
+														{/each}
+													</ul>
+												</div>
+											{/if}
+
+											{#if commitState?.status === 'done' && commitState.note}
+												<p
+													class="commit-success"
+													use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+												>
+													Saved
+													<a href={`/notes/${commitState.note.slug}`}>{commitState.note.title}</a>
+												</p>
+											{:else if commitState?.status === 'error'}
+												<p
+													class="commit-error"
+													use:bindElementToMap={{ id: msg.id, map: commitFeedbackRefs }}
+												>
+													{commitState.error}
+												</p>
+											{/if}
+										</div>
+									{/if}
 								{:else if msg.proposal.type === 'delete_note'}
 									<div
 										class="proposal-panel proposal-panel--delete"
@@ -1443,6 +1502,7 @@
 	}
 
 	.match-card,
+	.commit-card,
 	.proposal-panel {
 		display: grid;
 		gap: 0.85rem;
@@ -1457,6 +1517,10 @@
 		background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-raised));
 	}
 
+	.commit-card {
+		background: color-mix(in srgb, var(--accent-green) 9%, var(--bg-raised));
+	}
+
 	.match-card__head,
 	.proposal-head {
 		display: flex;
@@ -1466,6 +1530,7 @@
 	}
 
 	.match-card__eyebrow,
+	.commit-card__eyebrow,
 	.proposal-eyebrow,
 	.linked-patches__label {
 		margin: 0;

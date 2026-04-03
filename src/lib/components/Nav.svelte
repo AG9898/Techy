@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { DefaultSession } from '@auth/sveltekit';
 	import { loadGsap, prefersReducedMotion } from '$lib/client/motion';
 
@@ -55,9 +55,14 @@
 	type RailMode = 'route-default' | 'manual-collapsed' | 'temporary' | 'pinned';
 
 	let railEl = $state<HTMLElement | null>(null);
+	let navListEl = $state<HTMLUListElement | null>(null);
+	let activeIndicatorEl = $state<HTMLSpanElement | null>(null);
 	let railMode = $state<RailMode>('route-default');
 	let railMotionReady = false;
 	let lastVisualCollapseState = false;
+	let activeIndicatorReady = false;
+
+	const navItemRefs = new Map<string, HTMLAnchorElement>();
 
 	const railContentId = 'main-navigation-content';
 	const isPinned = $derived(railMode === 'pinned');
@@ -72,6 +77,10 @@
 	onMount(() => {
 		lastVisualCollapseState = visuallyCollapsed;
 		railMotionReady = true;
+		void tick().then(async () => {
+			await syncActiveIndicator(false);
+			activeIndicatorReady = true;
+		});
 	});
 
 	// Keep a CSS variable in sync so graph-page can offset its fixed position
@@ -94,6 +103,15 @@
 		void animateRailTransition(collapsed);
 	});
 
+	$effect(() => {
+		page.url.pathname;
+		visuallyCollapsed;
+
+		if (!navListEl || !activeIndicatorEl) return;
+
+		void syncActiveIndicator(activeIndicatorReady);
+	});
+
 	const navLinks = [
 		{ href: '/', label: 'Graph' },
 		{ href: '/notes', label: 'Notes' },
@@ -103,6 +121,20 @@
 	function isActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
 		return page.url.pathname.startsWith(href);
+	}
+
+	function currentActiveHref(): string | null {
+		return navLinks.find((link) => isActive(link.href))?.href ?? null;
+	}
+
+	function bindNavItem(node: HTMLAnchorElement, href: string) {
+		navItemRefs.set(href, node);
+
+		return {
+			destroy() {
+				navItemRefs.delete(href);
+			}
+		};
 	}
 
 	function openRail() {
@@ -190,6 +222,63 @@
 				}
 			);
 		}
+	}
+
+	async function syncActiveIndicator(animate: boolean) {
+		if (!navListEl || !activeIndicatorEl) return;
+
+		await tick();
+
+		const activeHref = currentActiveHref();
+		if (!activeHref) {
+			activeIndicatorEl.style.opacity = '0';
+			return;
+		}
+
+		const activeItem = navItemRefs.get(activeHref);
+		if (!activeItem) return;
+
+		const listRect = navListEl.getBoundingClientRect();
+		const itemRect = activeItem.getBoundingClientRect();
+		const nextX = itemRect.left - listRect.left;
+		const nextY = itemRect.top - listRect.top;
+		const nextWidth = itemRect.width;
+		const nextHeight = itemRect.height;
+
+		if (prefersReducedMotion()) {
+			activeIndicatorEl.style.opacity = '1';
+			activeIndicatorEl.style.transform = `translate(${nextX}px, ${nextY}px)`;
+			activeIndicatorEl.style.width = `${nextWidth}px`;
+			activeIndicatorEl.style.height = `${nextHeight}px`;
+			return;
+		}
+
+		const gsap = await loadGsap();
+		if (!gsap) return;
+
+		gsap.killTweensOf(activeIndicatorEl);
+
+		if (!animate) {
+			gsap.set(activeIndicatorEl, {
+				x: nextX,
+				y: nextY,
+				width: nextWidth,
+				height: nextHeight,
+				autoAlpha: 1
+			});
+			return;
+		}
+
+		gsap.to(activeIndicatorEl, {
+			x: nextX,
+			y: nextY,
+			width: nextWidth,
+			height: nextHeight,
+			autoAlpha: 1,
+			duration: 0.24,
+			ease: 'power2.out',
+			overwrite: 'auto'
+		});
 	}
 
 	async function animateShellFeedback(source: HTMLElement | null) {
@@ -301,42 +390,46 @@
 
 	<!-- ── Primary nav ─────────────────────────────────────────── -->
 	<div id={railContentId} class="nav-body">
-		<ul class="nav-list" role="list">
-			{#each navLinks as link}
-				<li>
-					<a
-						href={link.href}
-						class="nav-item"
-						class:active={isActive(link.href)}
-						title={visuallyCollapsed ? link.label : undefined}
-						aria-current={isActive(link.href) ? 'page' : undefined}
-						onclick={handleNavLinkClick}
-					>
-						{#if link.label === 'Graph'}
-							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<circle cx="12" cy="5" r="2.5"/>
-								<circle cx="5" cy="19" r="2.5"/>
-								<circle cx="19" cy="19" r="2.5"/>
-								<line x1="12" y1="7.5" x2="5.8" y2="16.7"/>
-								<line x1="12" y1="7.5" x2="18.2" y2="16.7"/>
-							</svg>
-						{:else if link.label === 'Notes'}
-							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-								<polyline points="14 2 14 8 20 8"/>
-								<line x1="16" y1="13" x2="8" y2="13"/>
-								<line x1="16" y1="17" x2="8" y2="17"/>
-							</svg>
-						{:else if link.label === 'Chat'}
-							<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-							</svg>
-						{/if}
-						<span class="nav-label">{link.label}</span>
-					</a>
-				</li>
-			{/each}
-		</ul>
+		<div class="nav-list-shell">
+			<span bind:this={activeIndicatorEl} class="nav-active-pill" aria-hidden="true"></span>
+			<ul bind:this={navListEl} class="nav-list" role="list">
+				{#each navLinks as link}
+					<li>
+						<a
+							href={link.href}
+							class="nav-item"
+							class:active={isActive(link.href)}
+							use:bindNavItem={link.href}
+							title={visuallyCollapsed ? link.label : undefined}
+							aria-current={isActive(link.href) ? 'page' : undefined}
+							onclick={handleNavLinkClick}
+						>
+							{#if link.label === 'Graph'}
+								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<circle cx="12" cy="5" r="2.5"/>
+									<circle cx="5" cy="19" r="2.5"/>
+									<circle cx="19" cy="19" r="2.5"/>
+									<line x1="12" y1="7.5" x2="5.8" y2="16.7"/>
+									<line x1="12" y1="7.5" x2="18.2" y2="16.7"/>
+								</svg>
+							{:else if link.label === 'Notes'}
+								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+									<polyline points="14 2 14 8 20 8"/>
+									<line x1="16" y1="13" x2="8" y2="13"/>
+									<line x1="16" y1="17" x2="8" y2="17"/>
+								</svg>
+							{:else if link.label === 'Chat'}
+								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+								</svg>
+							{/if}
+							<span class="nav-label">{link.label}</span>
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</div>
 
 		<!-- ── Footer controls ─────────────────────────────────── -->
 		<div class="rail-footer">
@@ -568,6 +661,10 @@
 	}
 
 	/* ── Nav list ─────────────────────────────────────────────── */
+	.nav-list-shell {
+		position: relative;
+	}
+
 	.nav-list {
 		list-style: none;
 		padding: 0.5rem 0.5rem 0;
@@ -577,7 +674,29 @@
 		flex-shrink: 0;
 	}
 
+	.nav-list li {
+		position: relative;
+		z-index: 1;
+	}
+
+	.nav-active-pill {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 0;
+		height: 0;
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--accent-soft) 92%, var(--bg-raised));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-strong) 18%, var(--border-soft));
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+		transform: translate(0, 0);
+	}
+
 	.nav-item {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
@@ -597,7 +716,7 @@
 
 	.nav-item.active {
 		color: var(--accent-primary);
-		background: var(--accent-soft);
+		background: transparent;
 	}
 
 	/* ── Icons ────────────────────────────────────────────────── */

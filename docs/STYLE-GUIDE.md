@@ -116,6 +116,7 @@ Rules:
 - collapsed rails should reopen only through an explicit user action, not passive hover
 - temporary expanded rails may close on route selection, outside click, or `Escape`, while pinned rails stay stable across navigation
 - shell behavior should preserve focus on the current page rather than constantly demanding attention
+- active-page emphasis in the rail should feel like one continuous surface sliding between destinations, not a snapped per-link state change
 - pages that scroll inside `.page-content` do not need to reference the rail width; only full-bleed fixed-position pages (currently only the graph) should anchor to `left: var(--rail-w)` — never a hardcoded pixel offset
 
 ### 3. Chat
@@ -133,6 +134,7 @@ Rules:
 - keep provider/model selectors and create/update overrides close to the composer so the thread remains the primary surface
 - keep the conversation surface clean and spacious
 - show assistant proposals as review surfaces, not separate dashboards
+- after a create-note confirmation succeeds, hand the user back to the conversation with a compact success state rather than leaving the full proposal editor occupying the thread
 - keep citations assistive and low-noise
 - inferred create/update behavior must not break normal conversation
 - persisted chat history should feel like a quiet notebook index, not a busy support inbox
@@ -255,6 +257,7 @@ Good uses:
 - assistant message reveal
 - confirmation-state transitions
 - subtle theme transition choreography
+- a shared active-state slide between left-rail destinations
 
 Avoid:
 - perpetual looping motion

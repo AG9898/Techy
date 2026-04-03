@@ -217,6 +217,7 @@ Rules:
 - Links should be visible in the draft body using `[[wikilinks]]`.
 - If existing notes will be patched to link to the new note, that should be shown as a secondary review block in the same panel.
 - Editable proposal panels should keep the assistant reply visible so the user can review the route, the sources, and the draft together.
+- After a successful `create_note` confirmation, the editable draft panel should collapse away and hand off to a compact success card with a link to the saved note instead of leaving the full editor open.
 
 ### Delete Confirmation
 
@@ -247,6 +248,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Nav labels (`span.nav-label`) fade out and collapse to zero width in `.rail.collapsed`; the toggle chevron rotates 180° (`.chevron.flipped`)
 - In the collapsed visual state, the header shows only the centered expand toggle, the `T` logo mark is hidden, and the accent dot row is hidden to prevent clipping inside the 52px rail
 - In the expanded visual state, the header shows explicit pin/unpin and collapse controls so the user can promote a temporary open rail into a persistent one
+- The active route background is a shared sliding pill that animates between nav items instead of snapping per-link background fills
 - Rail footer contains: dark/light theme toggle buttons, accent dot group (sand/lavender/mauve/rose), avatar + username, and sign-out form
 - Any fixed-position page that needs to offset from the rail must use `left: var(--rail-w)` — never a hardcoded pixel offset
 
@@ -274,6 +276,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Composer control popovers should use Techy surface/background tokens instead of relying on browser-native select menu colors
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
+- Successful create-note commits collapse the draft panel into a smaller success card linked to the saved note
 - Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility
 - Selecting a saved conversation restores its transcript; resuming it should not depend on provider-side hidden memory
 
@@ -288,6 +291,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 4. User edits the draft inline if needed.
 5. User confirms save.
 6. The app persists the note, syncs `note_links`, and applies any confirmed linked-note patches so graph connections are visible immediately.
+7. The editable draft panel collapses into a compact success state with a direct link to the saved note.
 
 ### Chat Resume Flow
 1. User opens `/chat` and selects a saved conversation.
@@ -323,8 +327,9 @@ GSAP should be limited to a few meaningful transitions:
 - proposal panel reveal/collapse
 - confirmation-state transitions
 - subtle theme toggle choreography, if used
+- shared active-state movement in the left rail when route selection changes
 
-Current implementation applies this to new assistant replies and proposal-state transitions in `/chat`, plus explicit rail/theme feedback in `Nav.svelte`.
+Current implementation applies this to new assistant replies and proposal-state transitions in `/chat`, the create-note success handoff, plus explicit rail/theme feedback and the sliding active-nav pill in `Nav.svelte`.
 
 Avoid decorative motion loops or broad page-wide animation.
 
