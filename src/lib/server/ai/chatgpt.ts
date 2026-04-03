@@ -120,8 +120,7 @@ export async function respondConversation(
 	currentNoteTitle?: string,
 	currentNoteBody?: string,
 	relatedNote?: RelatedNotePromptContext,
-	deleteTarget?: DeleteTargetPromptContext | null,
-	shouldOfferCreateProposal?: boolean
+	deleteTarget?: DeleteTargetPromptContext | null
 ): Promise<AssistantRespondResult> {
 	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 	const systemPrompt = buildRespondSystemPrompt({
@@ -133,8 +132,7 @@ export async function respondConversation(
 		currentNoteTitle,
 		currentNoteBody,
 		relatedNote,
-		deleteTarget,
-		shouldOfferCreateProposal
+		deleteTarget
 	});
 
 	const response = await client.responses.create({
@@ -145,7 +143,7 @@ export async function respondConversation(
 			role: m.role,
 			content: m.content
 		})),
-		max_output_tokens: 4096,
+		max_output_tokens: mode === 'chat' ? 1400 : 4096,
 		reasoning: getReasoningConfig(model)
 	});
 

@@ -6,7 +6,11 @@ import { respondConversation as respondWithOpenAI } from '$lib/server/ai/chatgpt
 import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
-import { resolveAssistantRouting } from '$lib/server/assistant/routing.js';
+import {
+	extractLearningTopic,
+	isTopicLearningPrompt,
+	resolveAssistantRouting
+} from '$lib/server/assistant/routing.js';
 import type {
 	DeleteTargetPromptContext,
 	RelatedNotePromptContext
@@ -17,11 +21,12 @@ import { eq } from 'drizzle-orm';
 import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
 const MAX_PROMPT_TAGS = 40;
-const TOPIC_LEARNING_PROMPT_PATTERNS = [
-	/^\s*(what is|what are)\b/i,
-	/^\s*(tell me about|teach me about|learn about)\b/i,
-	/^\s*(explain|describe|overview of|give me an overview of)\b/i
-];
+
+interface CreateOffer {
+	topic: string;
+	prompt: string;
+	label: string;
+}
 
 function collectPromptTags(tagSets: string[][]): string[] {
 	const counts = new Map<string, number>();
@@ -213,8 +218,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				currentNoteTitle,
 				currentNoteBody,
 				relatedNote,
-				deleteTarget,
-				shouldOfferCreateProposal(routing.latestUserMessage, routing.matchedNote)
+				deleteTarget
 			);
 		} else {
 			result = await respondWithOpenAI(
@@ -228,8 +232,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				currentNoteTitle,
 				currentNoteBody,
 				relatedNote,
-				deleteTarget,
-				shouldOfferCreateProposal(routing.latestUserMessage, routing.matchedNote)
+				deleteTarget
 			);
 		}
 
@@ -273,9 +276,16 @@ export const POST: RequestHandler = async ({ request }) => {
 			result.assistantMessage.citations = [...result.assistantMessage.citations, ...newCitations];
 		}
 
+		const createOffer = buildCreateOffer(
+			routing,
+			result.proposal,
+			routing.latestUserMessage
+		);
+
 		return json({
 			assistantMessage: result.assistantMessage,
 			proposal: result.proposal ?? null,
+			createOffer,
 			topicCache: cache,
 			routing
 		});
@@ -343,9 +353,32 @@ function resolveDeleteTarget({
 	return null;
 }
 
-function shouldOfferCreateProposal(
+function buildCreateOffer(
+	routing: ReturnType<typeof resolveAssistantRouting>,
+	proposal: unknown,
 	latestUserMessage: string,
-	matchedNote: { id: string } | null
-): boolean {
-	return !matchedNote && TOPIC_LEARNING_PROMPT_PATTERNS.some((pattern) => pattern.test(latestUserMessage));
+): CreateOffer | null {
+	if (
+		routing.resolvedMode !== 'chat' ||
+		routing.overrideSource !== 'none' ||
+		routing.matchedNote ||
+		proposal
+	) {
+		return null;
+	}
+
+	if (!isTopicLearningPrompt(latestUserMessage)) {
+		return null;
+	}
+
+	const topic = extractLearningTopic(latestUserMessage);
+	if (!topic) {
+		return null;
+	}
+
+	return {
+		topic,
+		prompt: `Create a note about ${topic}`,
+		label: 'Create note'
+	};
 }

@@ -26,7 +26,6 @@ interface RespondPromptOptions {
 	currentNoteBody?: string;
 	relatedNote?: RelatedNotePromptContext;
 	deleteTarget?: DeleteTargetPromptContext | null;
-	shouldOfferCreateProposal?: boolean;
 }
 
 /**
@@ -138,28 +137,16 @@ function buildCreateProposalShape(canonicalCategoriesText: string): string {
 }`;
 }
 
-function buildChatSkillPrompt(
-	canonicalCategoriesText: string,
-	shouldOfferCreateProposal: boolean
-): string {
-	const createProposalInstructions = shouldOfferCreateProposal
-		? `
-- This turn is a topic-learning prompt without a strong related saved note match. Answer the question conversationally and also include a create_note proposal so the UI can offer an explicit add-to-notes action in the same response.
-- The create_note proposal must use this exact proposal shape:
-${buildCreateProposalShape(canonicalCategoriesText)}
-- The proposal draft must follow the shared note structure exactly:
-${buildNoteSectionStructurePrompt()}
-- Choose exactly one canonical category from this list: ${canonicalCategoriesText}.
-- Prefer existing lower-case tags already used in the graph when they fit. Only create a new tag when no current tag is a clean match.
-- Keep the conversational answer and the create_note proposal aligned on the same topic.`
-		: `
-- Answer the user's question conversationally and keep "proposal": null unless the explicit delete skill below applies.`;
-
+function buildChatSkillPrompt(): string {
 	return `
 Active skill: conversation.
 
 Instructions:
-${createProposalInstructions}
+- Answer the user's question conversationally and keep "proposal": null unless the explicit delete skill below applies.
+- Do not return create_note in chat mode. The app handles note-creation offers separately from the conversational reply.
+- Keep the reply concise by default: a short overview plus a short bullet list or short follow-up paragraphs only when that improves clarity.
+- Use light markdown for readability when helpful, but avoid turning ordinary answers into long articles.
+- Avoid padded intros, repeated section labels, exhaustive service inventories, and unnecessary closing questions.
 - If a strong related saved note is provided, use it to summarize what is already saved, mention that the note exists, and offer a helpful follow-up such as deeper research or a review for updates.
 - A learning prompt about an existing topic must remain conversational first. Do not switch to update_note just because a note match exists.
 - Be concise, informative, and grounded in the saved note and any supplied research context.
@@ -278,8 +265,7 @@ export function buildRespondSystemPrompt({
 	currentNoteTitle,
 	currentNoteBody,
 	relatedNote,
-	deleteTarget,
-	shouldOfferCreateProposal = false
+	deleteTarget
 }: RespondPromptOptions): string {
 	const canonicalCategoriesText = canonicalCategories.join(', ');
 	const sections = [RESPOND_SYSTEM_PROMPT_IDENTITY];
@@ -289,7 +275,7 @@ export function buildRespondSystemPrompt({
 	} else if (mode === 'update') {
 		sections.push(buildUpdateSkillPrompt(canonicalCategoriesText));
 	} else {
-		sections.push(buildChatSkillPrompt(canonicalCategoriesText, shouldOfferCreateProposal));
+		sections.push(buildChatSkillPrompt());
 	}
 
 	sections.push(buildDeleteSkillInstructions(deleteTarget));

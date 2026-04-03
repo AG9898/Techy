@@ -189,12 +189,32 @@ Chat layout rules:
 - Remove non-essential top-of-page copy and status pills; the page should not open with a heavy header block.
 - The composer should sit in a centered narrow column rather than stretching like a full-width dashboard dock.
 - The conversation text bar should be materially smaller than the current wide dock treatment: reduced width, reduced height, reduced padding, and a calmer send affordance.
+- Assistant replies should render lightweight markdown in the transcript so short headings, lists, code, and links stay readable.
+- Default assistant replies should be concise and editorial rather than long article-style dumps.
 - The composer controls should prefer headless custom dropdowns over browser-native select menus where the native rendering breaks token contrast or readability.
 - The model selector should stay visible in the composer chrome, while provider switching becomes a quieter secondary control.
 - `Auto`, `Create`, and `Update` should be exposed through a compact mode selector in the composer chrome rather than a separate toolbar of pills.
+- Plain conversational turns should avoid redundant route chrome like generic `Chat` / `Conversation` pills; visible status should be reserved for override or mutation states that materially change the next user action.
 - The update target picker should appear only when `Update` is active, anchored directly under the composer.
 - The main chat surface should not be wrapped in a generic dashboard-style container component; the conversation area itself stays visually open.
 - Chat should follow the modern AI-reference layout rhythm from `references/UI/chat-example.png`, translated through Techy's tokens and type system rather than copied literally.
+
+### Conversational Create Offer
+
+For topic-learning prompts without a strong saved-note match, render a compact inline create-offer card beneath the assistant reply instead of opening a full draft immediately.
+
+Structure:
+```
+[ Save this topic ]
+[ topic title ]
+[ short explanation ]
+[ Create note ]
+```
+
+Rules:
+- The offer should be explicit and lightweight, not a hidden automatic mutation.
+- Activating the CTA should append a visible follow-up create turn in chat and then open the existing editable create-note proposal flow.
+- Do not show the create offer when a strong saved-note match is already being surfaced inline.
 
 ### Assistant Proposal Panel
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAssistantRouting } from './routing.js';
+import {
+	extractLearningTopic,
+	isTopicLearningPrompt,
+	resolveAssistantRouting
+} from './routing.js';
 
 const NOTES = [
 	{
@@ -47,5 +51,17 @@ describe('resolveAssistantRouting', () => {
 
 		expect(routing.resolvedMode).toBe('create');
 		expect(routing.intent).toBe('create');
+	});
+
+	it('detects topic-learning prompts that should stay conversational', () => {
+		expect(isTopicLearningPrompt('What can you teach me about Microsoft Azure')).toBe(true);
+		expect(isTopicLearningPrompt('Can you add this to my notes?')).toBe(false);
+	});
+
+	it('extracts a clean topic from learning prompts', () => {
+		expect(extractLearningTopic('What can you teach me about Microsoft Azure?')).toBe(
+			'Microsoft Azure'
+		);
+		expect(extractLearningTopic('Explain "npm".')).toBe('npm');
 	});
 });

@@ -137,6 +137,8 @@ Rules:
 - after a create-note confirmation succeeds, hand the user back to the conversation with a compact success state rather than leaving the full proposal editor occupying the thread
 - keep citations assistive and low-noise
 - inferred create/update behavior must not break normal conversation
+- render assistant prose with lightweight markdown so scannable structure survives in the transcript
+- bias normal chat replies toward concise, digestible output rather than long-form essays
 - persisted chat history should feel like a quiet notebook index, not a busy support inbox
 - default the chat entry state to inference-first `Auto`
 - reduce page-header copy to the minimum needed; avoid stacked title, eyebrow, lede, and status-pill clutter
@@ -145,6 +147,8 @@ Rules:
 - style `Auto`, `Create`, and `Update` as compact skill-like toggles attached to the composer
 - avoid wrapping the main chat surface in a large generic card or dashboard shell
 - let the transcript feel flatter and more editorial than the current rounded-component treatment
+- use a compact inline create-offer card for eligible learning prompts instead of opening a full draft panel unprompted
+- reserve routing/status pills for states that change behavior, not plain conversational turns
 
 Recommended desktop arrangement:
 - a restrained history rail or drawer for recent chats

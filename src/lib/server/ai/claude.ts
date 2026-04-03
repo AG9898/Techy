@@ -209,8 +209,7 @@ export async function respondConversation(
 	currentNoteTitle?: string,
 	currentNoteBody?: string,
 	relatedNote?: RelatedNotePromptContext,
-	deleteTarget?: DeleteTargetPromptContext | null,
-	shouldOfferCreateProposal?: boolean
+	deleteTarget?: DeleteTargetPromptContext | null
 ): Promise<AssistantRespondResult> {
 	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 	const systemPrompt = buildRespondSystemPrompt({
@@ -222,13 +221,12 @@ export async function respondConversation(
 		currentNoteTitle,
 		currentNoteBody,
 		relatedNote,
-		deleteTarget,
-		shouldOfferCreateProposal
+		deleteTarget
 	});
 
 	const message = await client.messages.create({
 		model,
-		max_tokens: 4096,
+		max_tokens: mode === 'chat' ? 1400 : 4096,
 		system: systemPrompt,
 		messages: messages.map((m) => ({ role: m.role, content: m.content }))
 	});

@@ -42,11 +42,11 @@ describe('buildRespondSystemPrompt', () => {
 		expect(prompt).toContain('The UI renders citations separately.');
 	});
 
-	it('allows a conversational answer plus create proposal for eligible learning prompts', () => {
-		const prompt = buildRespondSystemPrompt({ mode: 'chat', shouldOfferCreateProposal: true });
+	it('keeps chat replies concise and leaves note offers to the app', () => {
+		const prompt = buildRespondSystemPrompt({ mode: 'chat' });
 
-		expect(prompt).toContain('also include a create_note proposal');
-		expect(prompt).toContain('This turn is a topic-learning prompt without a strong related saved note match.');
-		expect(prompt).toContain('"type": "create_note"');
+		expect(prompt).toContain('Do not return create_note in chat mode.');
+		expect(prompt).toContain('Keep the reply concise by default');
+		expect(prompt).toContain('Use light markdown for readability when helpful');
 	});
 });

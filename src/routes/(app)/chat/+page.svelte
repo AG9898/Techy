@@ -46,6 +46,12 @@
 		latestUserMessage: string;
 	}
 
+	interface CreateOffer {
+		topic: string;
+		prompt: string;
+		label: string;
+	}
+
 	interface NoteDraft {
 		title: string;
 		body: string;
@@ -107,6 +113,7 @@
 		content: string;
 		citations: Citation[];
 		proposal: NoteProposal | null;
+		createOffer: CreateOffer | null;
 		routing: RoutingState | null;
 	}
 
@@ -299,6 +306,11 @@
 		return marked.parse(resolved) as string;
 	}
 
+	function renderAssistantContent(content: string): string {
+		const resolved = resolveWikilinks(content, noteSlugMap);
+		return marked.parse(resolved) as string;
+	}
+
 	function primaryCitations(citations: Citation[]): Citation[] {
 		return citations.slice(0, 3);
 	}
@@ -349,12 +361,6 @@
 
 	function currentNoteTargetLabel(): string {
 		return selectedNote?.title ?? 'Select a saved note';
-	}
-
-	function intentLabel(intent: RoutingState['intent']): string {
-		if (intent === 'create') return 'Create';
-		if (intent === 'review') return 'Review';
-		return 'Conversation';
 	}
 
 	function noteCardLabel(note: ChatNote): string {
@@ -598,37 +604,44 @@
 		}
 	}
 
-	async function sendMessage() {
-		const content = composerValue.trim();
-		if (!content || isLoading) return;
-		if (overrideMode === 'update' && !selectedNoteId) return;
+	async function submitMessage(
+		content: string,
+		options: { override?: AssistantMode | null; noteId?: string } = {}
+	) {
+		const trimmedContent = content.trim();
+		const requestOverride = options.override ?? null;
+		const requestNoteId = options.noteId ?? '';
+
+		if (!trimmedContent || isLoading) return;
+		if (requestOverride === 'update' && !requestNoteId) return;
 
 		const userMessage: UserMessage = {
 			id: nextMessageId('user'),
 			role: 'user',
-			content
+			content: trimmedContent
 		};
 
-		composerValue = '';
+		const nextConversationHistory = [...conversationHistory, { role: 'user' as const, content: trimmedContent }];
+
 		displayMessages = [...displayMessages, userMessage];
-		conversationHistory = [...conversationHistory, { role: 'user', content }];
+		conversationHistory = nextConversationHistory;
 		isLoading = true;
 		await scrollToBottom();
 
 		try {
 			const body: Record<string, unknown> = {
-				messages: conversationHistory,
+				messages: nextConversationHistory,
 				provider: selectedProvider,
 				model: selectedModel,
 				topicCache
 			};
 
-			if (overrideMode) {
-				body.override = overrideMode;
+			if (requestOverride) {
+				body.override = requestOverride;
 			}
 
-			if (overrideMode === 'update' && selectedNoteId) {
-				body.noteId = selectedNoteId;
+			if (requestOverride === 'update' && requestNoteId) {
+				body.noteId = requestNoteId;
 			}
 
 			const response = await fetch('/api/assistant/respond', {
@@ -642,6 +655,7 @@
 				const assistantContent: string = data.assistantMessage?.content ?? '';
 				const citations: Citation[] = data.assistantMessage?.citations ?? [];
 				const proposal: NoteProposal | null = data.proposal ?? null;
+				const createOffer: CreateOffer | null = data.createOffer ?? null;
 				const routing: RoutingState | null = data.routing ?? null;
 				const assistantMessage: AssistantMessage = {
 					id: nextMessageId('assistant'),
@@ -649,6 +663,7 @@
 					content: assistantContent,
 					citations,
 					proposal,
+					createOffer,
 					routing
 				};
 
@@ -658,7 +673,7 @@
 
 				displayMessages = [...displayMessages, assistantMessage];
 				conversationHistory = [
-					...conversationHistory,
+					...nextConversationHistory,
 					{ role: 'assistant', content: assistantContent }
 				];
 
@@ -684,6 +699,7 @@
 						content: errMessage,
 						citations: [],
 						proposal: null,
+						createOffer: null,
 						routing: null
 					}
 				];
@@ -697,6 +713,7 @@
 					content: 'Network error. Please try again.',
 					citations: [],
 					proposal: null,
+					createOffer: null,
 					routing: null
 				}
 			];
@@ -704,6 +721,22 @@
 
 		isLoading = false;
 		await scrollToBottom();
+	}
+
+	async function sendMessage() {
+		const content = composerValue.trim();
+		if (!content || isLoading) return;
+		if (overrideMode === 'update' && !selectedNoteId) return;
+
+		composerValue = '';
+		await submitMessage(content, {
+			override: overrideMode,
+			noteId: overrideMode === 'update' ? selectedNoteId : undefined
+		});
+	}
+
+	async function triggerCreateOffer(createOffer: CreateOffer) {
+		await submitMessage(createOffer.prompt, { override: 'create' });
 	}
 </script>
 
@@ -738,8 +771,9 @@
 							<div class="message-meta">
 								<span class="message-role">Assistant</span>
 								{#if msg.routing}
-									<span class="meta-pill">{modeLabel(msg.routing.resolvedMode)}</span>
-									<span class="meta-pill meta-pill--soft">{intentLabel(msg.routing.intent)}</span>
+									{#if msg.routing.resolvedMode !== 'chat'}
+										<span class="meta-pill">{modeLabel(msg.routing.resolvedMode)}</span>
+									{/if}
 									{#if msg.routing.overrideSource !== 'none'}
 										<span class="meta-pill meta-pill--accent">
 											{msg.routing.overrideSource === 'override' ? 'Manual override' : 'Legacy mode'}
@@ -749,7 +783,7 @@
 							</div>
 
 							<div class="assistant-copy">
-								<p>{msg.content}</p>
+								{@html renderAssistantContent(msg.content)}
 							</div>
 
 									{#if msg.citations.length}
@@ -772,6 +806,26 @@
 											</div>
 										</details>
 									{/if}
+
+							{#if msg.createOffer}
+								<div class="create-offer-card">
+									<div>
+										<p class="create-offer__eyebrow">Save this topic</p>
+										<h3>{msg.createOffer.topic}</h3>
+										<p class="create-offer__body">
+											Open a structured draft for review without leaving the conversation.
+										</p>
+									</div>
+									<button
+										type="button"
+										class="primary-btn"
+										disabled={isLoading}
+										onclick={() => triggerCreateOffer(msg.createOffer!)}
+									>
+										{msg.createOffer.label}
+									</button>
+								</div>
+							{/if}
 
 							{#if msg.routing?.matchedNote && msg.routing.resolvedMode === 'chat'}
 								{@const matched = noteLookupById.get(msg.routing.matchedNote.id)}
@@ -1348,7 +1402,6 @@
 	}
 
 	.message-bubble p,
-	.assistant-copy p,
 	.proposal-note,
 	.match-card__body,
 	.commit-success,
@@ -1425,6 +1478,94 @@
 	.assistant-copy {
 		color: var(--text-primary);
 		font-size: 0.95rem;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.assistant-copy :global(h1),
+	.assistant-copy :global(h2),
+	.assistant-copy :global(h3),
+	.assistant-copy :global(h4) {
+		margin: 0;
+		color: var(--text-primary);
+		line-height: 1.25;
+	}
+
+	.assistant-copy :global(h1) {
+		font-size: 1.08rem;
+	}
+
+	.assistant-copy :global(h2) {
+		font-size: 1rem;
+	}
+
+	.assistant-copy :global(h3),
+	.assistant-copy :global(h4) {
+		font-size: 0.92rem;
+	}
+
+	.assistant-copy :global(p),
+	.assistant-copy :global(ul),
+	.assistant-copy :global(ol),
+	.assistant-copy :global(pre),
+	.assistant-copy :global(blockquote) {
+		margin: 0;
+		line-height: 1.65;
+	}
+
+	.assistant-copy :global(ul),
+	.assistant-copy :global(ol) {
+		padding-left: 1.2rem;
+		display: grid;
+		gap: 0.25rem;
+		color: var(--text-secondary);
+	}
+
+	.assistant-copy :global(li > p) {
+		margin: 0;
+	}
+
+	.assistant-copy :global(strong) {
+		color: var(--text-primary);
+	}
+
+	.assistant-copy :global(a),
+	.assistant-copy :global(.wikilink) {
+		color: var(--accent-primary);
+		text-decoration: none;
+	}
+
+	.assistant-copy :global(.wikilink-broken) {
+		color: var(--accent-red);
+		text-decoration: line-through;
+	}
+
+	.assistant-copy :global(code) {
+		padding: 0.1rem 0.32rem;
+		border-radius: 0.4rem;
+		background: color-mix(in srgb, var(--bg-raised) 72%, var(--bg-surface));
+		border: 1px solid var(--border-soft);
+		font-size: 0.84em;
+	}
+
+	.assistant-copy :global(pre) {
+		overflow-x: auto;
+		padding: 0.8rem 0.9rem;
+		border-radius: 0.85rem;
+		border: 1px solid var(--border-soft);
+		background: var(--bg-surface);
+	}
+
+	.assistant-copy :global(pre code) {
+		padding: 0;
+		border: 0;
+		background: transparent;
+	}
+
+	.assistant-copy :global(blockquote) {
+		padding-left: 0.9rem;
+		border-left: 2px solid var(--border-soft);
+		color: var(--text-secondary);
 	}
 
 	.citation-row {
@@ -1502,6 +1643,7 @@
 	}
 
 	.match-card,
+	.create-offer-card,
 	.commit-card,
 	.proposal-panel {
 		display: grid;
@@ -1517,6 +1659,12 @@
 		background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-raised));
 	}
 
+	.create-offer-card {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		background: color-mix(in srgb, var(--accent-soft) 16%, var(--bg-raised));
+	}
+
 	.commit-card {
 		background: color-mix(in srgb, var(--accent-green) 9%, var(--bg-raised));
 	}
@@ -1530,6 +1678,7 @@
 	}
 
 	.match-card__eyebrow,
+	.create-offer__eyebrow,
 	.commit-card__eyebrow,
 	.proposal-eyebrow,
 	.linked-patches__label {
@@ -1539,6 +1688,18 @@
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--text-subtle);
+	}
+
+	.create-offer-card h3 {
+		margin: 0.25rem 0 0;
+		font-size: 0.98rem;
+		color: var(--text-primary);
+	}
+
+	.create-offer__body {
+		margin: 0.35rem 0 0;
+		color: var(--text-secondary);
+		line-height: 1.55;
 	}
 
 	.match-card h3,
@@ -2162,6 +2323,10 @@
 		.proposal-toolbar {
 			flex-direction: column;
 			align-items: stretch;
+		}
+
+		.create-offer-card {
+			grid-template-columns: 1fr;
 		}
 
 		.select-chip {

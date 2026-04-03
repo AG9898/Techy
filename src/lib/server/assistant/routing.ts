@@ -50,6 +50,34 @@ const REVIEW_INTENT_PATTERNS = [
 	/\b(outdated|out of date|missing|stale|current)\b/
 ];
 
+const TOPIC_LEARNING_PROMPT_PATTERNS = [
+	/^\s*(?:please\s+)?(?:what is|what are)\b/i,
+	/^\s*(?:please\s+)?(?:what can you teach me about|what can you tell me about)\b/i,
+	/^\s*(?:please\s+)?(?:can you teach me about|can you tell me about)\b/i,
+	/^\s*(?:please\s+)?(?:tell me about|tell me more about|teach me about|learn me about|learn about)\b/i,
+	/^\s*(?:please\s+)?(?:explain|describe|show me)\b/i,
+	/^\s*(?:please\s+)?(?:overview of|give me an overview of)\b/i
+];
+
+const TOPIC_LEARNING_LEAD_INS = [
+	/^\s*(?:please\s+)?what can you teach me about\s+/i,
+	/^\s*(?:please\s+)?what can you tell me about\s+/i,
+	/^\s*(?:please\s+)?can you teach me about\s+/i,
+	/^\s*(?:please\s+)?can you tell me about\s+/i,
+	/^\s*(?:please\s+)?tell me more about\s+/i,
+	/^\s*(?:please\s+)?tell me about\s+/i,
+	/^\s*(?:please\s+)?teach me about\s+/i,
+	/^\s*(?:please\s+)?learn me about\s+/i,
+	/^\s*(?:please\s+)?learn about\s+/i,
+	/^\s*(?:please\s+)?explain\s+/i,
+	/^\s*(?:please\s+)?describe\s+/i,
+	/^\s*(?:please\s+)?show me\s+/i,
+	/^\s*(?:please\s+)?what is\s+/i,
+	/^\s*(?:please\s+)?what are\s+/i,
+	/^\s*(?:please\s+)?give me an overview of\s+/i,
+	/^\s*(?:please\s+)?overview of\s+/i
+];
+
 const MATCH_LEAD_INS = [
 	/^(please\s+)?tell me about\s+/,
 	/^(please\s+)?teach me about\s+/,
@@ -119,6 +147,29 @@ export function resolveAssistantRouting({
 		noteId: targetNote?.id ?? null,
 		latestUserMessage
 	};
+}
+
+export function isTopicLearningPrompt(message: string): boolean {
+	return TOPIC_LEARNING_PROMPT_PATTERNS.some((pattern) => pattern.test(message.trim()));
+}
+
+export function extractLearningTopic(message: string): string | null {
+	if (!isTopicLearningPrompt(message)) {
+		return null;
+	}
+
+	let stripped = message.trim();
+
+	for (const pattern of TOPIC_LEARNING_LEAD_INS) {
+		stripped = stripped.replace(pattern, '');
+	}
+
+	const topic = stripped
+		.replace(/^[`"'“”‘’(\[]+/, '')
+		.replace(/[`"'“”‘’)\].,!?;:]+$/, '')
+		.trim();
+
+	return topic || null;
 }
 
 function getLatestUserMessage(messages: ConversationMessage[]): string {

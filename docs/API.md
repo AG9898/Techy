@@ -177,7 +177,8 @@ Primary assistant surface for conversation and note authoring.
 - The chat surface may render those override controls and the model picker inside the composer chrome rather than as a separate top toolbar.
 - `/chat` is the sole note-authoring entry point for new notes; there is no dedicated new-note page.
 - If the assistant detects a strong match to an existing note, the page may surface that note inline and offer research or review actions without forcing an immediate update flow.
-- For topic-learning prompts in `Auto` mode that do not strongly match an existing saved note, the assistant may return both a conversational answer and a `create_note` proposal so the user can add the topic to notes immediately.
+- Assistant transcript content may be rendered as markdown for readability rather than displayed as flat plain text.
+- For topic-learning prompts in `Auto` mode that do not strongly match an existing saved note, the response may include a lightweight `createOffer` CTA so the user can explicitly open the normal create-note draft flow from the same turn.
 - The page may render create/update proposals as editable inline draft panels and delete proposals as explicit confirmation cards.
 - The page submits full conversation state to `POST /api/assistant/respond`.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
@@ -185,10 +186,12 @@ Primary assistant surface for conversation and note authoring.
 - Respond-time prompt grounding also includes the shared canonical note-category list and a bounded deterministic list of existing lower-case note tags so create/update drafts reuse established taxonomy when possible.
 - Assistant proposals must follow the standard note skeleton from `docs/NOTES.md`: `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources`, with only the approved optional sections allowed between `Key Concepts` and `Connections`.
 - Assistant prompts also keep `Overview` brief, treat `Description` as the main explanatory section, prefer evergreen explanation over release-churn unless `Version Notes` is warranted, and ban deprecated default headings like `Current Status`, `Notable Features`, `Quick Examples`, and `Industry Usage`.
+- Conversational prompts should bias toward concise, digestible answers rather than long article-style replies.
 - The initial `/chat` selection defaults to OpenAI with `gpt-5-mini`.
 - The current OpenAI chat allowlist includes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`. The current OpenAI default is `gpt-5-mini`.
 - The current Anthropic default is `claude-haiku-4-5-20251001`.
 - Assistant responses may include a structured proposal for `create_note`, `update_note`, or `delete_note`.
+- Assistant responses may also include `createOffer` metadata for conversational learning turns that are eligible to become notes.
 - Create/update proposals render as editable draft panels in chat before save.
 - Delete proposals render as explicit confirmation UI.
 - Live web citations may be shown in chat review as a collapsed sources disclosure, but are not persisted as dedicated source metadata.
@@ -352,6 +355,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
       { "title": "SvelteKit docs", "url": "https://..." }
     ]
   },
+  "createOffer": null,
   "routing": {
     "intent": "create",
     "resolvedMode": "create",
@@ -404,6 +408,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - `routing.matchedNote` reports a conservative exact-match note hit from the latest user turn when one exists. `routing.targetNote` reports the effective note target for update flows, whether it came from an explicit `noteId` selection or inferred title/alias match.
 - Intent inference is conservative. Strong exact-title or alias matches may route into note-review behavior; weaker similarity should stay conversational and ask or suggest instead of silently picking a note target.
 - A prompt like "teach me about Django" should remain conversational even if a `Django` note exists. The server injects the matched note body for that chat turn so the assistant can summarize what is already saved and offer to research more or review it for updates without forcing an `update_note` proposal.
+- A conversational learning turn without a strong saved-note match may return `createOffer` metadata instead of an immediate `create_note` draft. The client can use that offer to append an explicit create follow-up turn and then render the normal editable draft panel from the resulting `create_note` proposal.
 - When the resolved intent is create, the assistant may return a `create_note` proposal while still answering conversationally about the topic.
 - For note proposals, `draft.category` is expected to be one of the canonical categories documented in [`docs/NOTES.md`](NOTES.md). The DB still stores `category` as `text`, but the product contract treats it as a controlled vocabulary.
 - For note proposals, `draft.tags` remain flexible `text[]` values, but the assistant should prefer already-established tags from the graph when they fit rather than inventing near-duplicates.
@@ -414,6 +419,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - Live web research is performed for create and update-style turns, including update review flows, so the comparison is always grounded in current information.
 - If the same topic is already known in the current conversation cache, the assistant should reuse that context rather than re-run the same live research.
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
+- Chat-mode responses should be biased toward concise markdown-friendly output, while create/update flows may still use larger output budgets for full draft generation.
 - OpenAI GPT-5-family requests may include adapter-level reasoning configuration without changing this endpoint contract.
 - No provider-side conversation identifier is part of this endpoint contract.
 - When chat history is resumed, the caller rebuilds the `messages` array from the saved transcript and sends that reconstructed conversation back through this same endpoint.

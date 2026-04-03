@@ -70,6 +70,7 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-37 | Intent routing defaults to inference from the conversation, but the UI may still expose explicit create/update override controls as hard user overrides | High |
 | F-38 | Existing-note detection is conservative: strong title or alias matches may route into note-review behavior, while weak matches stay conversational and ask or suggest rather than auto-targeting a note | High |
 | F-39 | Pure learning prompts about an existing note topic remain conversational first; the assistant may mention the saved note and offer to research more or review it for updates without forcing an update flow | High |
+| F-41 | Pure learning prompts without a strong saved-note match may surface a lightweight create-note offer, but they should not force an immediate full draft or silently switch the conversation into mutation mode | Medium |
 
 ### Live Research and Linking
 
