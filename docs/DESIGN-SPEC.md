@@ -171,7 +171,7 @@ Chat is now both the conversation surface and the primary authoring surface.
 ```
 [ history list / drawer ........ ][ centered conversation column ............................ ]
 [ recent chats / new chat ...... ][ minimal brand/title in empty state ...................... ]
-[ low-noise resume affordance ...][ composer chrome: inline model | skill-like mode chips .. ]
+[ low-noise resume affordance ...][ 21st-style composer chrome: inline model | skill chips . ]
 [ compact notebook index ........][ note picker row: visible only when Update is active .... ]
 [ ................................][ conversation area without a dashboard wrapper .......... ]
 [ ................................][ assistant proposal panel appears inline beneath message ]
@@ -290,6 +290,9 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 
 ### `Chat` surface
 - Compact mode selector: Auto | Create | Update
+- The persistent composer should follow the 21st.dev EaseMize AI Prompt Box reference closely in static layout and density: rounded prompt surface, textarea above, compact action row below, icon buttons/chips that expand into labeled active pills, subtle dividers between action clusters, and a circular send control at the far right
+- Techy's implementation must port the reference interaction model into Svelte rather than importing its React/shadcn implementation; do not add `framer-motion`, `lucide-react`, or Radix React dependencies
+- Limit the 21st.dev-inspired composer treatment to current Techy controls: Auto | Create | Update, provider, model, selected update note, and send. Do not add upload, voice, canvas, image preview, or stop-generation controls until the corresponding product/API contracts exist
 - A recent-conversations list or drawer allows the user to resume an older chat without leaving the chat surface
 - In Update mode, a full-width note picker appears below the composer chrome for choosing the note to review
 - Send is disabled in Update mode until a note is selected
@@ -300,7 +303,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
 - Successful create-note commits collapse the draft panel into a smaller success card linked to the saved note
-- Use Melt for selectors, confirmation affordances, and disclosure-style interaction where it improves accessibility
+- Use Melt for the exclusive mode control, provider/model selectors, tooltips, confirmation affordances, and disclosure-style interaction where it improves accessibility
 - Selecting a saved conversation restores its transcript; resuming it should not depend on provider-side hidden memory
 
 ---
@@ -349,6 +352,7 @@ GSAP should be limited to a few meaningful transitions:
 - assistant message reveal
 - proposal panel reveal/collapse
 - confirmation-state transitions
+- composer active-control transitions inspired by the 21st.dev reference, such as icon scale/rotation and active label width/opacity
 - subtle theme toggle choreography, if used
 - shared active-state movement in the left rail when route selection changes
 
@@ -356,14 +360,21 @@ Current implementation applies this to new assistant replies and proposal-state 
 
 Avoid decorative motion loops or broad page-wide animation.
 
+Composer motion rules:
+- Use GSAP or CSS transitions to reproduce the 21st.dev active-pill feel without decorative looping motion
+- Scope GSAP animations to the Svelte component and clean them up when the component unmounts or the animated state changes
+- Prefer CSS transitions for simple color, border, and hover changes; reserve GSAP for the active mode label/icon choreography where it improves continuity
+
 ---
 
 ## Melt UI Guidance
 
 Prefer Melt UI primitives where interaction quality matters:
-- create-mode toggle
+- Chat/Create/Update composer mode control, modeled as an exclusive control even when it visually resembles toggle chips
 - provider/model selectors
 - confirmation/disclosure interactions
 - any compact popover or command-like control near the composer
+
+When implementing reference-inspired controls, agents should first inspect the installed `melt` package examples/types or current Melt documentation for Svelte 5 builder/component usage. Match the reference's behavior with Melt primitives and Techy styling tokens rather than copying Radix React patterns directly.
 
 Do not use Melt as a pre-styled visual theme.

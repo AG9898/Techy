@@ -2671,6 +2671,46 @@
         "npm run check"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "UI-021",
+      "group_id": "UI",
+      "title": "21st.dev prompt-box fidelity pass",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Refine the current composer-integrated chat controls so the static prompt box and active-control behavior closely match the 21st.dev EaseMize reference.",
+      "description": "Refine the already composer-led `/chat` UI so its static state closely matches the 21st.dev EaseMize AI Prompt Box reference at https://21st.dev/community/components/easemize/ai-prompt-box/default while staying within Techy's token system, typography, current icons, and assistant API contract. The prompt box should look almost 1:1 with the reference in layout, spacing, density, rounded prompt surface, textarea position, bottom action row, active pill expansion, subtle action dividers, and far-right circular send control, but it must only expose current Techy controls: Auto/Create/Update, provider, model, selected update note, and send. Do not add upload, voice, canvas, image preview, or stop-generation affordances. Agents should inspect the 21st.dev live page/source/registry before implementing, inspect the installed `melt` package examples/types or current Melt docs for Svelte 5 `RadioGroup`, `Toggle`, `Tooltip`, and `Select` usage, and inspect GSAP docs or Context7 examples for scoped Svelte-compatible animation cleanup before coding.",
+      "acceptance_criteria": [
+        "The default `/chat` composer static layout closely reflects the 21st.dev prompt-box reference while using Techy tokens and local icon treatment",
+        "`Auto`, `Create`, and `Update` remain the visible mode controls and preserve the existing assistant request behavior",
+        "Provider and model controls remain available but visually secondary to the prompt and send action",
+        "Update mode still requires a selected note before send, with the note picker visually attached to the composer region",
+        "Active composer controls animate in a restrained 21st.dev-inspired way using GSAP or simpler CSS transitions where appropriate",
+        "No React, Radix React, `framer-motion`, `lucide-react`, upload, voice, canvas, image preview, or stop-generation behavior is introduced"
+      ],
+      "depends_on": [
+        "UI-019",
+        "UI-020"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/routes/(app)/chat/+page.server.ts"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Treat the 21st.dev component as a visual and interaction reference, not as code to import.",
+        "Melt should provide headless behavior only; match the reference through Techy CSS tokens rather than adopting Melt demo styling.",
+        "Use GSAP as the local substitute for Framer Motion only where active-control choreography benefits from it; simple hover/background changes can remain CSS transitions."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }

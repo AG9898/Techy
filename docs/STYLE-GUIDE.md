@@ -132,6 +132,7 @@ Desired feel:
 Rules:
 - keep the composer persistent and obvious
 - keep provider/model selectors and create/update overrides close to the composer so the thread remains the primary surface
+- the composer may absorb assistant controls when they stay compact, obvious, and secondary to the prompt itself
 - keep the conversation surface clean and spacious
 - show assistant proposals as review surfaces, not separate dashboards
 - after a create-note confirmation succeeds, hand the user back to the conversation with a compact success state rather than leaving the full proposal editor occupying the thread
@@ -149,6 +150,7 @@ Rules:
 - let the transcript feel flatter and more editorial than the current rounded-component treatment
 - use a compact inline create-offer card for eligible learning prompts instead of opening a full draft panel unprompted
 - reserve routing/status pills for states that change behavior, not plain conversational turns
+- for the next composer refinement, use the 21st.dev EaseMize AI Prompt Box as the primary static-state reference and reproduce its prompt-box layout, spacing, action-row density, active pill expansion, subtle dividers, and send-button placement as closely as practical within Techy's colors, icons, type, and accessibility constraints
 
 Recommended desktop arrangement:
 - a restrained history rail or drawer for recent chats
@@ -212,6 +214,8 @@ Rules:
 - keep the composer visually narrower and calmer than the full route width; it should feel like a centered prompt instrument, not a dashboard dock
 - show provider/model controls without turning the composer into a cockpit; keep the controls compact, smaller than the prompt field, and adjacent to it
 - prefer headless token-aware dropdowns for composer controls when native browser menus break readability or theme contrast
+- keep current controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider, model, selected note for Update, and send
+- do not surface unsupported reference actions such as upload, voice, canvas, image preview, or stop generation until the product and API contracts support them
 - let users resume prior conversations without making chat history the dominant visual element
 - render note proposals inline as editable review surfaces
 - when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
@@ -260,6 +264,7 @@ Good uses:
 - proposal panel enter/exit
 - assistant message reveal
 - confirmation-state transitions
+- 21st.dev-style composer state transitions for active controls, limited to short icon scale/rotation and active label width/opacity changes
 - subtle theme transition choreography
 - a shared active-state slide between left-rail destinations
 
@@ -267,17 +272,22 @@ Avoid:
 - perpetual looping motion
 - exaggerated hover animation
 - page-wide animation for minor state changes
+- recreating Framer Motion as a broad abstraction layer; use GSAP selectively or CSS transitions where simpler
 
 ---
 
 ## Melt Guidance
 
 Use Melt for behavior and accessibility primitives where the assistant flow benefits from them:
-- compact create/update override controls
+- compact Chat/Create/Update override controls
 - provider/model selectors
 - disclosure and confirmation UI
 - compact command-like controls
 - shell collapse / tucked-state disclosure where it improves accessibility and keyboard behavior
+
+Reference-inspired chat controls should use Melt for the accessible Svelte behavior that Radix provides in the original React component. Agents implementing this should inspect Melt's installed Svelte 5 builders/components and current docs for `RadioGroup`, `Toggle`, `Tooltip`, and `Select`, then style the resulting primitives to match the 21st.dev prompt-box reference rather than adopting Melt's visual examples.
+
+Use GSAP as the local substitute for Framer Motion when the reference relies on active-control choreography. Agents should consult GSAP guidance for scoped animations and cleanup in component lifecycles before adding animation code.
 
 Do not let Melt define the visual language.
 
