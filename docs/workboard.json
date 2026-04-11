@@ -2499,13 +2499,10 @@
         "The conversation empty state copy is clearly about the active thread, not the saved history area"
       ],
       "depends_on": [
-        "ASSIST-013",
+        "ASSIST-013d",
         "UI-019"
       ],
-      "blocked_by": [
-        "UI-018",
-        "ASSIST-013d"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts",
@@ -2654,9 +2651,7 @@
         "UI-019",
         "UI-020"
       ],
-      "blocked_by": [
-        "UI-018"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2694,9 +2689,7 @@
       "depends_on": [
         "UI-021"
       ],
-      "blocked_by": [
-        "UI-021"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2733,9 +2726,7 @@
       "depends_on": [
         "UI-022"
       ],
-      "blocked_by": [
-        "UI-022"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2773,9 +2764,7 @@
         "UI-021",
         "UI-023"
       ],
-      "blocked_by": [
-        "UI-023"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte"
       ],
@@ -2813,9 +2802,7 @@
         "UI-023",
         "UI-024"
       ],
-      "blocked_by": [
-        "UI-024"
-      ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.svelte"
       ],
@@ -2886,9 +2873,7 @@
         "npm run check passes"
       ],
       "depends_on": [],
-      "blocked_by": [
-        "ASSIST-013a"
-      ],
+      "blocked_by": [],
       "files": [
         "src/lib/server/assistant/conversations.ts"
       ],
@@ -2922,10 +2907,10 @@
         "Existing Auto/Create/Update mode behavior is unchanged",
         "npm run check passes"
       ],
-      "depends_on": [],
-      "blocked_by": [
+      "depends_on": [
         "ASSIST-013b"
       ],
+      "blocked_by": [],
       "files": [
         "src/routes/api/assistant/respond/+server.ts"
       ],
@@ -2958,11 +2943,11 @@
         "Starting a new chat from /chat remains possible without deleting saved conversations",
         "npm run prepare and npm run check both pass"
       ],
-      "depends_on": [],
-      "blocked_by": [
+      "depends_on": [
         "ASSIST-013b",
         "ASSIST-013c"
       ],
+      "blocked_by": [],
       "files": [
         "src/routes/(app)/chat/+page.server.ts",
         "src/routes/(app)/chat/[conversationId]/+page.server.ts",
