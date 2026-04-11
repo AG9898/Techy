@@ -749,10 +749,7 @@
 		{#if displayMessages.length === 0}
 			<div class="empty-stage">
 				<p class="empty-brand">Techy</p>
-				<h1>{overrideMode === 'create' ? 'Draft a note' : 'Chat'}</h1>
-				<p class="empty-copy">
-					Ask a question, request a draft, or review a note from the composer below.
-				</p>
+				<h1>Chat</h1>
 			</div>
 		{:else}
 			{#each displayMessages as msg}
@@ -1238,9 +1235,7 @@
 				</div>
 			</div>
 
-			{#if overrideMode === 'create'}
-				<p class="composer-context">Create mode drafts a new note inline.</p>
-			{:else if overrideMode === 'update' && selectedNote}
+			{#if overrideMode === 'update' && selectedNote}
 				<p class="composer-context">
 					Reviewing <a href={`/notes/${selectedNote.slug}`}>{selectedNote.title}</a>.
 				</p>
@@ -1375,14 +1370,6 @@
 		line-height: 1;
 		letter-spacing: -0.05em;
 		color: var(--text-primary);
-	}
-
-	.empty-copy {
-		margin: 0;
-		max-width: 28rem;
-		color: var(--text-secondary);
-		font-size: 0.88rem;
-		line-height: 1.55;
 	}
 
 	.message {

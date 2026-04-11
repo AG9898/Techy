@@ -1790,7 +1790,7 @@
       "id": "UI-010",
       "group_id": "UI",
       "title": "Melt UI primitives for assistant controls and review affordances",
-    "status": "done",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Use Melt primitives where the new assistant interaction model benefits from better accessibility and keyboard behavior.",
@@ -2446,7 +2446,7 @@
       "id": "ASSIST-012",
       "group_id": "ASSIST",
       "title": "Persist app-owned chat conversations and messages",
-    "status": "done",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add lean database-backed chat history storage for conversations and messages without persisting provider-side hidden memory or raw research payloads.",
@@ -2484,47 +2484,6 @@
       "estimate": "M"
     },
     {
-      "id": "ASSIST-013",
-      "group_id": "ASSIST",
-      "title": "Resume saved conversations from persisted transcript",
-      "status": "todo",
-      "priority": "high",
-      "type": "implementation",
-      "summary": "Expose recent conversations on `/chat`, add `/chat/[conversationId]`, and rebuild runtime context from saved messages when a thread is resumed.",
-      "description": "Implement the server-side load and routing support needed to reopen saved assistant conversations from app-owned transcript data. `/chat` should return recent conversation metadata, `/chat/[conversationId]` should load the selected transcript, and the chat runtime should rebuild the `messages` payload for subsequent assistant calls from the persisted message history instead of relying on provider-side memory.",
-      "acceptance_criteria": [
-        "`/chat` load returns recent conversation metadata alongside the existing provider and note data",
-        "`/chat/[conversationId]` loads conversation metadata plus saved messages for the selected thread",
-        "Resuming a conversation rebuilds the assistant request transcript from saved messages rather than provider-side hidden memory",
-        "Starting a new chat remains possible without deleting saved conversations"
-      ],
-      "depends_on": [
-        "ASSIST-012"
-      ],
-      "blocked_by": [],
-      "files": [
-        "src/routes/(app)/chat/+page.server.ts",
-        "src/routes/(app)/chat/[conversationId]/+page.server.ts",
-        "src/routes/(app)/chat/+page.svelte",
-        "src/routes/api/assistant/respond/+server.ts",
-        "src/lib/server/assistant/conversations.ts"
-      ],
-      "docs": [
-        "docs/PRD.md",
-        "docs/API.md",
-        "docs/ARCHITECTURE.md"
-      ],
-      "notes": [
-        "Treat the saved transcript as the product source of truth when resuming a thread.",
-        "Run `npm run prepare` in this task because it introduces a new route."
-      ],
-      "commands": [
-        "npm run prepare",
-        "npm run check"
-      ],
-      "estimate": "M"
-    },
-    {
       "id": "UI-017",
       "group_id": "UI",
       "title": "Chat history rail and resume UI",
@@ -2543,7 +2502,10 @@
         "ASSIST-013",
         "UI-019"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-018",
+        "ASSIST-013d"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts",
@@ -2568,7 +2530,7 @@
       "id": "UI-018",
       "group_id": "UI",
       "title": "Simplify chat shell and empty-state layout",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Remove the current cluttered chat header and boxed empty-state card in favor of a minimal centered entry state.",
@@ -2692,7 +2654,9 @@
         "UI-019",
         "UI-020"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-018"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2730,7 +2694,9 @@
       "depends_on": [
         "UI-021"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-021"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2767,7 +2733,9 @@
       "depends_on": [
         "UI-022"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-022"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte",
         "src/routes/(app)/chat/+page.server.ts"
@@ -2805,7 +2773,9 @@
         "UI-021",
         "UI-023"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-023"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte"
       ],
@@ -2843,7 +2813,9 @@
         "UI-023",
         "UI-024"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "UI-024"
+      ],
       "files": [
         "src/routes/(app)/chat/+page.svelte"
       ],
@@ -2859,6 +2831,157 @@
         "npm run check"
       ],
       "estimate": "S"
+    },
+    {
+      "id": "ASSIST-013a",
+      "group_id": "ASSIST",
+      "title": "Add conversation persistence schema and migration",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add conversations and conversation_messages tables to the Drizzle schema and apply migration to Neon.",
+      "description": "Add two new tables to schema.ts: conversations (id, userId, createdAt, updatedAt, title) and conversationMessages (id, conversationId, role, content, createdAt). Export TypeScript inference types. Run npm run db:generate then npm run db:migrate to apply. No other files should change.",
+      "acceptance_criteria": [
+        "schema.ts exports conversations and conversationMessages table definitions",
+        "TypeScript types Conversation, NewConversation, ConversationMessage, NewConversationMessage are exported",
+        "Migration SQL is generated and applied to Neon without errors",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-012"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/db/schema.ts"
+      ],
+      "docs": [
+        "docs/schema.md"
+      ],
+      "notes": [
+        "Run db:generate then db:migrate after schema changes.",
+        "conversations.userId references users.id with cascade delete.",
+        "conversationMessages.conversationId references conversations.id with cascade delete."
+      ],
+      "commands": [
+        "npm run db:generate",
+        "npm run db:migrate",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "ASSIST-013b",
+      "group_id": "ASSIST",
+      "title": "Conversation server module — CRUD queries",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Create src/lib/server/assistant/conversations.ts with typed query functions for creating conversations, appending messages, loading a thread, and listing recent conversations.",
+      "description": "Create the file src/lib/server/assistant/conversations.ts and export four functions: createConversation(userId, title?) → Conversation, appendMessages(conversationId, messages: {role, content}[]) → void, getConversation(conversationId, userId) → {conversation, messages} | null, listRecentConversations(userId, limit=20) → Conversation[]. All queries use the Drizzle db client from src/lib/server/db/index.ts. No route or page files change in this task.",
+      "acceptance_criteria": [
+        "createConversation inserts a row into conversations and returns the new record",
+        "appendMessages inserts one row per message into conversationMessages",
+        "getConversation returns the conversation with its messages ordered by createdAt, or null if not found or not owned by userId",
+        "listRecentConversations returns conversations ordered by updatedAt desc",
+        "npm run check passes"
+      ],
+      "depends_on": [],
+      "blocked_by": [
+        "ASSIST-013a"
+      ],
+      "files": [
+        "src/lib/server/assistant/conversations.ts"
+      ],
+      "docs": [
+        "docs/schema.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "This is a pure server-side data module — no SvelteKit route concerns here.",
+        "Use eq, desc, and asc from drizzle-orm for query predicates."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "ASSIST-013c",
+      "group_id": "ASSIST",
+      "title": "Persist messages in respond API",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Update the /api/assistant/respond endpoint to create or continue a conversation in the DB and persist user + assistant messages on each exchange.",
+      "description": "Modify src/routes/api/assistant/respond/+server.ts so that on each POST: (1) if no conversationId is provided in the request body, create a new conversation for the authenticated user; (2) append the incoming user message to the conversation; (3) after the assistant reply is generated, append the assistant message; (4) return conversationId in the JSON response alongside the existing reply fields. The request/response shape must remain backward-compatible — conversationId is an optional addition, not a replacement.",
+      "acceptance_criteria": [
+        "A new conversation row is created when conversationId is absent from the request",
+        "User message is persisted before the assistant call",
+        "Assistant message is persisted after the response is generated",
+        "conversationId is included in the JSON response",
+        "Existing Auto/Create/Update mode behavior is unchanged",
+        "npm run check passes"
+      ],
+      "depends_on": [],
+      "blocked_by": [
+        "ASSIST-013b"
+      ],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "The endpoint already has session auth — use the session userId for conversation ownership.",
+        "Keep streaming or non-streaming behavior unchanged; persistence is a side-effect."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "ASSIST-013d",
+      "group_id": "ASSIST",
+      "title": "Resume conversations via routing and page load",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Wire up /chat to return recent conversations, add /chat/[conversationId] route, and update the page to rebuild the messages array from a loaded transcript.",
+      "description": "Three changes: (1) update src/routes/(app)/chat/+page.server.ts load to call listRecentConversations and include results alongside existing provider/note data; (2) create src/routes/(app)/chat/[conversationId]/+page.server.ts that calls getConversation and returns conversation + messages (redirect to /chat if not found); (3) update src/routes/(app)/chat/+page.svelte to accept the conversations prop and, when a conversationId is present in page data, initialise the local messages state from the saved transcript so subsequent assistant calls continue from the right context. Run npm run prepare after adding the new route.",
+      "acceptance_criteria": [
+        "/chat load returns recent conversation metadata alongside the existing provider and note data",
+        "/chat/[conversationId] loads conversation metadata plus saved messages for the selected thread",
+        "Resuming a conversation rebuilds the assistant request transcript from saved messages",
+        "Starting a new chat from /chat remains possible without deleting saved conversations",
+        "npm run prepare and npm run check both pass"
+      ],
+      "depends_on": [],
+      "blocked_by": [
+        "ASSIST-013b",
+        "ASSIST-013c"
+      ],
+      "files": [
+        "src/routes/(app)/chat/+page.server.ts",
+        "src/routes/(app)/chat/[conversationId]/+page.server.ts",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Run npm run prepare after creating the new [conversationId] route.",
+        "The page already manages a local messages array — initialise it from data.messages when present."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
     }
   ]
 }
