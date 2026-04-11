@@ -15,6 +15,13 @@
       "when": 1774780529824,
       "tag": "0001_careless_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775893329759,
+      "tag": "0002_optimal_colossus",
+      "breakpoints": true
     }
   ]
 }

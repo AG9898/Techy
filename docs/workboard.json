@@ -2836,7 +2836,7 @@
       "id": "ASSIST-013a",
       "group_id": "ASSIST",
       "title": "Add conversation persistence schema and migration",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add conversations and conversation_messages tables to the Drizzle schema and apply migration to Neon.",

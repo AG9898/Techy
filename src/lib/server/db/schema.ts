@@ -119,9 +119,45 @@ export const noteRevisions = pgTable('note_revisions', {
 		.default(sql`now()`)
 });
 
+// ── Assistant conversation tables ─────────────────────────────────────────────
+
+export const conversations = pgTable('conversations', {
+	id: uuid('id')
+		.primaryKey()
+		.default(sql`gen_random_uuid()`),
+	userId: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	title: text('title'),
+	createdAt: timestamp('created_at', { mode: 'date' })
+		.notNull()
+		.default(sql`now()`),
+	updatedAt: timestamp('updated_at', { mode: 'date' })
+		.notNull()
+		.default(sql`now()`)
+});
+
+export const conversationMessages = pgTable('conversation_messages', {
+	id: uuid('id')
+		.primaryKey()
+		.default(sql`gen_random_uuid()`),
+	conversationId: uuid('conversation_id')
+		.notNull()
+		.references(() => conversations.id, { onDelete: 'cascade' }),
+	role: text('role', { enum: ['user', 'assistant'] }).notNull(),
+	content: text('content').notNull(),
+	createdAt: timestamp('created_at', { mode: 'date' })
+		.notNull()
+		.default(sql`now()`)
+});
+
 // ── Inferred TypeScript types ─────────────────────────────────────────────────
 
 export type Note = typeof notes.$inferSelect;
 export type NewNote = typeof notes.$inferInsert;
 export type NoteLink = typeof noteLinks.$inferSelect;
 export type NoteRevision = typeof noteRevisions.$inferSelect;
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type ConversationMessage = typeof conversationMessages.$inferSelect;
+export type NewConversationMessage = typeof conversationMessages.$inferInsert;

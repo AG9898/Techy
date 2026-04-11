@@ -129,42 +129,33 @@ Behavior notes:
 - revisions are read-only after insert
 - deleting a note deletes its revisions through cascade
 
----
+#### `conversations`
 
-## Planned Assistant-First Schema Additions
+Container table for app-owned assistant conversation history.
 
-These tables are part of the documented target direction but are not present in `src/lib/server/db/schema.ts` today.
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | Primary key, defaults to `gen_random_uuid()` |
+| `user_id` | `text` | Required, references `users.id`, `ON DELETE CASCADE` |
+| `title` | `text` | Optional conversation title |
+| `created_at` | `timestamp` | Required, defaults to `now()` |
+| `updated_at` | `timestamp` | Required, defaults to `now()` |
 
-### `chat_conversations`
+#### `conversation_messages`
 
-Planned conversation container table for app-owned assistant history.
+Transcript table linked to `conversations`.
 
-Expected fields:
-- `id` UUID primary key
-- `title` optional text
-- `created_at`
-- `updated_at`
-- `last_message_at`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | Primary key, defaults to `gen_random_uuid()` |
+| `conversation_id` | `uuid` | Required, references `conversations.id`, `ON DELETE CASCADE` |
+| `role` | `text` | Required enum: `user` \| `assistant` |
+| `content` | `text` | Required message content |
+| `created_at` | `timestamp` | Required, defaults to `now()` |
 
-### `chat_messages`
-
-Planned transcript table linked to `chat_conversations`.
-
-Expected fields:
-- `id` UUID primary key
-- `conversation_id` foreign key to `chat_conversations.id` with `ON DELETE CASCADE`
-- `role` constrained to `user` or `assistant`
-- `content`
-- `citations` JSONB
-- `proposal` JSONB
-- `created_at`
-
-Persistence rules for the planned chat tables:
+Persistence rules:
 - store app-owned canonical transcript data only
-- store lightweight citations and proposal snapshots when present
-- do not introduce a dedicated citation table in this phase
-- do not persist provider-managed conversation IDs
-- do not persist raw live-research payloads or the ephemeral topic cache as durable state
+- do not persist provider-managed conversation IDs or ephemeral live-research payloads
 
 ---
 
