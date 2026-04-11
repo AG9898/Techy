@@ -2638,7 +2638,7 @@
       "id": "UI-021",
       "group_id": "UI",
       "title": "21st.dev composer static layout",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Refine the current composer-integrated chat controls so the default prompt box closely matches the 21st.dev EaseMize static reference.",

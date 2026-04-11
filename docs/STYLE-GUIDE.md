@@ -150,7 +150,7 @@ Rules:
 - let the transcript feel flatter and more editorial than the current rounded-component treatment
 - use a compact inline create-offer card for eligible learning prompts instead of opening a full draft panel unprompted
 - reserve routing/status pills for states that change behavior, not plain conversational turns
-- for the next composer refinement, use the 21st.dev EaseMize AI Prompt Box as the primary static-state reference and reproduce its prompt-box layout, spacing, action-row density, active pill expansion, subtle dividers, and send-button placement as closely as practical within Techy's colors, icons, type, and accessibility constraints
+- the current composer uses the 21st.dev EaseMize AI Prompt Box as the primary static-state reference and reproduces its prompt-box layout, spacing, action-row density, active pill expansion, subtle dividers, and send-button placement as closely as practical within Techy's colors, icons, type, and accessibility constraints
 
 Recommended desktop arrangement:
 - a restrained history rail or drawer for recent chats
