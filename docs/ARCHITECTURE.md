@@ -94,6 +94,7 @@ src/
 │   │   ├── assistant/
 │   │   │   ├── orchestrator.ts
 │   │   │   ├── research.ts
+│   │   │   ├── conversations.ts
 │   │   │   ├── proposals.ts
 │   │   │   └── commit.ts
 │   │   ├── auth.ts
@@ -202,7 +203,7 @@ Delete proposals stay behind an explicit-intent gate. The shared prompt may surf
 
 The target architecture uses app-owned transcript storage rather than provider-owned session state. Canonical history should store message content, lightweight citations, and proposal snapshots when present, while avoiding provider conversation IDs, raw hidden context, and raw research payloads as durable state.
 
-The current Drizzle schema does not yet contain the planned chat-history tables described in the target direction. See [`docs/schema.md`](schema.md) for the distinction between current tables and planned schema additions.
+The current Drizzle schema contains the app-owned `conversations` and `conversation_messages` tables described in [`docs/schema.md`](schema.md). Server-side conversation persistence is wrapped by `src/lib/server/assistant/conversations.ts`, which creates conversations, appends transcript messages, loads owned threads, and lists recent conversations by `updated_at`.
 
 ### Provider / Model Abstraction
 

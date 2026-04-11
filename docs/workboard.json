@@ -2873,7 +2873,7 @@
       "id": "ASSIST-013b",
       "group_id": "ASSIST",
       "title": "Conversation server module — CRUD queries",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create src/lib/server/assistant/conversations.ts with typed query functions for creating conversations, appending messages, loading a thread, and listing recent conversations.",
