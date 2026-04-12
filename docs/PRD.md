@@ -93,6 +93,8 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 | F-30 | Chat history storage stays lean enough for Neon free-tier usage by storing canonical transcript data, proposal snapshots, and lightweight citation records only | Medium |
 | F-40 | Assistant responses may surface that a related note already exists and invite further research or review without automatically shifting the conversation into mutation mode | Medium |
 
+Implementation note: `/chat` now loads recent saved conversation metadata for the signed-in user, while `/chat/[conversationId]` loads an owned saved transcript and uses it to rebuild the client-side assistant message payload before the next model request. Starting from `/chat` still creates a new app-owned conversation on the first assistant response.
+
 Implementation note: the runtime should achieve this through one shared assistant identity with internal conversation, create, update, and explicit-delete skills layered by routing context rather than by exposing separate primary assistant personas.
 
 ### UI Direction

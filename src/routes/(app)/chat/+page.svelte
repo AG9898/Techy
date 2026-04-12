@@ -18,6 +18,7 @@
 		provider: ProviderId;
 		model: string;
 		topicCache: Record<string, unknown>;
+		conversationId?: string;
 		override?: AssistantMode;
 		noteId?: string;
 	};
@@ -127,10 +128,30 @@
 		routing: RoutingState | null;
 	}
 
+	interface SavedConversation {
+		id: string;
+		title: string | null;
+		createdAt: Date | string;
+		updatedAt: Date | string;
+	}
+
+	interface SavedConversationMessage {
+		id: string;
+		role: 'user' | 'assistant';
+		content: string;
+		createdAt: Date | string;
+	}
+
+	type ChatPageData = Omit<PageData, 'conversations' | 'conversation' | 'messages'> & {
+		conversations?: SavedConversation[];
+		conversation?: SavedConversation | null;
+		messages?: SavedConversationMessage[];
+	};
+
 	type DisplayMessage = UserMessage | AssistantMessage;
 	type ElementRefMap<T extends HTMLElement = HTMLElement> = Map<string, T>;
 
-	const { data }: { data: PageData } = $props();
+	const { data }: { data: ChatPageData } = $props();
 
 	let selectedProvider = $state<ProviderId>(
 		untrack(() => data.defaultProvider as ProviderId)
@@ -141,13 +162,18 @@
 	let composerValue = $state('');
 	let isLoading = $state(false);
 	let topicCache = $state<Record<string, unknown>>({});
-	let conversationHistory = $state<AssistantMessageInput[]>([]);
-	let displayMessages = $state<DisplayMessage[]>([]);
+	let activeConversationId = $state(untrack(() => data.conversation?.id ?? ''));
+	let conversationHistory = $state<AssistantMessageInput[]>(
+		untrack(() => savedMessagesToHistory(data.messages ?? []))
+	);
+	let displayMessages = $state<DisplayMessage[]>(
+		untrack(() => savedMessagesToDisplayMessages(data.messages ?? []))
+	);
 	let commitStates = $state<Record<string, CommitState>>({});
 	let compactSuccessStates = $state<Record<string, boolean>>({});
 	let draftStates = $state<Record<string, DraftEditorState>>({});
 	let conversationEl: HTMLDivElement | null = null;
-	let messageCounter = 0;
+	let messageCounter = untrack(() => data.messages?.length ?? 0);
 	let didMount = false;
 
 	const assistantPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
@@ -244,6 +270,35 @@
 	function nextMessageId(prefix: string): string {
 		messageCounter += 1;
 		return `${prefix}-${messageCounter}`;
+	}
+
+	function savedMessagesToHistory(messages: SavedConversationMessage[]): AssistantMessageInput[] {
+		return messages.map((message) => ({
+			role: message.role,
+			content: message.content
+		}));
+	}
+
+	function savedMessagesToDisplayMessages(messages: SavedConversationMessage[]): DisplayMessage[] {
+		return messages.map((message) => {
+			if (message.role === 'user') {
+				return {
+					id: message.id,
+					role: 'user',
+					content: message.content
+				};
+			}
+
+			return {
+				id: message.id,
+				role: 'assistant',
+				content: message.content,
+				citations: [],
+				proposal: null,
+				createOffer: null,
+				routing: null
+			};
+		});
 	}
 
 	function setOverride(mode: AssistantMode | null) {
@@ -401,6 +456,10 @@
 
 		if (requestOverride === 'update' && requestNoteId) {
 			body.noteId = requestNoteId;
+		}
+
+		if (activeConversationId) {
+			body.conversationId = activeConversationId;
 		}
 
 		return body;
@@ -683,6 +742,7 @@
 				const proposal: NoteProposal | null = data.proposal ?? null;
 				const createOffer: CreateOffer | null = data.createOffer ?? null;
 				const routing: RoutingState | null = data.routing ?? null;
+				const responseConversationId: string | undefined = data.conversationId;
 				const assistantMessage: AssistantMessage = {
 					id: nextMessageId('assistant'),
 					role: 'assistant',
@@ -695,6 +755,10 @@
 
 				if (data.topicCache && typeof data.topicCache === 'object') {
 					topicCache = data.topicCache as Record<string, unknown>;
+				}
+
+				if (responseConversationId) {
+					activeConversationId = responseConversationId;
 				}
 
 				displayMessages = [...displayMessages, assistantMessage];

@@ -1,6 +1,10 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
 import { PROVIDERS, DEFAULT_PROVIDER, DEFAULT_MODEL } from '$lib/server/ai/models.js';
-import { listRecentConversations } from '$lib/server/assistant/conversations.js';
+import {
+	getConversation,
+	listRecentConversations
+} from '$lib/server/assistant/conversations.js';
 import { db } from '$lib/server/db/index.js';
 import { notes } from '$lib/server/db/schema.js';
 import { asc } from 'drizzle-orm';
@@ -33,19 +37,30 @@ async function listChatNotes() {
 		.orderBy(asc(notes.title));
 }
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, params }) => {
 	const session = await locals.auth();
 	const userId = session?.user?.id;
+
+	if (!userId) {
+		redirect(303, '/signin');
+	}
+
+	const savedConversation = await getConversation(params.conversationId, userId);
+
+	if (!savedConversation) {
+		redirect(303, '/chat');
+	}
+
 	const [notesList, conversations] = await Promise.all([
 		listChatNotes(),
-		userId ? listRecentConversations(userId) : Promise.resolve([])
+		listRecentConversations(userId)
 	]);
 
 	return {
 		...providerOptions(),
 		notes: notesList,
 		conversations,
-		conversation: null,
-		messages: []
+		conversation: savedConversation.conversation,
+		messages: savedConversation.messages
 	};
 };

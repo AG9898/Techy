@@ -2931,7 +2931,7 @@
       "id": "ASSIST-013d",
       "group_id": "ASSIST",
       "title": "Resume conversations via routing and page load",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire up /chat to return recent conversations, add /chat/[conversationId] route, and update the page to rebuild the messages array from a loaded transcript.",

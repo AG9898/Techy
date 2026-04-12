@@ -151,19 +151,30 @@ Primary assistant surface for conversation and note authoring.
     status: 'stub' | 'growing' | 'mature',
     updatedAt: string
   }[],
-  conversations?: { id: string, title: string | null, updatedAt: string, lastMessagePreview?: string }[],
-  activeConversation?: {
+  conversations: { id: string, title: string | null, createdAt: string, updatedAt: string }[],
+  conversation: null,
+  messages: []
+}
+```
+
+`GET /chat` starts with an empty transcript. The first successful `POST /api/assistant/respond` call creates the app-owned conversation and returns its `conversationId`.
+
+**Resumed route-compatible page data shape:**
+```ts
+{
+  // same provider, model, note, and conversations fields as above
+  conversation: {
     id: string,
     title: string | null,
-    messages: {
-      id: string,
-      role: 'user' | 'assistant',
-      content: string,
-      citations?: { title: string, url: string }[],
-      proposal?: unknown | null,
-      createdAt: string
-    }[]
-  } | null
+    createdAt: string,
+    updatedAt: string
+  },
+  messages: {
+    id: string,
+    role: 'user' | 'assistant',
+    content: string,
+    createdAt: string
+  }[]
 }
 ```
 
@@ -181,6 +192,7 @@ Primary assistant surface for conversation and note authoring.
 - For topic-learning prompts in `Auto` mode that do not strongly match an existing saved note, the response may include a lightweight `createOffer` CTA so the user can explicitly open the normal create-note draft flow from the same turn.
 - The page may render create/update proposals as editable inline draft panels and delete proposals as explicit confirmation cards.
 - The page submits full conversation state to `POST /api/assistant/respond`.
+- When loaded from `/chat/[conversationId]`, the page rebuilds the submitted `messages` payload from the saved transcript and includes the app-owned `conversationId` on subsequent respond calls.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
 - The UI should continue to initialize provider/model state from those server-supplied defaults rather than introducing visual-only overrides.
 - Respond-time prompt grounding also includes the shared canonical note-category list and a bounded deterministic list of existing lower-case note tags so create/update drafts reuse established taxonomy when possible.
@@ -220,8 +232,6 @@ Resume a previously saved assistant conversation.
     id: string,
     role: 'user' | 'assistant',
     content: string,
-    citations?: { title: string, url: string }[],
-    proposal?: unknown | null,
     createdAt: string
   }[],
   providers: {
@@ -232,12 +242,22 @@ Resume a previously saved assistant conversation.
   }[],
   defaultProvider: 'anthropic' | 'openai',
   defaultModel: string,
-  notes: { id: string, title: string, slug: string, aliases: string[] }[]
+  notes: {
+    id: string,
+    title: string,
+    slug: string,
+    aliases: string[],
+    category: string | null,
+    status: 'stub' | 'growing' | 'mature',
+    updatedAt: string
+  }[],
+  conversations: { id: string, title: string | null, createdAt: string, updatedAt: string }[]
 }
 ```
 
 **Notes:**
 - The saved transcript is the canonical source of resumed chat state.
+- If the conversation is missing or is not owned by the signed-in user, the route redirects to `/chat`.
 - Provider-specific conversation IDs or hidden memory are not part of the route contract.
 - Older messages may later be truncated or summarized when rebuilding model context, but the saved transcript remains the product source of truth.
 

@@ -209,6 +209,8 @@ The target architecture uses app-owned transcript storage rather than provider-o
 
 The current Drizzle schema contains the app-owned `conversations` and `conversation_messages` tables described in [`docs/schema.md`](schema.md). Server-side conversation persistence is wrapped by `src/lib/server/assistant/conversations.ts`, which creates conversations, appends transcript messages, loads owned threads, and lists recent conversations by `updated_at`. `POST /api/assistant/respond` uses that wrapper to create a conversation when the request omits `conversationId`, verify session ownership when it is present, and persist the latest user and assistant message content for each successful exchange.
 
+The chat page load now participates in that same app-owned history boundary. `GET /chat` loads recent conversation metadata for the signed-in user alongside provider options and note targeting data, while `GET /chat/[conversationId]` verifies ownership with `getConversation`, redirects missing or unowned ids back to `/chat`, and returns the saved transcript. The browser rebuilds its local display and assistant request messages from those saved rows and includes the app-owned `conversationId` on follow-up respond calls.
+
 ### Provider / Model Abstraction
 
 Assistant routes accept provider/model pairs rather than hard-coding a single model family.
