@@ -2680,7 +2680,8 @@
 	}
 
 	.composer-actions {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.65rem;
@@ -2874,7 +2875,6 @@
 		}
 
 		.composer-actions,
-		.composer-actions__left,
 		.match-card__actions,
 		.proposal-toolbar {
 			flex-wrap: wrap;

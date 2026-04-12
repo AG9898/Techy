@@ -2785,7 +2785,7 @@
       "id": "UI-025",
       "group_id": "UI",
       "title": "Composer responsive visual QA",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Verify the 21st.dev-inspired composer across desktop and mobile states after layout, behavior, Melt, and motion work land.",
