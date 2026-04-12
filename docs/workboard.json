@@ -2487,7 +2487,7 @@
       "id": "UI-017",
       "group_id": "UI",
       "title": "Chat history rail and resume UI",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "feature",
       "summary": "Add the restrained recent-conversations rail or drawer described in the chat spec so saved threads can be reopened without competing with the active conversation.",

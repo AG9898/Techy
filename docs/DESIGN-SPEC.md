@@ -188,6 +188,7 @@ The assistant must be able to:
 Chat layout rules:
 - The initial chat state defaults to inference-first `Auto`.
 - Empty chat should use a centered, minimal entry state rather than a large explanatory card.
+- The current `/chat` layout renders saved conversations as a restrained desktop notebook index with a compact new-chat affordance, while mobile collapses that same history into a Recent chats drawer above the active thread.
 - Remove non-essential top-of-page copy and status pills; the page should not open with a heavy header block.
 - The composer should sit in a centered narrow column rather than stretching like a full-width dashboard dock.
 - The conversation text bar should be materially smaller than the current wide dock treatment: reduced width, reduced height, reduced padding, and a calmer send affordance.

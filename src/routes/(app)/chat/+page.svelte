@@ -163,6 +163,7 @@
 	let isLoading = $state(false);
 	let topicCache = $state<Record<string, unknown>>({});
 	let activeConversationId = $state(untrack(() => data.conversation?.id ?? ''));
+	let isHistoryDrawerOpen = $state(false);
 	let conversationHistory = $state<AssistantMessageInput[]>(
 		untrack(() => savedMessagesToHistory(data.messages ?? []))
 	);
@@ -215,6 +216,8 @@
 		data.providers.find((provider) => provider.id === selectedProvider)?.models ?? []
 	);
 
+	const savedConversations = $derived(data.conversations ?? []);
+	const hasSavedConversations = $derived(savedConversations.length > 0);
 	const selectedNote = $derived.by(() => data.notes.find((note) => note.id === selectedNoteId) ?? null);
 	const composerMode: ComposerModeValue = $derived(
 		overrideMode === 'create' || overrideMode === 'update' ? overrideMode : 'auto'
@@ -468,6 +471,10 @@
 	function noteCardLabel(note: ChatNote): string {
 		const category = note.category ? note.category : 'Uncategorised';
 		return `${category} · ${note.status}`;
+	}
+
+	function conversationTitle(conversation: SavedConversation): string {
+		return conversation.title?.trim() || 'Untitled chat';
 	}
 
 	async function scrollToBottom() {
@@ -834,26 +841,92 @@
 </svelte:head>
 
 <div class="chat-page">
-	<div class="conversation-stream" class:conversation-stream--empty={displayMessages.length === 0} bind:this={conversationEl} aria-label="Conversation">
-		{#if displayMessages.length === 0}
-			<div class="empty-stage">
-				<p class="empty-brand">Techy</p>
-				<h1>Chat</h1>
-			</div>
-		{:else}
-			{#each displayMessages as msg}
-				{#if msg.role === 'user'}
-					<article class="message message--user">
-						<div class="message-bubble message-bubble--user">
-							<p>{msg.content}</p>
-						</div>
-					</article>
+	<div class="history-mobile">
+		<details class="history-drawer" bind:open={isHistoryDrawerOpen}>
+			<summary>
+				<span>Recent chats</span>
+				<span class="history-drawer__count">{savedConversations.length}</span>
+			</summary>
+			<div class="history-drawer__body">
+				<a class="history-new history-new--mobile" href="/chat" onclick={() => (isHistoryDrawerOpen = false)}>
+					<span>New chat</span>
+					<span aria-hidden="true">+</span>
+				</a>
+				{#if hasSavedConversations}
+					<nav class="history-list" aria-label="Saved conversations">
+						{#each savedConversations as conversation}
+							<a
+								class="history-item"
+								class:history-item--active={conversation.id === activeConversationId}
+								href={`/chat/${conversation.id}`}
+								aria-current={conversation.id === activeConversationId ? 'page' : undefined}
+								onclick={() => (isHistoryDrawerOpen = false)}
+							>
+								<span class="history-item__title">{conversationTitle(conversation)}</span>
+								<span class="history-item__time">{formatRelativeTime(conversation.updatedAt)}</span>
+							</a>
+						{/each}
+					</nav>
 				{:else}
-					<article class="message message--assistant">
-						<div
-							class="assistant-panel"
-							use:bindElementToMap={{ id: msg.id, map: assistantPanelRefs }}
+					<p class="history-empty">Saved chats will collect here after the first reply.</p>
+				{/if}
+			</div>
+		</details>
+	</div>
+
+	<div class="chat-shell">
+		<aside class="history-rail" aria-label="Recent conversations">
+			<div class="history-rail__head">
+				<div>
+					<p>Notebook index</p>
+					<h2>Recent</h2>
+				</div>
+				<a class="history-new" href="/chat" aria-label="Start a new chat">
+					<span aria-hidden="true">+</span>
+				</a>
+			</div>
+
+			{#if hasSavedConversations}
+				<nav class="history-list" aria-label="Saved conversations">
+					{#each savedConversations as conversation}
+						<a
+							class="history-item"
+							class:history-item--active={conversation.id === activeConversationId}
+							href={`/chat/${conversation.id}`}
+							aria-current={conversation.id === activeConversationId ? 'page' : undefined}
 						>
+							<span class="history-item__title">{conversationTitle(conversation)}</span>
+							<span class="history-item__time">{formatRelativeTime(conversation.updatedAt)}</span>
+						</a>
+					{/each}
+				</nav>
+			{:else}
+				<p class="history-empty">Saved chats will collect here after the first reply.</p>
+			{/if}
+		</aside>
+
+		<section class="chat-main" aria-label="Active conversation">
+			<div class="conversation-stream" class:conversation-stream--empty={displayMessages.length === 0} bind:this={conversationEl} aria-label="Conversation">
+				{#if displayMessages.length === 0}
+					<div class="empty-stage">
+						<p class="empty-brand">Techy</p>
+						<h1>New chat</h1>
+						<p class="empty-copy">This thread is empty. Start here or reopen a saved chat from Recent.</p>
+					</div>
+				{:else}
+					{#each displayMessages as msg}
+						{#if msg.role === 'user'}
+							<article class="message message--user">
+								<div class="message-bubble message-bubble--user">
+									<p>{msg.content}</p>
+								</div>
+							</article>
+						{:else}
+							<article class="message message--assistant">
+								<div
+									class="assistant-panel"
+									use:bindElementToMap={{ id: msg.id, map: assistantPanelRefs }}
+								>
 							<div class="message-meta">
 								<span class="message-role">Assistant</span>
 								{#if msg.routing}
@@ -1231,167 +1304,169 @@
 						</div>
 					</article>
 				{/if}
-			{/each}
+					{/each}
 
-			{#if isLoading}
-				<div class="loading-row" aria-live="polite">
-					<div class="loading-dots">
-						<span></span>
-						<span></span>
-						<span></span>
-					</div>
-					<p>Thinking…</p>
-				</div>
-			{/if}
-		{/if}
-	</div>
-
-	<div class="composer-shell">
-		<div class="composer-dock">
-			<textarea
-				class="composer-input"
-				placeholder={overrideMode === 'create'
-					? 'Describe the note you want drafted...'
-					: overrideMode === 'update'
-						? 'Ask to review, revise, or fix the selected note...'
-						: 'Ask about your notes, request a draft, or start a review...'}
-				rows="2"
-				disabled={isLoading}
-				bind:value={composerValue}
-				onkeydown={(event) => {
-					if (event.key === 'Enter' && !event.shiftKey) {
-						event.preventDefault();
-						sendMessage();
-					}
-				}}
-			></textarea>
-
-			<div class="composer-actions">
-				<div class="composer-actions__left">
-					<div class="mode-pill-group" aria-label="Assistant mode">
-						{#each modeOptions as option}
-							<button
-								type="button"
-								class="mode-pill"
-								class:mode-pill--active={composerMode === option.value}
-								aria-pressed={composerMode === option.value}
-								onclick={() => setOverride(option.value === 'auto' ? null : option.value)}
-							>
-								{option.label}
-							</button>
-						{/each}
-					</div>
-
-					<div class="composer-divider" aria-hidden="true"></div>
-
-					<div class="select-wrap">
-						<div class="select-chip select-chip--secondary">
-							<span>Provider</span>
-							<button type="button" class="composer-select-trigger" {...providerSelect.trigger}>
-								<span class="composer-select-value">{currentProviderLabel()}</span>
-								<span class="composer-select-chevron" aria-hidden="true">⌄</span>
-							</button>
+					{#if isLoading}
+						<div class="loading-row" aria-live="polite">
+							<div class="loading-dots">
+								<span></span>
+								<span></span>
+								<span></span>
+							</div>
+							<p>Thinking…</p>
 						</div>
-						<div class="composer-select-menu" {...providerSelect.content}>
-							{#each data.providers as provider}
-								<div
-									class="composer-select-option"
-									class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
-									{...providerSelect.getOption(provider.id, provider.label)}
-								>
-									<span>{provider.label}</span>
-									{#if providerSelect.isSelected(provider.id)}
-										<span class="composer-select-check" aria-hidden="true">•</span>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</div>
-
-					<div class="composer-divider" aria-hidden="true"></div>
-
-					<div class="select-wrap">
-						<div class="select-chip select-chip--primary">
-							<span>Model</span>
-							<button type="button" class="composer-select-trigger" {...modelSelect.trigger}>
-								<span class="composer-select-value">{currentModelLabel()}</span>
-								<span class="composer-select-chevron" aria-hidden="true">⌄</span>
-							</button>
-						</div>
-						<div class="composer-select-menu" {...modelSelect.content}>
-							{#each currentProviderModels as model}
-								<div
-									class="composer-select-option"
-									class:composer-select-option--selected={modelSelect.isSelected(model.id)}
-									{...modelSelect.getOption(model.id, model.label)}
-								>
-									<span>{model.label}</span>
-									{#if modelSelect.isSelected(model.id)}
-										<span class="composer-select-check" aria-hidden="true">•</span>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					class="send-btn"
-					aria-label={sendButtonLabel}
-					disabled={isSendDisabled}
-					onclick={sendMessage}
-				>
-					<span aria-hidden="true">{isLoading ? '...' : '↑'}</span>
-				</button>
+					{/if}
+				{/if}
 			</div>
 
-			{#if overrideMode === 'update'}
-				<div class="note-select-row">
-					<div class="select-wrap select-wrap--full">
+			<div class="composer-shell">
+				<div class="composer-dock">
+					<textarea
+						class="composer-input"
+						placeholder={overrideMode === 'create'
+							? 'Describe the note you want drafted...'
+							: overrideMode === 'update'
+								? 'Ask to review, revise, or fix the selected note...'
+								: 'Ask about your notes, request a draft, or start a review...'}
+						rows="2"
+						disabled={isLoading}
+						bind:value={composerValue}
+						onkeydown={(event) => {
+							if (event.key === 'Enter' && !event.shiftKey) {
+								event.preventDefault();
+								sendMessage();
+							}
+						}}
+					></textarea>
+
+					<div class="composer-actions">
+						<div class="composer-actions__left">
+							<div class="mode-pill-group" aria-label="Assistant mode">
+								{#each modeOptions as option}
+									<button
+										type="button"
+										class="mode-pill"
+										class:mode-pill--active={composerMode === option.value}
+										aria-pressed={composerMode === option.value}
+										onclick={() => setOverride(option.value === 'auto' ? null : option.value)}
+									>
+										{option.label}
+									</button>
+								{/each}
+							</div>
+
+							<div class="composer-divider" aria-hidden="true"></div>
+
+							<div class="select-wrap">
+								<div class="select-chip select-chip--secondary">
+									<span>Provider</span>
+									<button type="button" class="composer-select-trigger" {...providerSelect.trigger}>
+										<span class="composer-select-value">{currentProviderLabel()}</span>
+										<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+									</button>
+								</div>
+								<div class="composer-select-menu" {...providerSelect.content}>
+									{#each data.providers as provider}
+										<div
+											class="composer-select-option"
+											class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
+											{...providerSelect.getOption(provider.id, provider.label)}
+										>
+											<span>{provider.label}</span>
+											{#if providerSelect.isSelected(provider.id)}
+												<span class="composer-select-check" aria-hidden="true">•</span>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+
+							<div class="composer-divider" aria-hidden="true"></div>
+
+							<div class="select-wrap">
+								<div class="select-chip select-chip--primary">
+									<span>Model</span>
+									<button type="button" class="composer-select-trigger" {...modelSelect.trigger}>
+										<span class="composer-select-value">{currentModelLabel()}</span>
+										<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+									</button>
+								</div>
+								<div class="composer-select-menu" {...modelSelect.content}>
+									{#each currentProviderModels as model}
+										<div
+											class="composer-select-option"
+											class:composer-select-option--selected={modelSelect.isSelected(model.id)}
+											{...modelSelect.getOption(model.id, model.label)}
+										>
+											<span>{model.label}</span>
+											{#if modelSelect.isSelected(model.id)}
+												<span class="composer-select-check" aria-hidden="true">•</span>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							</div>
+						</div>
+
 						<button
 							type="button"
-							class="note-select-trigger"
-							{...noteTargetSelect.trigger}
+							class="send-btn"
+							aria-label={sendButtonLabel}
+							disabled={isSendDisabled}
+							onclick={sendMessage}
 						>
-							<span class="note-select-label">
-								{#if selectedNote}
-									Reviewing
-								{:else}
-									Review target
-								{/if}
-							</span>
-							<span class="composer-select-value">{currentNoteTargetLabel()}</span>
-							<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+							<span aria-hidden="true">{isLoading ? '...' : '↑'}</span>
 						</button>
-						<div class="composer-select-menu composer-select-menu--note" {...noteTargetSelect.content}>
-							<div
-								class="composer-select-option"
-								class:composer-select-option--selected={noteTargetSelect.isSelected('')}
-								{...noteTargetSelect.getOption('', 'Select a saved note')}
-							>
-								<span>Select a saved note</span>
-							</div>
-							{#each data.notes as note}
-								<div
-									class="composer-select-option composer-select-option--stacked"
-									class:composer-select-option--selected={noteTargetSelect.isSelected(note.id)}
-									{...noteTargetSelect.getOption(
-										note.id,
-										`${note.title}${note.category ? ` · ${note.category}` : ''} · ${note.status}`
-									)}
-								>
-									<span>{note.title}</span>
-									<span class="composer-select-meta">
-										{note.category ? `${note.category} · ` : ''}{note.status}
-									</span>
-								</div>
-							{/each}
-						</div>
 					</div>
+
+					{#if overrideMode === 'update'}
+						<div class="note-select-row">
+							<div class="select-wrap select-wrap--full">
+								<button
+									type="button"
+									class="note-select-trigger"
+									{...noteTargetSelect.trigger}
+								>
+									<span class="note-select-label">
+										{#if selectedNote}
+											Reviewing
+										{:else}
+											Review target
+										{/if}
+									</span>
+									<span class="composer-select-value">{currentNoteTargetLabel()}</span>
+									<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+								</button>
+								<div class="composer-select-menu composer-select-menu--note" {...noteTargetSelect.content}>
+									<div
+										class="composer-select-option"
+										class:composer-select-option--selected={noteTargetSelect.isSelected('')}
+										{...noteTargetSelect.getOption('', 'Select a saved note')}
+									>
+										<span>Select a saved note</span>
+									</div>
+									{#each data.notes as note}
+										<div
+											class="composer-select-option composer-select-option--stacked"
+											class:composer-select-option--selected={noteTargetSelect.isSelected(note.id)}
+											{...noteTargetSelect.getOption(
+												note.id,
+												`${note.title}${note.category ? ` · ${note.category}` : ''} · ${note.status}`
+											)}
+										>
+											<span>{note.title}</span>
+											<span class="composer-select-meta">
+												{note.category ? `${note.category} · ` : ''}{note.status}
+											</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+						</div>
+					{/if}
 				</div>
-			{/if}
-		</div>
+			</div>
+		</section>
 	</div>
 </div>
 
@@ -1400,7 +1475,203 @@
 		min-height: calc(100vh - 4rem);
 		display: flex;
 		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.chat-shell {
+		flex: 1;
+		min-height: 0;
+		display: grid;
+		grid-template-columns: minmax(10.5rem, 13.75rem) minmax(0, 1fr);
+		gap: clamp(1rem, 3vw, 2.4rem);
+		align-items: stretch;
+		width: 100%;
+		max-width: 78rem;
+		margin: 0 auto;
+	}
+
+	.chat-main {
+		min-width: 0;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
 		gap: 1.25rem;
+	}
+
+	.history-mobile {
+		display: none;
+	}
+
+	.history-rail {
+		align-self: start;
+		position: sticky;
+		top: 0.75rem;
+		display: grid;
+		gap: 0.85rem;
+		max-height: calc(100vh - 6rem);
+		overflow: hidden;
+		padding: 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--border-soft) 78%, transparent);
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--bg-surface) 68%, transparent);
+	}
+
+	.history-rail__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.15rem 0.15rem 0.35rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 72%, transparent);
+	}
+
+	.history-rail__head p {
+		margin: 0;
+		color: var(--text-subtle);
+		font-size: 0.64rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.history-rail__head h2 {
+		margin: 0.12rem 0 0;
+		color: var(--text-secondary);
+		font-size: 0.92rem;
+		line-height: 1.2;
+	}
+
+	.history-new {
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.45rem;
+		min-height: 2rem;
+		padding: 0.45rem 0.62rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--accent-soft) 18%, var(--bg-raised));
+		color: var(--accent-primary);
+		font-size: 0.82rem;
+		font-weight: 700;
+		text-decoration: none;
+		transition:
+			border-color 150ms ease,
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.history-new:hover {
+		border-color: var(--border-strong);
+		color: var(--accent-strong);
+	}
+
+	.history-list {
+		display: grid;
+		gap: 0.22rem;
+		overflow: auto;
+		padding-right: 0.1rem;
+	}
+
+	.history-item {
+		display: grid;
+		gap: 0.2rem;
+		padding: 0.58rem 0.62rem;
+		border: 1px solid transparent;
+		border-radius: 0.5rem;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition:
+			background 150ms ease,
+			border-color 150ms ease,
+			color 150ms ease;
+	}
+
+	.history-item:hover,
+	.history-item--active {
+		border-color: color-mix(in srgb, var(--accent-strong) 24%, var(--border-soft));
+		background: color-mix(in srgb, var(--accent-soft) 14%, var(--bg-raised));
+		color: var(--text-primary);
+	}
+
+	.history-item__title {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.82rem;
+		font-weight: 700;
+		line-height: 1.25;
+	}
+
+	.history-item__time,
+	.history-empty {
+		color: var(--text-subtle);
+		font-size: 0.72rem;
+		line-height: 1.45;
+	}
+
+	.history-empty {
+		margin: 0;
+		padding: 0.2rem 0.15rem;
+	}
+
+	.history-drawer {
+		border: 1px solid color-mix(in srgb, var(--border-soft) 78%, transparent);
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--bg-surface) 76%, transparent);
+	}
+
+	.history-drawer summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-height: 2.6rem;
+		padding: 0.55rem 0.7rem;
+		color: var(--text-secondary);
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.history-drawer summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.history-drawer summary::after {
+		content: '⌄';
+		color: var(--text-subtle);
+		font-size: 0.72rem;
+		transition: transform 150ms ease;
+	}
+
+	.history-drawer[open] summary::after {
+		transform: rotate(180deg);
+	}
+
+	.history-drawer__count {
+		margin-left: auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.5rem;
+		padding: 0.12rem 0.42rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		color: var(--text-subtle);
+		font-size: 0.72rem;
+	}
+
+	.history-drawer__body {
+		display: grid;
+		gap: 0.55rem;
+		padding: 0 0.55rem 0.6rem;
+	}
+
+	.history-new--mobile {
+		width: 100%;
 	}
 
 	.conversation-stream {
@@ -1412,7 +1683,7 @@
 		overflow: auto;
 		padding-right: 0.25rem;
 		scrollbar-gutter: stable;
-		max-width: 68rem;
+		max-width: 54rem;
 		width: 100%;
 		margin: 0 auto;
 	}
@@ -1443,8 +1714,15 @@
 		margin: 0;
 		font-size: clamp(2rem, 4vw, 3.25rem);
 		line-height: 1;
-		letter-spacing: -0.05em;
 		color: var(--text-primary);
+	}
+
+	.empty-copy {
+		max-width: 24rem;
+		margin: 0;
+		color: var(--text-muted);
+		font-size: 0.9rem;
+		line-height: 1.55;
 	}
 
 	.message {
@@ -2370,6 +2648,22 @@
 	}
 
 	@media (max-width: 960px) {
+		.chat-shell {
+			display: block;
+			max-width: 54rem;
+		}
+
+		.history-rail {
+			display: none;
+		}
+
+		.history-mobile {
+			display: block;
+			width: 100%;
+			max-width: 54rem;
+			margin: 0 auto;
+		}
+
 		.empty-stage {
 			min-height: 22vh;
 		}
@@ -2386,6 +2680,11 @@
 	@media (max-width: 680px) {
 		.chat-page {
 			min-height: auto;
+		}
+
+		.history-mobile,
+		.chat-shell {
+			max-width: 100%;
 		}
 
 		.message-bubble,
@@ -2455,6 +2754,9 @@
 		.mode-pill,
 		.composer-select-chevron,
 		.composer-select-option,
+		.history-drawer summary::after,
+		.history-new,
+		.history-item,
 		.loading-dots span {
 			transition: none;
 		}

@@ -217,6 +217,7 @@ Rules:
 - keep current controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider, model, selected note for Update, and send
 - do not surface unsupported reference actions such as upload, voice, canvas, image preview, or stop generation until the product and API contracts support them
 - let users resume prior conversations without making chat history the dominant visual element
+- present saved conversations as a quiet Recent notebook index on desktop and collapse them into a compact drawer on mobile
 - render note proposals inline as editable review surfaces
 - when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
 - show citations during review without overwhelming the draft itself; prefer a collapsed low-noise sources disclosure over inline source dumps
