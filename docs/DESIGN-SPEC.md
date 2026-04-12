@@ -202,6 +202,8 @@ Chat layout rules:
 - The main chat surface should not be wrapped in a generic dashboard-style container component; the conversation area itself stays visually open.
 - Chat should follow the modern AI-reference layout rhythm from `references/UI/chat-example.png`, translated through Techy's tokens and type system rather than copied literally.
 - The current `/chat` composer uses the 21st.dev EaseMize prompt-box static layout as its structural reference: prompt text area above, compact action row below, visible `Auto` / `Create` / `Update` mode pills, secondary provider and model controls, subtle action dividers, conditional update-note picker, and a far-right circular send control.
+- The composer mode pills are a Melt `RadioGroup` styled as compact chips, so `Auto`, `Create`, and `Update` remain one keyboard-accessible single-choice control with visible token-based focus treatment.
+- The composer provider, model, and update-note pickers use Melt `Select` primitives styled through Techy tokens rather than browser-native select menus in the prompt box chrome.
 
 ### Conversational Create Offer
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
-	import { Select as MeltSelect } from 'melt/builders';
+	import { RadioGroup as MeltRadioGroup, Select as MeltSelect } from 'melt/builders';
 	import { marked } from 'marked';
 	import type { PageData } from './$types.js';
 	import { loadGsap, prefersReducedMotion } from '$lib/client/motion';
@@ -188,6 +188,20 @@
 		{ value: 'update', label: 'Update' }
 	];
 
+	const composerMode: ComposerModeValue = $derived(
+		overrideMode === 'create' || overrideMode === 'update' ? overrideMode : 'auto'
+	);
+
+	const modeRadioGroup = new MeltRadioGroup({
+		value: () => composerMode,
+		orientation: 'horizontal',
+		name: 'assistant-mode',
+		onValueChange: (value) => {
+			const nextMode = value as ComposerModeValue;
+			setOverride(nextMode === 'auto' ? null : nextMode);
+		}
+	});
+
 	const providerSelect = new MeltSelect<ProviderId>({
 		value: () => selectedProvider,
 		onValueChange: (value) => {
@@ -219,9 +233,6 @@
 	const savedConversations = $derived(data.conversations ?? []);
 	const hasSavedConversations = $derived(savedConversations.length > 0);
 	const selectedNote = $derived.by(() => data.notes.find((note) => note.id === selectedNoteId) ?? null);
-	const composerMode: ComposerModeValue = $derived(
-		overrideMode === 'create' || overrideMode === 'update' ? overrideMode : 'auto'
-	);
 	const isComposerEmpty = $derived(composerValue.trim().length === 0);
 	const isUpdateTargetMissing = $derived(overrideMode === 'update' && !selectedNoteId);
 	const isSendDisabled = $derived(isComposerEmpty || isLoading || isUpdateTargetMissing);
@@ -1341,18 +1352,20 @@
 
 					<div class="composer-actions">
 						<div class="composer-actions__left">
-							<div class="mode-pill-group" aria-label="Assistant mode">
+							<div class="mode-pill-group" {...modeRadioGroup.root}>
+								<span id={modeRadioGroup.ids.label} class="sr-only">Assistant mode</span>
 								{#each modeOptions as option}
+									{@const modeItem = modeRadioGroup.getItem(option.value)}
 									<button
 										type="button"
 										class="mode-pill"
-										class:mode-pill--active={composerMode === option.value}
-										aria-pressed={composerMode === option.value}
-										onclick={() => setOverride(option.value === 'auto' ? null : option.value)}
+										class:mode-pill--active={modeItem.checked}
+										{...modeItem.attrs}
 									>
 										{option.label}
 									</button>
 								{/each}
+								<input {...modeRadioGroup.hiddenInput} />
 							</div>
 
 							<div class="composer-divider" aria-hidden="true"></div>
@@ -1471,6 +1484,18 @@
 </div>
 
 <style>
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
 	.chat-page {
 		min-height: calc(100vh - 4rem);
 		display: flex;
@@ -2369,6 +2394,12 @@
 		outline: none;
 	}
 
+	.composer-select-trigger:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--accent-strong) 70%, transparent);
+		outline-offset: 0.18rem;
+		border-radius: 0.35rem;
+	}
+
 	.composer-select-value {
 		min-width: 0;
 		overflow: hidden;
@@ -2503,6 +2534,7 @@
 	}
 
 	.note-select-trigger:focus,
+	.note-select-trigger:focus-visible,
 	.note-select-trigger:has(+ [data-open]) {
 		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
@@ -2580,6 +2612,11 @@
 	.mode-pill--active {
 		background: color-mix(in srgb, var(--accent-soft) 36%, var(--bg-surface));
 		color: var(--accent-primary);
+	}
+
+	.mode-pill:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--accent-strong) 70%, transparent);
+		outline-offset: 0.12rem;
 	}
 
 	.composer-divider {

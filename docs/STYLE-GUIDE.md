@@ -214,6 +214,7 @@ Rules:
 - keep the composer visually narrower and calmer than the full route width; it should feel like a centered prompt instrument, not a dashboard dock
 - show provider/model controls without turning the composer into a cockpit; keep the controls compact, smaller than the prompt field, and adjacent to it
 - prefer headless token-aware dropdowns for composer controls when native browser menus break readability or theme contrast
+- preserve accessible single-choice semantics, keyboard navigation, and visible focus states for the `Auto` / `Create` / `Update` mode selector even when it is styled as compact chips
 - keep current controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider, model, selected note for Update, and send
 - do not surface unsupported reference actions such as upload, voice, canvas, image preview, or stop generation until the product and API contracts support them
 - let users resume prior conversations without making chat history the dominant visual element

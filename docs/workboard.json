@@ -2711,7 +2711,7 @@
       "id": "UI-023",
       "group_id": "UI",
       "title": "Melt composer accessibility primitives",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Use Melt where useful to make the 21st.dev-inspired composer controls keyboard accessible without changing Techy's visual language.",
