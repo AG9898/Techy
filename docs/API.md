@@ -325,6 +325,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
   "override": "create",
   "provider": "anthropic",
   "model": "claude-opus-4-6",
+  "conversationId": "optional-existing-conversation-id",
   "topicCache": {
     "sveltekit adapters": {
       "summary": "...",
@@ -342,6 +343,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 | `override` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
 | `provider` | yes | `"anthropic"` \| `"openai"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
+| `conversationId` | no | UUID of an existing owned conversation to continue. When omitted, the endpoint creates a new conversation for the authenticated user and returns its id. |
 | `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
 | `noteId` | conditional | UUID of the selected note to compare. Required only when the resolved intent is `"update"` and no strong exact title/alias note match can be resolved from the latest user turn. |
 | `mode` | temporary | Legacy compatibility field during migration. Its semantics match `override`, and when both are present `override` wins. |
@@ -394,12 +396,17 @@ Target direction: the assistant resolves intent server-side from the conversatio
         { "title": "SvelteKit docs", "url": "https://..." }
       ]
     }
-  }
+  },
+  "conversationId": "saved-conversation-id"
 }
 ```
 
 **Behaviour:**
 - The assistant remains conversational regardless of the resolved intent.
+- The endpoint requires an authenticated session and uses the session user id as the conversation owner.
+- If `conversationId` is omitted, the endpoint creates a new conversation row before calling the assistant.
+- If `conversationId` is provided, it must identify an existing conversation owned by the authenticated user.
+- The latest incoming user message is appended before the provider call; the generated assistant message content is appended after a successful response.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
 - Prompt assembly starts from one shared assistant identity and layers routed skill instructions for conversation, create, update, and explicit-delete behavior on top.
@@ -421,13 +428,14 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - Citations are review-only and are not persisted as dedicated DB metadata in this phase.
 - Chat-mode responses should be biased toward concise markdown-friendly output, while create/update flows may still use larger output budgets for full draft generation.
 - OpenAI GPT-5-family requests may include adapter-level reasoning configuration without changing this endpoint contract.
-- No provider-side conversation identifier is part of this endpoint contract.
+- No provider-side conversation identifier is part of this endpoint contract. The returned `conversationId` is the app-owned persisted transcript id.
 - When chat history is resumed, the caller rebuilds the `messages` array from the saved transcript and sends that reconstructed conversation back through this same endpoint.
 - `topicCache` is an ephemeral optimization and is not intended to be the persisted source of truth for chat history.
 
 **Errors:**
 - `400` — invalid body, missing messages, invalid provider/model combination, invalid selected `noteId`, or update routing with neither a selected note nor a strong exact match
-- `401` — invalid or missing provider API key
+- `401` — missing app session, or invalid or missing provider API key
+- `404` — provided `conversationId` was not found for the authenticated user
 - `429` — provider rate limit exceeded
 - `500` — assistant orchestration or provider failure
 

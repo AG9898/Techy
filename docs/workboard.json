@@ -2894,7 +2894,7 @@
       "id": "ASSIST-013c",
       "group_id": "ASSIST",
       "title": "Persist messages in respond API",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Update the /api/assistant/respond endpoint to create or continue a conversation in the DB and persist user + assistant messages on each exchange.",

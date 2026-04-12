@@ -7,6 +7,11 @@ import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
 import {
+	appendMessages,
+	createConversation,
+	getConversation
+} from '$lib/server/assistant/conversations.js';
+import {
 	extractLearningTopic,
 	isTopicLearningPrompt,
 	resolveAssistantRouting
@@ -53,7 +58,7 @@ function collectPromptTags(tagSets: string[][]): string[] {
  * to avoid re-researching the same topic within a session.
  * Returns a conversational reply plus an optional structured note proposal.
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ locals, request }) => {
 	let body: unknown;
 	try {
 		body = await request.json();
@@ -65,10 +70,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Request body must be a JSON object' }, { status: 400 });
 	}
 
-	const { messages, mode, override, provider, model, topicCache, noteId } = body as Record<
-		string,
-		unknown
-	>;
+	const { messages, mode, override, provider, model, topicCache, noteId, conversationId } =
+		body as Record<string, unknown>;
 
 	// Validate messages
 	if (!Array.isArray(messages) || messages.length === 0) {
@@ -110,7 +113,38 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 
+	if (conversationId !== undefined && typeof conversationId !== 'string') {
+		return json({ error: 'conversationId must be a string' }, { status: 400 });
+	}
+
+	const session = await locals.auth();
+	const userId = session?.user?.id;
+
+	if (!userId) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	const typedMessages = messages as ConversationMessage[];
+	const latestUserMessage = [...typedMessages].reverse().find((message) => message.role === 'user');
+
+	if (!latestUserMessage) {
+		return json({ error: 'messages must include at least one user message' }, { status: 400 });
+	}
+
+	let resolvedConversationId = conversationId?.trim() ?? '';
+	if (resolvedConversationId) {
+		const existingConversation = await getConversation(resolvedConversationId, userId);
+		if (!existingConversation) {
+			return json({ error: 'Conversation not found' }, { status: 404 });
+		}
+	} else {
+		const conversation = await createConversation(userId, buildConversationTitle(latestUserMessage.content));
+		resolvedConversationId = conversation.id;
+	}
+
+	await appendMessages(resolvedConversationId, [
+		{ role: 'user', content: latestUserMessage.content }
+	]);
 
 	// Load existing notes for context injection, note matching, and patch resolution.
 	const allNotes = await db
@@ -282,12 +316,17 @@ export const POST: RequestHandler = async ({ request }) => {
 			routing.latestUserMessage
 		);
 
+		await appendMessages(resolvedConversationId, [
+			{ role: 'assistant', content: result.assistantMessage.content }
+		]);
+
 		return json({
 			assistantMessage: result.assistantMessage,
 			proposal: result.proposal ?? null,
 			createOffer,
 			topicCache: cache,
-			routing
+			routing,
+			conversationId: resolvedConversationId
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
@@ -311,6 +350,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Assistant request failed' }, { status: 500 });
 	}
 };
+
+function buildConversationTitle(content: string): string | undefined {
+	const title = content.trim().replace(/\s+/g, ' ').slice(0, 80);
+	return title || undefined;
+}
 
 const EXPLICIT_DELETE_INTENT_PATTERNS = [
 	/\bdelete\b/,

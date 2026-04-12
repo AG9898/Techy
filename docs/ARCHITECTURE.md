@@ -155,6 +155,8 @@ The dedicated `/notes/new` route has been removed; new-note authoring stays insi
 
 `POST /api/assistant/respond` is the runtime boundary for:
 - validating the provider/model pair against the server allowlist
+- creating a new app-owned conversation, or validating ownership of an existing one, for the authenticated session user
+- appending the latest user turn before the provider call and the generated assistant turn after a successful response
 - resolving the user's intent from the conversation and any explicit UI override
 - conservatively matching the turn to an existing note when update/review behavior is plausible
 - loading matched-note body context for note-aware conversational turns when a strong exact title or alias hit exists
@@ -170,13 +172,15 @@ The dedicated `/notes/new` route has been removed; new-note authoring stays insi
 
 Target request-time sequence:
 1. validate provider/model
-2. inspect the transcript and optional override to resolve intent
-3. attempt conservative existing-note matching when update/review behavior is plausible
-4. gather live research for create/update-style turns
-5. assemble one shared assistant-identity prompt plus layered skill-specific routing context
-6. normalize the assistant response and any proposal metadata for the UI
+2. create or validate the app-owned conversation for the session user and persist the incoming user turn
+3. inspect the transcript and optional override to resolve intent
+4. attempt conservative existing-note matching when update/review behavior is plausible
+5. gather live research for create/update-style turns
+6. assemble one shared assistant-identity prompt plus layered skill-specific routing context
+7. normalize the assistant response and any proposal metadata for the UI
+8. persist the generated assistant turn and return the app-owned `conversationId`
 
-The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint.
+The endpoint is stateless with respect to provider-managed hidden conversation memory. When a saved conversation is resumed, the app rebuilds the transcript from app-owned history and sends that transcript back through the same endpoint with the app-owned `conversationId`.
 
 The shared router lives in `src/lib/server/assistant/routing.ts`. It normalizes the new `override` field plus the legacy `mode` alias, inspects the latest user turn, attempts conservative exact title/alias matching against saved notes, and returns routing metadata (`overrideSource`, `matchedNote`, `targetNote`, `noteId`) alongside the assistant response so the UI can expose the resolved branch without guessing on the client. Strong note matches do not automatically force mutation mode: in conversational routing, the respond endpoint can inject the matched note body into the shared prompt so the model can summarize what is already saved and offer follow-up research or review without emitting an update proposal.
 The note-section contract itself lives in `src/lib/utils/note-structure.ts`, which is imported by both the prompt builder and the assistant commit validator so the allowed sections and validation messages do not drift.
@@ -203,7 +207,7 @@ Delete proposals stay behind an explicit-intent gate. The shared prompt may surf
 
 The target architecture uses app-owned transcript storage rather than provider-owned session state. Canonical history should store message content, lightweight citations, and proposal snapshots when present, while avoiding provider conversation IDs, raw hidden context, and raw research payloads as durable state.
 
-The current Drizzle schema contains the app-owned `conversations` and `conversation_messages` tables described in [`docs/schema.md`](schema.md). Server-side conversation persistence is wrapped by `src/lib/server/assistant/conversations.ts`, which creates conversations, appends transcript messages, loads owned threads, and lists recent conversations by `updated_at`.
+The current Drizzle schema contains the app-owned `conversations` and `conversation_messages` tables described in [`docs/schema.md`](schema.md). Server-side conversation persistence is wrapped by `src/lib/server/assistant/conversations.ts`, which creates conversations, appends transcript messages, loads owned threads, and lists recent conversations by `updated_at`. `POST /api/assistant/respond` uses that wrapper to create a conversation when the request omits `conversationId`, verify session ownership when it is present, and persist the latest user and assistant message content for each successful exchange.
 
 ### Provider / Model Abstraction
 
