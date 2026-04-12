@@ -174,18 +174,21 @@
 	let compactSuccessStates = $state<Record<string, boolean>>({});
 	let draftStates = $state<Record<string, DraftEditorState>>({});
 	let conversationEl: HTMLDivElement | null = null;
+	let composerControlsEl: HTMLDivElement | null = null;
 	let messageCounter = untrack(() => data.messages?.length ?? 0);
 	let didMount = false;
+	let lastAnimatedComposerMode: ComposerModeValue = 'auto';
+	let cleanupComposerModeAnimation: (() => void) | null = null;
 
 	const assistantPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const proposalPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const previewPaneRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const commitFeedbackRefs: ElementRefMap<HTMLElement> = new Map();
 
-	const modeOptions: Array<{ value: ComposerModeValue; label: string }> = [
-		{ value: 'auto', label: 'Auto' },
-		{ value: 'create', label: 'Create' },
-		{ value: 'update', label: 'Update' }
+	const modeOptions: Array<{ value: ComposerModeValue; label: string; icon: string }> = [
+		{ value: 'auto', label: 'Auto', icon: 'A' },
+		{ value: 'create', label: 'Create', icon: '+' },
+		{ value: 'update', label: 'Update', icon: '↻' }
 	];
 
 	const composerMode: ComposerModeValue = $derived(
@@ -258,6 +261,42 @@
 
 	onMount(() => {
 		didMount = true;
+
+		return () => {
+			cleanupComposerModeAnimation?.();
+		};
+	});
+
+	$effect(() => {
+		const nextMode = composerMode;
+		const root = composerControlsEl;
+
+		if (!didMount || !root) {
+			lastAnimatedComposerMode = nextMode;
+			return;
+		}
+
+		if (nextMode === lastAnimatedComposerMode) return;
+
+		lastAnimatedComposerMode = nextMode;
+		let cancelled = false;
+		cleanupComposerModeAnimation?.();
+		cleanupComposerModeAnimation = null;
+
+		void animateComposerModeChange(root, nextMode).then((cleanup) => {
+			if (cancelled) {
+				cleanup?.();
+				return;
+			}
+
+			cleanupComposerModeAnimation = cleanup;
+		});
+
+		return () => {
+			cancelled = true;
+			cleanupComposerModeAnimation?.();
+			cleanupComposerModeAnimation = null;
+		};
 	});
 
 	function bindElementToMap<T extends HTMLElement>(
@@ -562,6 +601,75 @@
 			{ autoAlpha: 0, y: 8 },
 			{ autoAlpha: 1, y: 0, duration: 0.18, ease: 'power2.out', clearProps: 'opacity,transform' }
 		);
+	}
+
+	async function animateComposerModeChange(root: HTMLElement, mode: ComposerModeValue) {
+		if (prefersReducedMotion()) return null;
+
+		const gsap = await loadGsap();
+		if (!gsap) return null;
+
+		const ctx = gsap.context(() => {
+			const activeButton = root.querySelector<HTMLElement>(`[data-mode-value="${mode}"]`);
+			if (!activeButton) return;
+
+			const activeIcon = activeButton.querySelector<HTMLElement>('.mode-pill__icon');
+			const activeLabel = activeButton.querySelector<HTMLElement>('.mode-pill__label');
+			const inactiveLabels = Array.from(
+				root.querySelectorAll<HTMLElement>(`.mode-pill:not([data-mode-value="${mode}"]) .mode-pill__label`)
+			);
+			const targets = [activeButton, activeIcon, activeLabel, ...inactiveLabels].filter(
+				Boolean
+			) as HTMLElement[];
+
+			gsap.killTweensOf(targets);
+
+			if (inactiveLabels.length) {
+				gsap.to(inactiveLabels, {
+					maxWidth: 0,
+					autoAlpha: 0,
+					duration: 0.14,
+					ease: 'power2.out',
+					clearProps: 'opacity,visibility'
+				});
+			}
+
+			if (activeLabel) {
+				gsap.fromTo(
+					activeLabel,
+					{ maxWidth: 0, autoAlpha: 0 },
+					{
+						maxWidth: activeLabel.scrollWidth,
+						autoAlpha: 1,
+						duration: 0.2,
+						ease: 'power2.out',
+						clearProps: 'max-width,opacity,visibility'
+					}
+				);
+			}
+
+			if (activeIcon) {
+				gsap.fromTo(
+					activeIcon,
+					{ scale: 0.9, rotate: -8 },
+					{
+						scale: 1,
+						rotate: 0,
+						duration: 0.18,
+						ease: 'back.out(2)',
+						clearProps: 'transform'
+					}
+				);
+			}
+
+			gsap.fromTo(
+				activeButton,
+				{ scale: 0.985 },
+				{ scale: 1, duration: 0.18, ease: 'power2.out', clearProps: 'transform' }
+			);
+		}, root);
+
+		return () => ctx.revert();
 	}
 
 	async function collapseCreateProposal(messageId: string) {
@@ -1352,7 +1460,7 @@
 
 					<div class="composer-actions">
 						<div class="composer-actions__left">
-							<div class="mode-pill-group" {...modeRadioGroup.root}>
+							<div class="mode-pill-group" bind:this={composerControlsEl} {...modeRadioGroup.root}>
 								<span id={modeRadioGroup.ids.label} class="sr-only">Assistant mode</span>
 								{#each modeOptions as option}
 									{@const modeItem = modeRadioGroup.getItem(option.value)}
@@ -1360,9 +1468,11 @@
 										type="button"
 										class="mode-pill"
 										class:mode-pill--active={modeItem.checked}
+										data-mode-value={option.value}
 										{...modeItem.attrs}
 									>
-										{option.label}
+										<span class="mode-pill__icon" aria-hidden="true">{option.icon}</span>
+										<span class="mode-pill__label">{option.label}</span>
 									</button>
 								{/each}
 								<input {...modeRadioGroup.hiddenInput} />
@@ -2588,12 +2698,19 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2rem;
+		width: 10.6rem;
 		padding: 0.12rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--bg-raised) 64%, transparent);
 	}
 
 	.mode-pill {
+		flex: 0 0 2rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.32rem;
+		min-width: 0;
 		border: 0;
 		border-radius: 999px;
 		background: transparent;
@@ -2604,12 +2721,14 @@
 		line-height: 1;
 		padding: 0.46rem 0.58rem;
 		cursor: pointer;
+		overflow: hidden;
 		transition:
 			background 150ms ease,
 			color 150ms ease;
 	}
 
 	.mode-pill--active {
+		flex: 1 1 auto;
 		background: color-mix(in srgb, var(--accent-soft) 36%, var(--bg-surface));
 		color: var(--accent-primary);
 	}
@@ -2617,6 +2736,30 @@
 	.mode-pill:focus-visible {
 		outline: 2px solid color-mix(in srgb, var(--accent-strong) 70%, transparent);
 		outline-offset: 0.12rem;
+	}
+
+	.mode-pill__icon {
+		flex: 0 0 auto;
+		display: inline-grid;
+		place-items: center;
+		width: 0.85rem;
+		line-height: 1;
+	}
+
+	.mode-pill__label {
+		display: inline-block;
+		max-width: 0;
+		overflow: hidden;
+		opacity: 0;
+		white-space: nowrap;
+		transition:
+			max-width 180ms ease,
+			opacity 150ms ease;
+	}
+
+	.mode-pill--active .mode-pill__label {
+		max-width: 4rem;
+		opacity: 1;
 	}
 
 	.composer-divider {
@@ -2758,6 +2901,7 @@
 
 		.mode-pill-group {
 			justify-content: space-between;
+			width: 100%;
 		}
 
 		.mode-pill {
@@ -2789,6 +2933,7 @@
 		.ghost-btn,
 		.send-btn,
 		.mode-pill,
+		.mode-pill__label,
 		.composer-select-chevron,
 		.composer-select-option,
 		.history-drawer summary::after,

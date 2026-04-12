@@ -2748,7 +2748,7 @@
       "id": "UI-024",
       "group_id": "UI",
       "title": "GSAP composer motion parity",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Add restrained 21st.dev-style active-control motion to the composer using GSAP or simpler CSS transitions.",
