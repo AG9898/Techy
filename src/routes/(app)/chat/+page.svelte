@@ -11,6 +11,16 @@
 	type AssistantMode = 'chat' | 'create' | 'update';
 	type ComposerModeValue = 'auto' | 'create' | 'update';
 	type NoteStatus = 'stub' | 'growing' | 'mature';
+	type AssistantMessageInput = { role: 'user' | 'assistant'; content: string };
+	type SubmitMessageOptions = { override?: AssistantMode | null; noteId?: string };
+	type AssistantRequestBody = {
+		messages: AssistantMessageInput[];
+		provider: ProviderId;
+		model: string;
+		topicCache: Record<string, unknown>;
+		override?: AssistantMode;
+		noteId?: string;
+	};
 
 	interface ChatNote {
 		id: string;
@@ -131,7 +141,7 @@
 	let composerValue = $state('');
 	let isLoading = $state(false);
 	let topicCache = $state<Record<string, unknown>>({});
-	let conversationHistory = $state<{ role: 'user' | 'assistant'; content: string }[]>([]);
+	let conversationHistory = $state<AssistantMessageInput[]>([]);
 	let displayMessages = $state<DisplayMessage[]>([]);
 	let commitStates = $state<Record<string, CommitState>>({});
 	let compactSuccessStates = $state<Record<string, boolean>>({});
@@ -180,6 +190,18 @@
 	);
 
 	const selectedNote = $derived.by(() => data.notes.find((note) => note.id === selectedNoteId) ?? null);
+	const composerMode: ComposerModeValue = $derived(
+		overrideMode === 'create' || overrideMode === 'update' ? overrideMode : 'auto'
+	);
+	const isComposerEmpty = $derived(composerValue.trim().length === 0);
+	const isUpdateTargetMissing = $derived(overrideMode === 'update' && !selectedNoteId);
+	const isSendDisabled = $derived(isComposerEmpty || isLoading || isUpdateTargetMissing);
+	const sendButtonLabel = $derived.by(() => {
+		if (isLoading) return 'Sending message';
+		if (isUpdateTargetMissing) return 'Select a note before sending';
+		if (isComposerEmpty) return 'Enter a message before sending';
+		return 'Send message';
+	});
 	const noteLookupById = $derived.by(
 		() => new Map(data.notes.map((note) => [note.id, note] as const))
 	);
@@ -349,6 +371,39 @@
 
 	function currentNoteTargetLabel(): string {
 		return selectedNote?.title ?? 'Select a saved note';
+	}
+
+	function canSubmitAssistantMessage(
+		content: string,
+		requestOverride: AssistantMode | null,
+		requestNoteId: string
+	): boolean {
+		if (!content || isLoading) return false;
+		return requestOverride !== 'update' || Boolean(requestNoteId);
+	}
+
+	function buildAssistantRequestBody(
+		messages: AssistantMessageInput[],
+		options: SubmitMessageOptions
+	): AssistantRequestBody {
+		const requestOverride = options.override ?? null;
+		const requestNoteId = options.noteId ?? '';
+		const body: AssistantRequestBody = {
+			messages,
+			provider: selectedProvider,
+			model: selectedModel,
+			topicCache
+		};
+
+		if (requestOverride) {
+			body.override = requestOverride;
+		}
+
+		if (requestOverride === 'update' && requestNoteId) {
+			body.noteId = requestNoteId;
+		}
+
+		return body;
 	}
 
 	function noteCardLabel(note: ChatNote): string {
@@ -592,16 +647,12 @@
 		}
 	}
 
-	async function submitMessage(
-		content: string,
-		options: { override?: AssistantMode | null; noteId?: string } = {}
-	) {
+	async function submitMessage(content: string, options: SubmitMessageOptions = {}) {
 		const trimmedContent = content.trim();
 		const requestOverride = options.override ?? null;
 		const requestNoteId = options.noteId ?? '';
 
-		if (!trimmedContent || isLoading) return;
-		if (requestOverride === 'update' && !requestNoteId) return;
+		if (!canSubmitAssistantMessage(trimmedContent, requestOverride, requestNoteId)) return;
 
 		const userMessage: UserMessage = {
 			id: nextMessageId('user'),
@@ -617,20 +668,7 @@
 		await scrollToBottom();
 
 		try {
-			const body: Record<string, unknown> = {
-				messages: nextConversationHistory,
-				provider: selectedProvider,
-				model: selectedModel,
-				topicCache
-			};
-
-			if (requestOverride) {
-				body.override = requestOverride;
-			}
-
-			if (requestOverride === 'update' && requestNoteId) {
-				body.noteId = requestNoteId;
-			}
+			const body = buildAssistantRequestBody(nextConversationHistory, options);
 
 			const response = await fetch('/api/assistant/respond', {
 				method: 'POST',
@@ -713,8 +751,7 @@
 
 	async function sendMessage() {
 		const content = composerValue.trim();
-		if (!content || isLoading) return;
-		if (overrideMode === 'update' && !selectedNoteId) return;
+		if (isSendDisabled) return;
 
 		composerValue = '';
 		await submitMessage(content, {
@@ -1172,8 +1209,8 @@
 							<button
 								type="button"
 								class="mode-pill"
-								class:mode-pill--active={(overrideMode ?? 'auto') === option.value}
-								aria-pressed={(overrideMode ?? 'auto') === option.value}
+								class:mode-pill--active={composerMode === option.value}
+								aria-pressed={composerMode === option.value}
 								onclick={() => setOverride(option.value === 'auto' ? null : option.value)}
 							>
 								{option.label}
@@ -1237,8 +1274,8 @@
 				<button
 					type="button"
 					class="send-btn"
-					aria-label={isLoading ? 'Sending message' : 'Send message'}
-					disabled={!composerValue.trim() || isLoading || (overrideMode === 'update' && !selectedNoteId)}
+					aria-label={sendButtonLabel}
+					disabled={isSendDisabled}
 					onclick={sendMessage}
 				>
 					<span aria-hidden="true">{isLoading ? '...' : '↑'}</span>

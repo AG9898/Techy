@@ -2674,7 +2674,7 @@
       "id": "UI-022",
       "group_id": "UI",
       "title": "Composer control contract preservation",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Verify and harden the current assistant controls after the 21st.dev static composer layout is applied.",
