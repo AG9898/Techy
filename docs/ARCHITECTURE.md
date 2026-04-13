@@ -210,7 +210,11 @@ The target architecture uses app-owned transcript storage rather than provider-o
 
 The current Drizzle schema contains the app-owned `conversations` and `conversation_messages` tables described in [`docs/schema.md`](schema.md). Server-side conversation persistence is wrapped by `src/lib/server/assistant/conversations.ts`, which creates conversations, appends transcript messages, loads owned threads, and lists recent conversations by `updated_at`. `POST /api/assistant/respond` uses that wrapper to create a conversation when the request omits `conversationId`, verify session ownership when it is present, and persist the latest user and assistant message content for each successful exchange.
 
-The chat page load now participates in that same app-owned history boundary. `GET /chat` loads recent conversation metadata for the signed-in user alongside provider options and note targeting data, while `GET /chat/[conversationId]` verifies ownership with `getConversation`, redirects missing or unowned ids back to `/chat`, and returns the saved transcript. The browser rebuilds its local display and assistant request messages from those saved rows and includes the app-owned `conversationId` on follow-up respond calls.
+The chat page load now participates in that same app-owned history boundary. `GET /chat` loads recent conversation metadata for the signed-in user alongside provider options and note targeting data, while `GET /chat/[conversationId]` verifies ownership with `getConversation`, redirects missing or unowned ids back to `/chat`, and returns the saved transcript. Both routes must render the same chat surface contract, with `/chat/[conversationId]` acting as a preloaded resume entrypoint instead of a separate UI.
+
+The browser rebuilds local display state from saved rows and includes the app-owned `conversationId` on follow-up respond calls. Canonical transcript persistence remains full-fidelity, while runtime replay to the model is currently windowed to the most recent 5 user+assistant exchanges. The respond API also returns lightweight conversation metadata so the Notebook Index ordering and labels can refresh in-place immediately after successful replies without requiring a page reload.
+
+Notebook history is a contextual chat surface, not a second primary app rail: the chat route may open the Notebook Index overlay on entry, and while already on `/chat` or `/chat/[conversationId]`, activating the main `Chat` nav toggles that overlay open/closed in-place.
 
 ### Provider / Model Abstraction
 

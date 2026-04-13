@@ -169,10 +169,10 @@ Rules:
 Chat is now both the conversation surface and the primary authoring surface.
 
 ```
-[ history list / drawer ........ ][ centered conversation column ............................ ]
-[ recent chats / new chat ...... ][ minimal brand/title in empty state ...................... ]
-[ low-noise resume affordance ...][ 21st-style composer chrome: inline model | skill chips . ]
-[ compact notebook index ........][ note picker row: visible only when Update is active .... ]
+[ notebook overlay trigger ...... ][ centered conversation column ............................ ]
+[ slide-over recent chats ....... ][ minimal brand/title in empty state ...................... ]
+[ low-noise resume affordance ...][ 21st-style composer chrome: mode chips + settings ....... ]
+[ one primary app sidebar .......][ note picker row: visible only when Update is active .... ]
 [ ................................][ conversation area without a dashboard wrapper .......... ]
 [ ................................][ assistant proposal panel appears inline beneath message ]
 [ ................................][ composer remains the primary entry point ............... ]
@@ -188,14 +188,17 @@ The assistant must be able to:
 Chat layout rules:
 - The initial chat state defaults to inference-first `Auto`.
 - Empty chat should use a centered, minimal entry state rather than a large explanatory card.
-- The current `/chat` layout renders saved conversations as a restrained desktop notebook index with a compact new-chat affordance, while mobile collapses that same history into a Recent chats drawer above the active thread.
+- The current `/chat` layout uses a Notebook Index slide-over surface for saved conversations so the app keeps one primary navigation rail.
+- Entering chat may open the Notebook Index for quick resume; users can close it and keep the active thread in place.
+- While already on `/chat` or `/chat/[conversationId]`, activating the main `Chat` nav toggles the Notebook Index in-place instead of reloading the page.
+- Notebook Index updates immediately after successful assistant responses, so new/updated conversations appear without refresh.
 - Remove non-essential top-of-page copy and status pills; the page should not open with a heavy header block.
 - The composer should sit in a centered narrow column rather than stretching like a full-width dashboard dock.
 - The conversation text bar should be materially smaller than the current wide dock treatment: reduced width, reduced height, reduced padding, and a calmer send affordance.
 - Assistant replies should render lightweight markdown in the transcript so short headings, lists, code, and links stay readable.
 - Default assistant replies should be concise and editorial rather than long article-style dumps.
-- The composer controls should prefer headless custom dropdowns over browser-native select menus where the native rendering breaks token contrast or readability.
-- The model selector should stay visible in the composer chrome, while provider switching becomes a quieter secondary control.
+- Provider/model controls should avoid clipped popovers and awkward wrapping; they should be consolidated into one assistant settings dialog anchored to the composer.
+- The model selector remains the primary choice in that dialog, while provider switching remains available as a quieter secondary choice.
 - `Auto`, `Create`, and `Update` should be exposed through a compact mode selector in the composer chrome rather than a separate toolbar of pills.
 - Plain conversational turns should avoid redundant route chrome like generic `Chat` / `Conversation` pills; visible status should be reserved for override or mutation states that materially change the next user action.
 - The update target picker should appear only when `Update` is active, anchored directly under the composer.
@@ -297,13 +300,13 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - The persistent composer should follow the 21st.dev EaseMize AI Prompt Box reference closely in static layout and density: rounded prompt surface, textarea above, compact action row below, icon buttons/chips that expand into labeled active pills, subtle dividers between action clusters, and a circular send control at the far right
 - Techy's implementation must port the reference interaction model into Svelte rather than importing its React/shadcn implementation; do not add `framer-motion`, `lucide-react`, or Radix React dependencies
 - Limit the 21st.dev-inspired composer treatment to current Techy controls: Auto | Create | Update, provider, model, selected update note, and send. Do not add upload, voice, canvas, image preview, or stop-generation controls until the corresponding product/API contracts exist
-- A recent-conversations list or drawer allows the user to resume an older chat without leaving the chat surface
+- A Notebook Index overlay allows the user to resume an older chat without leaving the chat surface
 - In Update mode, a full-width note picker appears below the composer chrome for choosing the note to review
 - Send is disabled in Update mode until a note is selected
-- Add provider/model selection controls
+- Add one assistant settings control that contains provider and model selection
 - Composer chrome is constrained to a centered narrow width on desktop rather than spanning the full conversation column
-- Model remains the primary visible selector; provider stays visible but smaller and quieter
-- Composer control popovers should use Techy surface/background tokens instead of relying on browser-native select menu colors
+- Model remains the primary visible choice; provider stays visible but quieter within the same settings surface
+- The settings dialog should use Techy overlay/surface tokens with comfortable width and wrapping so long model labels remain readable
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
 - Successful create-note commits collapse the draft panel into a smaller success card linked to the saved note

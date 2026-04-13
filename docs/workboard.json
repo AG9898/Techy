@@ -2967,6 +2967,400 @@
         "npm run check"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "ASSIST-014a",
+      "group_id": "ASSIST",
+      "title": "Mount chat UI for /chat/[conversationId] route",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add route view wiring so saved conversation routes render the active chat interface instead of blank output.",
+      "description": "Create `src/routes/(app)/chat/[conversationId]/+page.svelte` as a minimal route view that mounts the existing chat page UI contract used by `/chat`. This task is route-view wiring only; no replay policy, no history reordering logic, and no overlay redesign.",
+      "acceptance_criteria": [
+        "Navigating to /chat/[conversationId] renders the chat interface instead of a blank routed view",
+        "Loaded transcript data from server is visible in the mounted chat UI",
+        "Existing ownership redirect behavior remains unchanged",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-013d"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/[conversationId]/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Keep this task strictly to route view mounting.",
+        "Avoid introducing duplicated full chat UI code."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "ASSIST-014b",
+      "group_id": "ASSIST",
+      "title": "Add helper for last-5-exchanges replay slicing",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Introduce a deterministic helper that returns only the most recent 5 complete user+assistant exchanges.",
+      "description": "Implement a focused helper in `src/routes/(app)/chat/+page.svelte` (or a nearby chat utility) that slices conversation history down to the most recent 5 full exchanges. This task defines the helper only and validates pair-safe behavior; it does not yet change outbound request composition.",
+      "acceptance_criteria": [
+        "Helper returns at most 5 complete user+assistant exchanges",
+        "Helper does not cut in the middle of an exchange",
+        "Existing display history state remains unchanged in this task",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-014a"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "Helper-only task: no API payload integration yet.",
+        "Keep logic deterministic for agent verification."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "ASSIST-014c",
+      "group_id": "ASSIST",
+      "title": "Return conversation summary object in respond API",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add lightweight `conversation` metadata to successful `/api/assistant/respond` responses.",
+      "description": "Update `src/routes/api/assistant/respond/+server.ts` so successful responses include `conversation: { id, title, updatedAt }` alongside existing fields. This task is server contract expansion only; it does not update client-side history list behavior.",
+      "acceptance_criteria": [
+        "Successful respond payload includes conversation.id, conversation.title, and conversation.updatedAt",
+        "conversationId remains present for backward compatibility",
+        "No change to ownership, persistence, or routing behavior",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-013c"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/assistant/respond/+server.ts"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "Keep payload additive and backward-compatible.",
+        "Do not modify DB schema in this task."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "UI-026",
+      "group_id": "UI",
+      "title": "Build Notebook Index overlay shell in chat page",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Replace persistent history rail with a secondary overlay shell in `/chat` layout only.",
+      "description": "Implement Notebook Index as an in-page overlay/drawer in `src/routes/(app)/chat/+page.svelte`, including open/close state and base layout replacement for the current permanent history rail. This task does not include Nav integration toggle logic.",
+      "acceptance_criteria": [
+        "Desktop history rail is replaced by Notebook overlay shell",
+        "Overlay can open and close without clearing active transcript",
+        "Mobile history remains available via compact drawer/sheet behavior",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-014a"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Keep this task focused on chat-page UI shell.",
+        "Nav click toggle contract is handled separately."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-027",
+      "group_id": "UI",
+      "title": "Add assistant settings dialog scaffold",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Introduce a single settings dialog entrypoint in composer chrome without migrating selector internals yet.",
+      "description": "Add the assistant settings dialog shell and trigger to `src/routes/(app)/chat/+page.svelte`, including open/close behavior and placeholder content region for provider/model controls. Keep current selectors functional until migration tasks move them.\n",
+      "acceptance_criteria": [
+        "Composer renders one assistant settings trigger and dialog shell",
+        "Dialog open/close behavior is keyboard accessible",
+        "Current provider/model controls continue to function during scaffold phase",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "UI-025"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Scaffold-only task to reduce migration risk.",
+        "Do not change provider/model behavior yet."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "ASSIST-014d",
+      "group_id": "ASSIST",
+      "title": "Wire 5-exchange replay window into request payload",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Use the replay-window helper in send flow so `/api/assistant/respond` receives only the latest 5 exchanges.",
+      "description": "Update the chat request builder in `src/routes/(app)/chat/+page.svelte` to apply the existing 5-exchange window helper right before composing the `messages` body for `/api/assistant/respond`. Keep full transcript state unchanged for rendering/history; only the outbound replay payload is windowed.",
+      "acceptance_criteria": [
+        "Assistant request body uses a capped replay payload of 5 user+assistant exchanges",
+        "UI transcript rendering still shows the full conversation",
+        "No database persistence behavior is changed",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-014b"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "Keep windowing local to request composition.",
+        "Do not truncate saved messages."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "ASSIST-014e",
+      "group_id": "ASSIST",
+      "title": "Notebook Index live insert/reorder from server conversation metadata",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Consume `conversation` response metadata to update saved conversations immediately without refresh.",
+      "description": "Update chat page state in `src/routes/(app)/chat/+page.svelte` so successful assistant responses merge the returned `conversation` object into the local saved-conversation list: insert new rows on first reply and move existing rows to the top on later replies. Keep ordering based on latest `updatedAt` from server payload.",
+      "acceptance_criteria": [
+        "New conversation appears in Notebook Index immediately after first successful assistant reply",
+        "Existing conversation moves to the top after subsequent successful replies",
+        "Local list updates are driven by server-returned conversation metadata",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "ASSIST-014c"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
+      "notes": [
+        "No route reload should be needed for history visibility.",
+        "Do not mutate server schema for this task."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "UI-028",
+      "group_id": "UI",
+      "title": "Toggle Notebook overlay from Chat nav on chat routes",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Wire main `Chat` nav click to toggle Notebook overlay in-place when already in chat.",
+      "description": "Implement a route-aware toggle contract between `src/lib/components/Nav.svelte` and chat route state so clicking `Chat` while already on `/chat` or `/chat/[conversationId]` opens/closes the Notebook overlay instead of triggering a hard route reset. Non-chat routes should keep normal navigation behavior.",
+      "acceptance_criteria": [
+        "On /chat and /chat/[conversationId], clicking Chat nav toggles Notebook overlay in-place",
+        "On non-chat routes, Chat nav still navigates to /chat normally",
+        "Active chat transcript state remains intact across toggles",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "UI-026"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/Nav.svelte",
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Use a lightweight in-app signaling approach; avoid introducing global complexity.",
+        "Keep keyboard accessibility and focus continuity."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-029",
+      "group_id": "UI",
+      "title": "Move provider/model controls into assistant settings dialog",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Replace composer popovers with dialog-hosted provider/model controls.",
+      "description": "Migrate provider and model selectors from the current popover controls into the new assistant settings dialog in `src/routes/(app)/chat/+page.svelte`, preserving existing selection behavior, defaults, and provider/model compatibility handling.",
+      "acceptance_criteria": [
+        "Provider and model are selectable only through the assistant settings dialog",
+        "Existing model fallback/default behavior remains correct when provider changes",
+        "No regression to update-note picker or send flow",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "UI-027"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/API.md"
+      ],
+      "notes": [
+        "Do not add unsupported extra controls.",
+        "Keep dialog control density compact."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-030",
+      "group_id": "UI",
+      "title": "Assistant settings dialog overflow and wrapping polish",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Fix long-label readability and remove awkward scrolling/clipping in settings UI.",
+      "description": "Polish dialog sizing and option rendering in `src/routes/(app)/chat/+page.svelte` so long provider/model labels wrap cleanly, controls do not clip outside bounds, and internal scroll behavior is used only when truly necessary. Keep token-based styling and visible focus states.",
+      "acceptance_criteria": [
+        "Long model/provider labels remain readable without clipping",
+        "Dialog content no longer exhibits tiny popover-like overflow behavior",
+        "Keyboard focus states remain visible and correct",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "UI-029"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Keep this pass purely visual/accessibility polish.",
+        "No behavioral API changes in this task."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "UI-031",
+      "group_id": "UI",
+      "title": "Notebook overlay accessibility and mobile interaction pass",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Finalize close mechanics and focus behavior for Notebook overlay on desktop and mobile.",
+      "description": "Add or refine close affordances and interaction behavior for Notebook overlay in chat page: Escape handling, outside-click behavior, and mobile-safe open/close transitions. Ensure focus return is predictable and transcript interaction remains stable after closing.",
+      "acceptance_criteria": [
+        "Overlay closes via Escape and explicit close action",
+        "Outside-click behavior is consistent and does not break transcript interaction",
+        "Mobile open/close remains usable without layout regressions",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "UI-026"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte"
+      ],
+      "docs": [
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Keep behavior aligned with existing shell interaction conventions.",
+        "Avoid introducing modal traps that block normal chat usage."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
     }
   ]
 }

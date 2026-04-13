@@ -180,21 +180,26 @@ Primary assistant surface for conversation and note authoring.
 
 **Page behaviour:**
 - Standard conversation stays available at all times.
-- The page may show a persisted conversation list so an older chat can be resumed without leaving `/chat`.
+- The page shows persisted conversations through a secondary Notebook Index surface so an older chat can be resumed without leaving `/chat`.
+- The Notebook Index behaves like a slide-over/drawer overlay rather than a second primary app rail.
+- Entering `/chat` may open the Notebook Index for quick resume; closing it does not reset the active transcript.
+- While already on `/chat` or `/chat/[conversationId]`, activating the main app `Chat` nav item toggles the Notebook Index surface instead of forcing a route reload.
 - Starting a new chat does not require deleting older conversations.
+- After a successful assistant response, the conversation list updates immediately in-place (insert or reorder by `updatedAt`) without requiring a page refresh.
 - The composer remains a single unified entry point rather than a primary mode switcher.
 - The initial chat mode defaults to inference-first `Auto`.
 - The UI may expose compact create/update override controls near the composer, but inference is the default routing path.
-- The chat surface may render those override controls and the model picker inside the composer chrome rather than as a separate top toolbar.
+- The chat surface may render those override controls inside the composer chrome rather than as a separate top toolbar.
 - `/chat` is the sole note-authoring entry point for new notes; there is no dedicated new-note page.
 - If the assistant detects a strong match to an existing note, the page may surface that note inline and offer research or review actions without forcing an immediate update flow.
 - Assistant transcript content may be rendered as markdown for readability rather than displayed as flat plain text.
 - For topic-learning prompts in `Auto` mode that do not strongly match an existing saved note, the response may include a lightweight `createOffer` CTA so the user can explicitly open the normal create-note draft flow from the same turn.
 - The page may render create/update proposals as editable inline draft panels and delete proposals as explicit confirmation cards.
-- The page submits full conversation state to `POST /api/assistant/respond`.
+- The page keeps the full saved transcript as canonical history, but submits a bounded replay window when continuing a conversation (currently the most recent 5 user+assistant exchanges).
 - When loaded from `/chat/[conversationId]`, the page rebuilds the submitted `messages` payload from the saved transcript and includes the app-owned `conversationId` on subsequent respond calls.
 - Provider/model options come from the server-side registry in `src/lib/server/ai/models.ts`.
 - The UI should continue to initialize provider/model state from those server-supplied defaults rather than introducing visual-only overrides.
+- Provider and model selection should be presented through one consolidated assistant settings dialog to avoid clipped popovers and poor wrapping behavior.
 - Respond-time prompt grounding also includes the shared canonical note-category list and a bounded deterministic list of existing lower-case note tags so create/update drafts reuse established taxonomy when possible.
 - Assistant proposals must follow the standard note skeleton from `docs/NOTES.md`: `Overview`, `Description`, `Key Concepts`, `Connections`, and `Resources`, with only the approved optional sections allowed between `Key Concepts` and `Connections`.
 - Assistant prompts also keep `Overview` brief, treat `Description` as the main explanatory section, prefer evergreen explanation over release-churn unless `Version Notes` is warranted, and ban deprecated default headings like `Current Status`, `Notable Features`, `Quick Examples`, and `Industry Usage`.
@@ -257,10 +262,11 @@ Resume a previously saved assistant conversation.
 ```
 
 **Notes:**
+- This route renders the same chat interface contract as `/chat`, preloaded with owned conversation metadata and transcript rows.
 - The saved transcript is the canonical source of resumed chat state.
 - If the conversation is missing or is not owned by the signed-in user, the route redirects to `/chat`.
 - Provider-specific conversation IDs or hidden memory are not part of the route contract.
-- Older messages may later be truncated or summarized when rebuilding model context, but the saved transcript remains the product source of truth.
+- The saved transcript remains the product source of truth; runtime model replay is currently limited to the most recent 5 user+assistant exchanges.
 
 ---
 
@@ -360,7 +366,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `messages` | yes | Full conversation transcript for the active chat runtime; may be rebuilt from saved history when resuming |
+| `messages` | yes | Active conversation replay payload for the current request. When resuming, this is rebuilt from saved history and may be windowed (current policy: most recent 5 user+assistant exchanges). |
 | `override` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
 | `provider` | yes | `"anthropic"` \| `"openai"` \| `"openrouter"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
@@ -418,6 +424,11 @@ Target direction: the assistant resolves intent server-side from the conversatio
       ]
     }
   },
+  "conversation": {
+    "id": "saved-conversation-id",
+    "title": "Create a note about SvelteKit adapters",
+    "updatedAt": "2026-04-13T19:22:41.000Z"
+  },
   "conversationId": "saved-conversation-id"
 }
 ```
@@ -428,6 +439,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - If `conversationId` is omitted, the endpoint creates a new conversation row before calling the assistant.
 - If `conversationId` is provided, it must identify an existing conversation owned by the authenticated user.
 - The latest incoming user message is appended before the provider call; the generated assistant message content is appended after a successful response.
+- The response includes conversation metadata (`conversation`) plus `conversationId` so the client can update Notebook Index ordering and labels immediately without waiting for a page reload.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
 - The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API, OpenAI currently uses the Responses API, and OpenRouter currently uses Chat Completions compatibility.
 - Prompt assembly starts from one shared assistant identity and layers routed skill instructions for conversation, create, update, and explicit-delete behavior on top.
@@ -450,7 +462,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - Chat-mode responses should be biased toward concise markdown-friendly output, while create/update flows may still use larger output budgets for full draft generation.
 - OpenAI GPT-5-family requests may include adapter-level reasoning configuration without changing this endpoint contract.
 - No provider-side conversation identifier is part of this endpoint contract. The returned `conversationId` is the app-owned persisted transcript id.
-- When chat history is resumed, the caller rebuilds the `messages` array from the saved transcript and sends that reconstructed conversation back through this same endpoint.
+- When chat history is resumed, the caller rebuilds `messages` from the saved transcript and currently sends only the most recent 5 user+assistant exchanges.
 - `topicCache` is an ephemeral optimization and is not intended to be the persisted source of truth for chat history.
 
 **Errors:**

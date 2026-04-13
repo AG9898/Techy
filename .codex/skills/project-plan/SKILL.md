@@ -48,6 +48,9 @@ After the documentation direction is accepted and applied, produce tasks that ot
 
 - Match the existing workboard shape and naming style.
 - Split tasks by subsystem or responsibility, not by arbitrary file count.
+- Prefer small, narrowly scoped tasks (typically `XS` or `S`) that can be completed in one short agent run.
+- Keep each task focused on one primary surface and one behavioral outcome; avoid bundling API + UI + docs changes into a single task unless unavoidable.
+- When in doubt, split broad tasks into sequenced follow-ons with explicit `depends_on` edges.
 - Create subtasks only when they reduce ambiguity or let work proceed in parallel.
 - Use `depends_on` and `blocked_by` to show ordering explicitly.
 - Keep acceptance criteria behavioral and testable.

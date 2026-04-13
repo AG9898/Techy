@@ -95,6 +95,10 @@ The next phase of Techy consolidates assistant chat and AI note authoring into a
 
 Implementation note: `/chat` now loads recent saved conversation metadata for the signed-in user, while `/chat/[conversationId]` loads an owned saved transcript and uses it to rebuild the client-side assistant message payload before the next model request. Starting from `/chat` still creates a new app-owned conversation on the first assistant response.
 
+Implementation note: Canonical transcript persistence remains full conversation history, but resumed assistant requests use a bounded replay window (current default: most recent 5 user+assistant exchanges) to control prompt size.
+
+Implementation note: chat history is presented as a Notebook Index overlay on the chat surface, and successful assistant replies update that index immediately without requiring a route refresh.
+
 Implementation note: the runtime should achieve this through one shared assistant identity with internal conversation, create, update, and explicit-delete skills layered by routing context rather than by exposing separate primary assistant personas.
 
 ### UI Direction

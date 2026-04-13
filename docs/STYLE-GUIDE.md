@@ -141,6 +141,7 @@ Rules:
 - render assistant prose with lightweight markdown so scannable structure survives in the transcript
 - bias normal chat replies toward concise, digestible output rather than long-form essays
 - persisted chat history should feel like a quiet notebook index, not a busy support inbox
+- notebook history should be contextual and overlay-based so the app keeps one primary sidebar
 - default the chat entry state to inference-first `Auto`
 - reduce page-header copy to the minimum needed; avoid stacked title, eyebrow, lede, and status-pill clutter
 - keep the empty state centered and composer-led rather than explaining the product through cards
@@ -153,7 +154,7 @@ Rules:
 - the current composer uses the 21st.dev EaseMize AI Prompt Box as the primary static-state reference and reproduces its prompt-box layout, spacing, action-row density, active pill expansion, subtle dividers, and send-button placement as closely as practical within Techy's colors, icons, type, and accessibility constraints
 
 Recommended desktop arrangement:
-- a restrained history rail or drawer for recent chats
+- a Notebook Index slide-over surface for recent chats
 - centered conversation column
 - minimal brand/title above the composer in the empty state
 - assistant controls integrated into the composer chrome
@@ -212,13 +213,15 @@ Rules:
 - keep the chat surface unified and inference-first
 - expose create/update as compact override controls rather than the primary mental model
 - keep the composer visually narrower and calmer than the full route width; it should feel like a centered prompt instrument, not a dashboard dock
-- show provider/model controls without turning the composer into a cockpit; keep the controls compact, smaller than the prompt field, and adjacent to it
+- show provider/model controls without turning the composer into a cockpit; prefer one compact assistant settings dialog near the prompt controls
 - prefer headless token-aware dropdowns for composer controls when native browser menus break readability or theme contrast
 - preserve accessible single-choice semantics, keyboard navigation, and visible focus states for the `Auto` / `Create` / `Update` mode selector even when it is styled as compact chips
 - keep current controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider, model, selected note for Update, and send
 - do not surface unsupported reference actions such as upload, voice, canvas, image preview, or stop generation until the product and API contracts support them
 - let users resume prior conversations without making chat history the dominant visual element
-- present saved conversations as a quiet Recent notebook index on desktop and collapse them into a compact drawer on mobile
+- present saved conversations through a quiet Notebook Index overlay and keep the main app rail as the only primary sidebar
+- while already on `/chat` routes, activating the main `Chat` nav should toggle the Notebook Index overlay in-place
+- update Notebook Index rows immediately after successful assistant responses so new conversations appear without refresh
 - render note proposals inline as editable review surfaces
 - when a strong existing-note match is found, surface it inline and offer further research or review without abruptly switching the user into an edit flow
 - show citations during review without overwhelming the draft itself; prefer a collapsed low-noise sources disclosure over inline source dumps
@@ -282,7 +285,7 @@ Avoid:
 
 Use Melt for behavior and accessibility primitives where the assistant flow benefits from them:
 - compact Chat/Create/Update override controls
-- provider/model selectors
+- provider/model selection inside the assistant settings dialog
 - disclosure and confirmation UI
 - compact command-like controls
 - shell collapse / tucked-state disclosure where it improves accessibility and keyboard behavior
