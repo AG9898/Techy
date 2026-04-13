@@ -89,6 +89,7 @@ src/
 │   │   ├── ai/
 │   │   │   ├── anthropic.ts / claude.ts
 │   │   │   ├── openai.ts / chatgpt.ts
+│   │   │   ├── openrouter.ts
 │   │   │   ├── prompts.ts
 │   │   │   └── models.ts
 │   │   ├── assistant/
@@ -216,10 +217,10 @@ The chat page load now participates in that same app-owned history boundary. `GE
 Assistant routes accept provider/model pairs rather than hard-coding a single model family.
 
 Current direction:
-- Anthropic and OpenAI are the supported providers
+- Anthropic, OpenAI, and OpenRouter are the supported providers
 - approved combinations live in `src/lib/server/ai/models.ts`
 - provider adapters may differ internally, but the external request contract stays unified
-- OpenRouter compatibility is a future concern, not part of the current phase
+- OpenRouter currently routes through a dedicated adapter with OpenAI-compatible Chat Completions transport
 
 ---
 

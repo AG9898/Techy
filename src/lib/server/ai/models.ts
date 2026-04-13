@@ -1,4 +1,4 @@
-export type Provider = 'anthropic' | 'openai';
+export type Provider = 'anthropic' | 'openai' | 'openrouter';
 
 export interface ModelOption {
 	id: string;
@@ -14,6 +14,7 @@ export interface ProviderOption {
 
 export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 export const OPENAI_DEFAULT_MODEL = 'gpt-5-mini';
+export const OPENROUTER_DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
 
 export const PROVIDERS: ProviderOption[] = [
 	{
@@ -35,6 +36,17 @@ export const PROVIDERS: ProviderOption[] = [
 			{ id: 'gpt-5-mini', label: 'GPT-5 Mini' },
 			{ id: 'gpt-4o', label: 'GPT-4o' },
 			{ id: 'gpt-4o-mini', label: 'GPT-4o Mini' }
+		]
+	},
+	{
+		id: 'openrouter',
+		label: 'OpenRouter',
+		defaultModel: OPENROUTER_DEFAULT_MODEL,
+		models: [
+			{
+				id: 'nvidia/nemotron-3-super-120b-a12b:free',
+				label: 'NVIDIA Nemotron-3 Super 120B A12B (Free)'
+			}
 		]
 	}
 ];

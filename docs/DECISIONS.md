@@ -376,6 +376,8 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 - Provider-specific error shapes must be normalised at the adapter layer to keep the endpoint contract clean
 - The registry must be kept up to date as models are released or deprecated
 
+**Implementation note (2026-04-13):** OpenRouter is now wired as a first-class provider in `src/lib/server/ai/models.ts` and `POST /api/assistant/respond`, with `nvidia/nemotron-3-super-120b-a12b:free` as the initial allowlisted model.
+
 ---
 
 ## ADR-017: Materiality gate heuristics for assistant update proposals

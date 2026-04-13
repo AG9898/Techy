@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types.js';
 import { isValidProviderModel } from '$lib/server/ai/models.js';
 import { respondConversation as respondWithClaude } from '$lib/server/ai/claude.js';
 import { respondConversation as respondWithOpenAI } from '$lib/server/ai/chatgpt.js';
+import { respondConversation as respondWithOpenRouter } from '$lib/server/ai/openrouter.js';
 import type { ConversationMessage } from '$lib/server/ai/claude.js';
 import { performResearch, topicKey } from '$lib/server/assistant/research.js';
 import type { TopicCache } from '$lib/server/assistant/research.js';
@@ -254,8 +255,22 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 				relatedNote,
 				deleteTarget
 			);
-		} else {
+		} else if (provider === 'openai') {
 			result = await respondWithOpenAI(
+				typedMessages,
+				routing.resolvedMode,
+				model,
+				researchContext,
+				CANONICAL_NOTE_CATEGORIES,
+				existingTags,
+				noteTitles,
+				currentNoteTitle,
+				currentNoteBody,
+				relatedNote,
+				deleteTarget
+			);
+		} else {
+			result = await respondWithOpenRouter(
 				typedMessages,
 				routing.resolvedMode,
 				model,
@@ -335,7 +350,8 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 			message.includes('invalid_api_key') ||
 			message.includes('authentication') ||
 			message.includes('Incorrect API key') ||
-			message.includes('No auth credentials')
+			message.includes('No auth credentials') ||
+			message.includes('OPENROUTER_API_KEY')
 		) {
 			return json({ error: 'Invalid or missing provider API key' }, { status: 401 });
 		}

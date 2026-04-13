@@ -84,6 +84,7 @@ DATABASE_URL=postgresql://...?sslmode=require
 # Required for assistant/provider work once the assistant-first phase lands
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
+OPENROUTER_API_KEY=
 ```
 
 ---
@@ -166,6 +167,9 @@ The command is a dry run unless `--apply` is provided. It rewrites only safe leg
    | `DEBUG_AUTH_BYPASS_SECRET` | Optional. Strong shared secret for local and deployed debug login |
    | `DEBUG_AUTH_BYPASS_NAME` | Optional. Display name for the debug session, e.g. `Agent` |
    | `DATABASE_URL` | Neon **pooled** connection string (see below) |
+   | `ANTHROPIC_API_KEY` | Required for Anthropic models on `/chat` |
+   | `OPENAI_API_KEY` | Required for OpenAI models on `/chat` |
+   | `OPENROUTER_API_KEY` | Required for OpenRouter models on `/chat` |
    | `AUTH_TRUST_HOST` | Set to `true` — required on Vercel so Auth.js trusts the host header |
 
 4. Create a second GitHub OAuth App (or update the existing one) with:

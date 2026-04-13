@@ -7,7 +7,7 @@
 	import { resolveWikilinks } from '$lib/utils/wikilinks.js';
 	import { CANONICAL_NOTE_CATEGORIES } from '$lib/utils/note-taxonomy.js';
 
-	type ProviderId = 'anthropic' | 'openai';
+	type ProviderId = PageData['providers'][number]['id'];
 	type AssistantMode = 'chat' | 'create' | 'update';
 	type ComposerModeValue = 'auto' | 'create' | 'update';
 	type NoteStatus = 'stub' | 'growing' | 'mature';

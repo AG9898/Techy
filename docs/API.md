@@ -135,12 +135,12 @@ Primary assistant surface for conversation and note authoring.
 ```ts
 {
   providers: {
-    id: 'anthropic' | 'openai',
+    id: 'anthropic' | 'openai' | 'openrouter',
     label: string,
     models: { id: string, label: string }[],
     defaultModel: string
   }[],
-  defaultProvider: 'anthropic' | 'openai',
+  defaultProvider: 'anthropic' | 'openai' | 'openrouter',
   defaultModel: string,
   notes: {
     id: string,
@@ -202,6 +202,7 @@ Primary assistant surface for conversation and note authoring.
 - The initial `/chat` selection defaults to OpenAI with `gpt-5-mini`.
 - The current OpenAI chat allowlist includes `gpt-5.2`, `gpt-5-mini`, `gpt-4o`, and `gpt-4o-mini`. The current OpenAI default is `gpt-5-mini`.
 - The current Anthropic default is `claude-haiku-4-5-20251001`.
+- The current OpenRouter allowlist includes `nvidia/nemotron-3-super-120b-a12b:free`. The current OpenRouter default is `nvidia/nemotron-3-super-120b-a12b:free`.
 - Assistant responses may include a structured proposal for `create_note`, `update_note`, or `delete_note`.
 - Assistant responses may also include `createOffer` metadata for conversational learning turns that are eligible to become notes.
 - Create/update proposals render as editable draft panels in chat before save.
@@ -235,12 +236,12 @@ Resume a previously saved assistant conversation.
     createdAt: string
   }[],
   providers: {
-    id: 'anthropic' | 'openai',
+    id: 'anthropic' | 'openai' | 'openrouter',
     label: string,
     models: { id: string, label: string }[],
     defaultModel: string
   }[],
-  defaultProvider: 'anthropic' | 'openai',
+  defaultProvider: 'anthropic' | 'openai' | 'openrouter',
   defaultModel: string,
   notes: {
     id: string,
@@ -361,7 +362,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 |-------|----------|-------------|
 | `messages` | yes | Full conversation transcript for the active chat runtime; may be rebuilt from saved history when resuming |
 | `override` | no | Optional hard override for the assistant router: `"chat"` \| `"create"` \| `"update"`. The default path is server-side inference from the conversation. |
-| `provider` | yes | `"anthropic"` \| `"openai"` |
+| `provider` | yes | `"anthropic"` \| `"openai"` \| `"openrouter"` |
 | `model` | yes | A server-approved model identifier for the chosen provider |
 | `conversationId` | no | UUID of an existing owned conversation to continue. When omitted, the endpoint creates a new conversation for the authenticated user and returns its id. |
 | `topicCache` | no | Ephemeral per-conversation research cache used to avoid re-researching the same topic repeatedly during an active runtime |
@@ -428,7 +429,7 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - If `conversationId` is provided, it must identify an existing conversation owned by the authenticated user.
 - The latest incoming user message is appended before the provider call; the generated assistant message content is appended after a successful response.
 - The endpoint is stateless with respect to provider-managed hidden conversation memory.
-- The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API while OpenAI currently uses the Responses API.
+- The endpoint contract is provider-agnostic, but the adapters may differ internally: Anthropic currently uses the Messages API, OpenAI currently uses the Responses API, and OpenRouter currently uses Chat Completions compatibility.
 - Prompt assembly starts from one shared assistant identity and layers routed skill instructions for conversation, create, update, and explicit-delete behavior on top.
 - The router resolves whether the turn is best treated as chat, create, or update based on the latest user turn plus any explicit override.
 - `routing.overrideSource` is `"override"`, `"mode"`, or `"none"` so the UI can tell whether the resolved branch came from the new override field, the legacy compatibility alias, or pure inference.
