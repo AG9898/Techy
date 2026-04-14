@@ -3007,7 +3007,7 @@
       "id": "ASSIST-014b",
       "group_id": "ASSIST",
       "title": "Add helper for last-5-exchanges replay slicing",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Introduce a deterministic helper that returns only the most recent 5 complete user+assistant exchanges.",

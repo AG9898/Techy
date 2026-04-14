@@ -354,6 +354,29 @@
 		});
 	}
 
+	/**
+	 * Returns the most recent `maxExchanges` complete user+assistant exchange pairs from
+	 * `messages`. A complete exchange is one user message immediately followed by one
+	 * assistant message. Any trailing message that does not form a complete pair is
+	 * excluded so the slice is always pair-safe.
+	 */
+	function sliceLastExchanges(
+		messages: AssistantMessageInput[],
+		maxExchanges = 5
+	): AssistantMessageInput[] {
+		const pairs: [AssistantMessageInput, AssistantMessageInput][] = [];
+		let i = 0;
+		while (i < messages.length - 1) {
+			if (messages[i].role === 'user' && messages[i + 1].role === 'assistant') {
+				pairs.push([messages[i], messages[i + 1]]);
+				i += 2;
+			} else {
+				i++;
+			}
+		}
+		return pairs.slice(-maxExchanges).flat();
+	}
+
 	function setOverride(mode: AssistantMode | null) {
 		overrideMode = mode;
 		if (mode !== 'update') {
