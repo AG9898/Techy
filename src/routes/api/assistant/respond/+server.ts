@@ -133,14 +133,17 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	}
 
 	let resolvedConversationId = conversationId?.trim() ?? '';
+	let resolvedConversationTitle: string | null = null;
 	if (resolvedConversationId) {
 		const existingConversation = await getConversation(resolvedConversationId, userId);
 		if (!existingConversation) {
 			return json({ error: 'Conversation not found' }, { status: 404 });
 		}
+		resolvedConversationTitle = existingConversation.conversation.title ?? null;
 	} else {
 		const conversation = await createConversation(userId, buildConversationTitle(latestUserMessage.content));
 		resolvedConversationId = conversation.id;
+		resolvedConversationTitle = conversation.title ?? null;
 	}
 
 	await appendMessages(resolvedConversationId, [
@@ -331,6 +334,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 			routing.latestUserMessage
 		);
 
+		const respondedAt = new Date();
 		await appendMessages(resolvedConversationId, [
 			{ role: 'assistant', content: result.assistantMessage.content }
 		]);
@@ -341,6 +345,11 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 			createOffer,
 			topicCache: cache,
 			routing,
+			conversation: {
+				id: resolvedConversationId,
+				title: resolvedConversationTitle,
+				updatedAt: respondedAt.toISOString()
+			},
 			conversationId: resolvedConversationId
 		});
 	} catch (err) {

@@ -3043,7 +3043,7 @@
       "id": "ASSIST-014c",
       "group_id": "ASSIST",
       "title": "Return conversation summary object in respond API",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add lightweight `conversation` metadata to successful `/api/assistant/respond` responses.",
