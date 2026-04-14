@@ -3482,7 +3482,7 @@
       "id": "SPEECH-002",
       "group_id": "SPEECH",
       "title": "Add note detail read-aloud control",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add a compact Read note / Stop button to note detail pages.",

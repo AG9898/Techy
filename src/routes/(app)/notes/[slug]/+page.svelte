@@ -1,7 +1,31 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
+	import { canSpeak, speak, stopSpeaking, extractHtmlText } from '$lib/client/speech.js';
 
 	let { data }: { data: PageData } = $props();
+
+	let speechSupported = $state(false);
+	let isPlaying = $state(false);
+
+	$effect(() => {
+		speechSupported = canSpeak();
+		return () => {
+			stopSpeaking();
+		};
+	});
+
+	function handleReadAloud() {
+		if (isPlaying) {
+			stopSpeaking();
+			isPlaying = false;
+		} else {
+			const text = extractHtmlText(data.htmlBody);
+			isPlaying = true;
+			speak(text, () => {
+				isPlaying = false;
+			});
+		}
+	}
 </script>
 
 <div class="note-detail">
@@ -11,6 +35,17 @@
 			<span class="status-badge" data-status={data.note.status}>{data.note.status}</span>
 			<a href="/notes/{data.note.slug}/history" class="btn-secondary">History</a>
 			<a href="/notes/{data.note.slug}/edit" class="btn-secondary">Edit</a>
+			{#if speechSupported}
+				<button
+					class="btn-secondary btn-read-aloud"
+					class:playing={isPlaying}
+					onclick={handleReadAloud}
+					aria-pressed={isPlaying}
+					title={isPlaying ? 'Stop reading' : 'Read note aloud'}
+				>
+					{isPlaying ? 'Stop' : 'Read'}
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -117,6 +152,14 @@
 	.btn-secondary:hover {
 		color: var(--text-secondary);
 		border-color: var(--border-strong);
+	}
+	.btn-read-aloud {
+		cursor: pointer;
+		font-family: inherit;
+	}
+	.btn-read-aloud.playing {
+		color: var(--accent-primary);
+		border-color: var(--accent-primary);
 	}
 	h1 {
 		font-size: 1.75rem;
