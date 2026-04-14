@@ -3260,11 +3260,11 @@
       "id": "UI-029",
       "group_id": "UI",
       "title": "Move provider/model controls into assistant settings dialog",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Replace composer popovers with dialog-hosted provider/model controls.",
-      "description": "Migrate provider and model selectors from the current popover controls into the new assistant settings dialog in `src/routes/(app)/chat/+page.svelte`, preserving existing selection behavior, defaults, and provider/model compatibility handling.",
+      "description": "Migrate provider and model selectors from the current popover controls into the new assistant settings dialog in `src/routes/(app)/chat/+page.svelte`, preserving existing selection behavior, defaults, and provider/model compatibility handling. Prefer using Melt UI primitives for dialog/form control behavior and layering where practical; optional subtle GSAP motion polish is allowed if it does not compromise accessibility or performance.",
       "acceptance_criteria": [
         "Provider and model are selectable only through the assistant settings dialog",
         "Existing model fallback/default behavior remains correct when provider changes",
