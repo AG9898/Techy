@@ -91,9 +91,10 @@ Compatibility rules:
 ## Workboard Sequence
 
 Planned implementation slices:
-- `PWA-001`: configure install metadata and app-shell service-worker caching
+- `PWA-001`: configure install metadata and app-shell service-worker caching ✓
 - `PWA-002`: add minimal PWA registration/update polish
-- `SPEECH-001`: add shared browser speech helpers and tests
+- `SPEECH-001`: add shared browser speech helpers and tests ✓
+  - `src/lib/client/speech.ts`: `canSpeak`, `canListen`, `speak`, `stopSpeaking`, `isSpeaking`, `extractHtmlText`, `extractMarkdownText`
 - `SPEECH-002`: add note detail read-aloud
 - `SPEECH-003`: add assistant message readback
 - `SPEECH-004`: add browser dictation to the chat composer

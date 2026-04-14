@@ -3445,7 +3445,7 @@
       "id": "SPEECH-001",
       "group_id": "SPEECH",
       "title": "Add browser speech capability helpers",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create reusable client helpers for speech synthesis, recognition detection, and safe readback text extraction.",

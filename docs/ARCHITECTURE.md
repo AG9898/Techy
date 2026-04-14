@@ -252,6 +252,11 @@ See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for implementation scope and cache pol
 
 Speech is layered over existing client and server contracts. Browser speech synthesis handles note and assistant readback, dictation writes text into the existing chat composer, and the optional server speech-to-text endpoint returns transcript text only. Voice-composed chat still uses `/api/assistant/respond`; raw microphone audio and generated speech audio are not persisted. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for detailed behavior and fallback rules.
 
+`src/lib/client/speech.ts` is the shared browser speech helper module. It exposes:
+- `canSpeak()` / `canListen()` — capability detection, SSR-safe (no browser globals at import time)
+- `speak(text, onEnd?)` / `stopSpeaking()` / `isSpeaking()` — singleton TTS management; only one readback active at a time
+- `extractHtmlText(html)` / `extractMarkdownText(markdown)` — pure text extraction helpers for read-aloud targets
+
 ---
 
 ## D3 Force Graph

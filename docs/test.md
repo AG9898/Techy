@@ -31,9 +31,14 @@ The current unit tests focus on fast, deterministic modules that do not require 
 - `src/lib/server/assistant/routing.test.ts`
   - verifies inference-first routing keeps plain learning prompts conversational
   - verifies follow-up asks like `add it to notes` or `save this to my notes` route into note creation
+- `src/lib/client/speech.test.ts`
+  - verifies `canSpeak` and `canListen` return false in SSR (no window) and correctly detect API presence using `vi.stubGlobal`
+  - verifies `extractHtmlText` strips tags, decodes common entities, and collapses whitespace
+  - verifies `extractMarkdownText` strips headings, bold/italic, links, images, wikilinks, code blocks, and list markers
+  - verifies `speak` and `stopSpeaking` manage utterance lifecycle, cancel before starting new speech, trigger `onEnd` on end/error events, and no-op when the API is absent
+  - browser speech APIs are mocked via `vi.stubGlobal`; no real microphone or system voices required
 
-Planned coverage additions for the PWA and voice phase are tracked in [`docs/PWA-SPEECH.md`](PWA-SPEECH.md):
-- pure helpers for speech capability detection and read-aloud text extraction
+Remaining planned additions for the PWA and voice phase:
 - route tests for optional speech transcription error states where practical
 - build checks that the PWA manifest and service-worker registration compile without server-only import leaks
 
