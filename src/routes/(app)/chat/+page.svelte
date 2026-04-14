@@ -234,7 +234,7 @@
 		data.providers.find((provider) => provider.id === selectedProvider)?.models ?? []
 	);
 
-	const savedConversations = $derived(data.conversations ?? []);
+	let savedConversations = $state<SavedConversation[]>(untrack(() => data.conversations ?? []));
 	const hasSavedConversations = $derived(savedConversations.length > 0);
 	const selectedNote = $derived.by(() => data.notes.find((note) => note.id === selectedNoteId) ?? null);
 	const isComposerEmpty = $derived(composerValue.trim().length === 0);
@@ -866,6 +866,20 @@
 		}
 	}
 
+	function mergeConversationIntoList(conv: { id: string; title: string | null; updatedAt: string }) {
+		const existingIndex = savedConversations.findIndex((c) => c.id === conv.id);
+		const merged: SavedConversation = {
+			id: conv.id,
+			title: conv.title,
+			createdAt: existingIndex >= 0 ? savedConversations[existingIndex].createdAt : conv.updatedAt,
+			updatedAt: conv.updatedAt
+		};
+		const without = existingIndex >= 0
+			? savedConversations.filter((_, i) => i !== existingIndex)
+			: [...savedConversations];
+		savedConversations = [merged, ...without];
+	}
+
 	async function submitMessage(content: string, options: SubmitMessageOptions = {}) {
 		const trimmedContent = content.trim();
 		const requestOverride = options.override ?? null;
@@ -919,6 +933,10 @@
 
 				if (responseConversationId) {
 					activeConversationId = responseConversationId;
+				}
+
+				if (data.conversation && typeof data.conversation === 'object') {
+					mergeConversationIntoList(data.conversation as { id: string; title: string | null; updatedAt: string });
 				}
 
 				displayMessages = [...displayMessages, assistantMessage];

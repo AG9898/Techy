@@ -3187,7 +3187,7 @@
       "id": "ASSIST-014e",
       "group_id": "ASSIST",
       "title": "Notebook Index live insert/reorder from server conversation metadata",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Consume `conversation` response metadata to update saved conversations immediately without refresh.",
