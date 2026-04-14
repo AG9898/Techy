@@ -164,6 +164,7 @@
 	let topicCache = $state<Record<string, unknown>>({});
 	let activeConversationId = $state(untrack(() => data.conversation?.id ?? ''));
 	let isHistoryDrawerOpen = $state(false);
+	let isNotebookOpen = $state(false);
 	let conversationHistory = $state<AssistantMessageInput[]>(
 		untrack(() => savedMessagesToHistory(data.messages ?? []))
 	);
@@ -262,8 +263,14 @@
 	onMount(() => {
 		didMount = true;
 
+		function handleKeydown(event: KeyboardEvent) {
+			if (event.key === 'Escape') isNotebookOpen = false;
+		}
+		window.addEventListener('keydown', handleKeydown);
+
 		return () => {
 			cleanupComposerModeAnimation?.();
+			window.removeEventListener('keydown', handleKeydown);
 		};
 	});
 
@@ -1017,15 +1024,39 @@
 	</div>
 
 	<div class="chat-shell">
-		<aside class="history-rail" aria-label="Recent conversations">
-			<div class="history-rail__head">
+		{#if isNotebookOpen}
+			<div
+				class="notebook-backdrop"
+				role="presentation"
+				aria-hidden="true"
+				onclick={() => (isNotebookOpen = false)}
+			></div>
+		{/if}
+
+		<aside
+			id="notebook-overlay"
+			class="notebook-overlay"
+			class:notebook-overlay--open={isNotebookOpen}
+			aria-label="Notebook index"
+			aria-hidden={!isNotebookOpen}
+			inert={!isNotebookOpen}
+		>
+			<div class="notebook-overlay__head">
 				<div>
 					<p>Notebook index</p>
 					<h2>Recent</h2>
 				</div>
-				<a class="history-new" href="/chat" aria-label="Start a new chat">
-					<span aria-hidden="true">+</span>
-				</a>
+				<div class="notebook-overlay__head-controls">
+					<a class="history-new" href="/chat" aria-label="Start a new chat">
+						<span aria-hidden="true">+</span>
+					</a>
+					<button
+						type="button"
+						class="notebook-close-btn"
+						onclick={() => (isNotebookOpen = false)}
+						aria-label="Close notebook index"
+					>✕</button>
+				</div>
 			</div>
 
 			{#if hasSavedConversations}
@@ -1036,6 +1067,7 @@
 							class:history-item--active={conversation.id === activeConversationId}
 							href={`/chat/${conversation.id}`}
 							aria-current={conversation.id === activeConversationId ? 'page' : undefined}
+							onclick={() => (isNotebookOpen = false)}
 						>
 							<span class="history-item__title">{conversationTitle(conversation)}</span>
 							<span class="history-item__time">{formatRelativeTime(conversation.updatedAt)}</span>
@@ -1048,6 +1080,18 @@
 		</aside>
 
 		<section class="chat-main" aria-label="Active conversation">
+			<div class="chat-topbar">
+				<button
+					type="button"
+					class="notebook-toggle-btn"
+					aria-expanded={isNotebookOpen}
+					aria-controls="notebook-overlay"
+					onclick={() => (isNotebookOpen = !isNotebookOpen)}
+				>
+					<span class="notebook-toggle-btn__icon" aria-hidden="true">≡</span>
+					<span>Notebook</span>
+				</button>
+			</div>
 			<div class="conversation-stream" class:conversation-stream--empty={displayMessages.length === 0} bind:this={conversationEl} aria-label="Conversation">
 				{#if displayMessages.length === 0}
 					<div class="empty-stage">
@@ -1637,14 +1681,13 @@
 	}
 
 	.chat-shell {
+		position: relative;
 		flex: 1;
 		min-height: 0;
-		display: grid;
-		grid-template-columns: minmax(10.5rem, 13.75rem) minmax(0, 1fr);
-		gap: clamp(1rem, 3vw, 2.4rem);
-		align-items: stretch;
+		display: flex;
+		flex-direction: column;
 		width: 100%;
-		max-width: 78rem;
+		max-width: 54rem;
 		margin: 0 auto;
 	}
 
@@ -1653,6 +1696,7 @@
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
+		flex: 1;
 		gap: 1.25rem;
 	}
 
@@ -1660,21 +1704,46 @@
 		display: none;
 	}
 
-	.history-rail {
-		align-self: start;
-		position: sticky;
-		top: 0.75rem;
+	/* Notebook overlay (replaces permanent history rail) */
+	.notebook-backdrop {
+		position: absolute;
+		inset: 0;
+		z-index: 18;
+		background: color-mix(in srgb, var(--bg-base) 20%, transparent);
+	}
+
+	.notebook-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 13.75rem;
+		z-index: 20;
 		display: grid;
+		grid-template-rows: auto 1fr;
 		gap: 0.85rem;
-		max-height: calc(100vh - 6rem);
 		overflow: hidden;
 		padding: 0.6rem;
 		border: 1px solid color-mix(in srgb, var(--border-soft) 78%, transparent);
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--bg-surface) 68%, transparent);
+		background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+		backdrop-filter: blur(14px);
+		box-shadow: 0 8px 32px rgb(0 0 0 / 0.16);
+		transform: translateX(calc(-100% - 1rem));
+		transition:
+			transform 240ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+			visibility 240ms;
+		visibility: hidden;
+		pointer-events: none;
 	}
 
-	.history-rail__head {
+	.notebook-overlay--open {
+		transform: translateX(0);
+		visibility: visible;
+		pointer-events: auto;
+	}
+
+	.notebook-overlay__head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -1683,7 +1752,7 @@
 		border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 72%, transparent);
 	}
 
-	.history-rail__head p {
+	.notebook-overlay__head p {
 		margin: 0;
 		color: var(--text-subtle);
 		font-size: 0.64rem;
@@ -1692,11 +1761,82 @@
 		text-transform: uppercase;
 	}
 
-	.history-rail__head h2 {
+	.notebook-overlay__head h2 {
 		margin: 0.12rem 0 0;
 		color: var(--text-secondary);
 		font-size: 0.92rem;
 		line-height: 1.2;
+	}
+
+	.notebook-overlay__head-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+
+	.notebook-close-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text-muted);
+		font: inherit;
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.notebook-close-btn:hover {
+		border-color: var(--border-strong);
+		background: color-mix(in srgb, var(--bg-raised) 60%, transparent);
+		color: var(--text-primary);
+	}
+
+	/* Chat topbar with notebook toggle */
+	.chat-topbar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.1rem 0 0.25rem;
+	}
+
+	.notebook-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.42rem;
+		padding: 0.4rem 0.72rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text-muted);
+		font: inherit;
+		font-size: 0.75rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.notebook-toggle-btn:hover,
+	.notebook-toggle-btn[aria-expanded='true'] {
+		border-color: color-mix(in srgb, var(--accent-strong) 40%, var(--border-soft));
+		background: color-mix(in srgb, var(--accent-soft) 16%, var(--bg-raised));
+		color: var(--accent-primary);
+	}
+
+	.notebook-toggle-btn__icon {
+		font-size: 0.88rem;
+		line-height: 1;
 	}
 
 	.history-new {
@@ -2852,12 +2992,9 @@
 	}
 
 	@media (max-width: 960px) {
-		.chat-shell {
-			display: block;
-			max-width: 54rem;
-		}
-
-		.history-rail {
+		.chat-topbar,
+		.notebook-overlay,
+		.notebook-backdrop {
 			display: none;
 		}
 
@@ -2962,6 +3099,9 @@
 		.history-drawer summary::after,
 		.history-new,
 		.history-item,
+		.notebook-overlay,
+		.notebook-toggle-btn,
+		.notebook-close-btn,
 		.loading-dots span {
 			transition: none;
 		}

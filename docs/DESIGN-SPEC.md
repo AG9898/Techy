@@ -301,6 +301,8 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Techy's implementation must port the reference interaction model into Svelte rather than importing its React/shadcn implementation; do not add `framer-motion`, `lucide-react`, or Radix React dependencies
 - Limit the 21st.dev-inspired composer treatment to current Techy controls: Auto | Create | Update, provider, model, selected update note, and send. Do not add upload, voice, canvas, image preview, or stop-generation controls until the corresponding product/API contracts exist
 - A Notebook Index overlay allows the user to resume an older chat without leaving the chat surface
+- Notebook Index implementation: `.chat-topbar` row at the top of the conversation column holds a `.notebook-toggle-btn` (pill button, `aria-expanded`); clicking opens/closes `.notebook-overlay` (position absolute within `.chat-shell`, slides via `transform: translateX`); `Escape` and backdrop click also close it; the overlay is desktop-only (hidden at ≤ 960px via `display: none`); mobile uses the existing `history-mobile` `<details>` drawer
+- The desktop `.chat-shell` is now a single flex column (`position: relative`; no grid rail column); the `conversation-stream` and `composer-shell` remain centered with `margin: 0 auto`
 - In Update mode, a full-width note picker appears below the composer chrome for choosing the note to review
 - Send is disabled in Update mode until a note is selected
 - Add one assistant settings control that contains provider and model selection

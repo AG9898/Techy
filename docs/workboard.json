@@ -3079,7 +3079,7 @@
       "id": "UI-026",
       "group_id": "UI",
       "title": "Build Notebook Index overlay shell in chat page",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Replace persistent history rail with a secondary overlay shell in `/chat` layout only.",
