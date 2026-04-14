@@ -3151,7 +3151,7 @@
       "id": "ASSIST-014d",
       "group_id": "ASSIST",
       "title": "Wire 5-exchange replay window into request payload",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Use the replay-window helper in send flow so `/api/assistant/respond` receives only the latest 5 exchanges.",

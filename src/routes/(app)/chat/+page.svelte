@@ -526,8 +526,12 @@
 	): AssistantRequestBody {
 		const requestOverride = options.override ?? null;
 		const requestNoteId = options.noteId ?? '';
+		// Window prior exchanges to the last 5, then re-append the current user turn.
+		const currentTurn = messages[messages.length - 1];
+		const priorHistory = messages.slice(0, -1);
+		const replayMessages = [...sliceLastExchanges(priorHistory), currentTurn];
 		const body: AssistantRequestBody = {
-			messages,
+			messages: replayMessages,
 			provider: selectedProvider,
 			model: selectedModel,
 			topicCache
