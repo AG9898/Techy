@@ -17,6 +17,8 @@ Recommended local sequence before pushing:
 2. `npm run check`
 3. `npm run build`
 
+For PWA or speech work, also verify the built app exposes the expected manifest/service-worker assets and that browser-only speech helpers degrade cleanly when APIs are unavailable.
+
 ## Current Scope
 
 The current unit tests focus on fast, deterministic modules that do not require live provider APIs, a browser, or a database:
@@ -29,6 +31,11 @@ The current unit tests focus on fast, deterministic modules that do not require 
 - `src/lib/server/assistant/routing.test.ts`
   - verifies inference-first routing keeps plain learning prompts conversational
   - verifies follow-up asks like `add it to notes` or `save this to my notes` route into note creation
+
+Planned coverage additions for the PWA and voice phase are tracked in [`docs/PWA-SPEECH.md`](PWA-SPEECH.md):
+- pure helpers for speech capability detection and read-aloud text extraction
+- route tests for optional speech transcription error states where practical
+- build checks that the PWA manifest and service-worker registration compile without server-only import leaks
 
 ## Shared Contract
 
@@ -67,3 +74,5 @@ When adding tests:
 - avoid live network calls and provider SDK calls
 - mock or isolate runtime-heavy boundaries instead of depending on external services
 - add route-level or browser-level tests only when unit coverage is not enough to protect the behavior
+- for speech features, mock browser speech APIs instead of depending on device microphone, installed system voices, or live transcription providers
+- for PWA features, prefer build/output verification and manifest assertions over brittle install-prompt automation

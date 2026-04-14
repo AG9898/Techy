@@ -510,3 +510,43 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 **Trade-offs:**
 - Legacy stored accent preferences need a migration path into the new family names
 - Accent documentation and UI labels need to stay synchronized because the family names are now part of the product language
+
+## ADR-023: Private online-first PWA over native mobile packaging
+
+**Date:** 2026-04-14
+**Status:** Accepted
+
+**Context:** Techy is a personal, single-user web app that should be convenient to open from a phone. The main alternatives are a PWA installed from the browser, a native wrapper/APK, or platform-specific distribution such as TestFlight.
+
+**Decision:** Use an authenticated online-first PWA as the first mobile app shape. The PWA is served by the existing SvelteKit deployment, uses the same GitHub OAuth gate, and targets installability through manifest/icons/theme metadata plus a service worker for static app-shell assets. Notes, chat, auth, database access, live research, and provider calls remain online-only in v1.
+
+**Reasons:**
+- A PWA gives the desired phone home-screen workflow without creating a second runtime
+- Keeping the existing web deployment and auth boundary avoids native distribution and signing complexity
+- Online-first behavior matches Techy's current dependence on Neon, OAuth, live research, and model providers
+- App-shell caching improves launch feel without committing to offline data sync
+
+**Trade-offs:**
+- iOS and Android install prompts and PWA behavior differ by browser and OS
+- The app remains dependent on network access for useful authenticated behavior
+- Offline note reading or queued writes would require separate cache invalidation and sync design
+
+## ADR-024: Browser-first speech with optional server STT fallback
+
+**Date:** 2026-04-14
+**Status:** Accepted
+
+**Context:** Techy should support voice-like chat interaction and note read-aloud while preserving the existing assistant contracts. Browser text-to-speech is broadly available and has no provider cost, while browser speech recognition support is less consistent and may use browser/vendor services under the hood. Server speech-to-text can improve consistency but adds provider cost, key management, and audio upload handling.
+
+**Decision:** Use browser `SpeechSynthesis` for note and assistant readback in v1. Use browser speech recognition for dictating chat input where supported, and define an optional authenticated server transcription endpoint as a fallback if mobile support is unreliable. Voice input becomes normal composer text before calling `/api/assistant/respond`; raw microphone audio and generated speech audio are not persisted.
+
+**Reasons:**
+- Browser TTS is the lowest-cost path for note read-aloud
+- Dictation into the existing composer preserves all current chat capabilities and saved transcript behavior
+- An optional server STT boundary leaves room for providers with free credits or low personal-use cost without making the product depend on one vendor
+- Avoiding persisted audio keeps the privacy and storage model simple
+
+**Trade-offs:**
+- Browser STT availability and quality vary across devices
+- Server fallback requires upload limits, provider configuration, and graceful disabled states when no key is configured
+- Generated browser voices vary by OS and may not sound identical across phone and desktop

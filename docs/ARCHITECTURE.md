@@ -6,6 +6,7 @@ For those topics, see:
 - [`docs/API.md`](API.md) for routes, form actions, and JSON endpoint contracts
 - [`docs/schema.md`](schema.md) for persisted tables and planned schema direction
 - [`docs/NOTES.md`](NOTES.md) for note fields, wikilinks, and authoring rules
+- [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for private PWA and speech feature planning
 - [`docs/DESIGN-SPEC.md`](DESIGN-SPEC.md) and [`docs/STYLE-GUIDE.md`](STYLE-GUIDE.md) for shell, layout, theming, and visual direction
 
 ## System Overview
@@ -20,6 +21,8 @@ The main architectural boundaries are:
 - assistant orchestration stays inside the app server layer rather than a separate service
 - Auth.js owns OAuth/session handling, while route protection is enforced in the app shell
 - D3 graph rendering stays client-only and consumes pre-fetched graph data from server load
+- the mobile app shape is an online-first PWA over the existing authenticated web app, not a native wrapper
+- speech features are an optional client/input-output layer over existing note and assistant contracts
 - SvelteKit server modules read app secrets through `$env/dynamic/private`, while non-app CLI/config files such as `drizzle.config.ts` continue to use plain Node env access
 - one-off operator maintenance scripts live in `scripts/` and run outside request handling; they may reuse the shared DB schema and taxonomy helpers, but they are not part of normal app traffic
 
@@ -227,6 +230,16 @@ Current direction:
 - approved combinations live in `src/lib/server/ai/models.ts`
 - provider adapters may differ internally, but the external request contract stays unified
 - OpenRouter currently routes through a dedicated adapter with OpenAI-compatible Chat Completions transport
+
+---
+
+## PWA Runtime
+
+Techy's mobile app direction is an online-first PWA served by the same SvelteKit app. The architecture boundary is installability plus static app-shell caching only; authenticated data, notes, chat, live research, and provider responses remain network-backed. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for implementation scope and cache policy.
+
+## Speech Runtime
+
+Speech is layered over existing client and server contracts. Browser speech synthesis handles note and assistant readback, dictation writes text into the existing chat composer, and the optional server speech-to-text endpoint returns transcript text only. Voice-composed chat still uses `/api/assistant/respond`; raw microphone audio and generated speech audio are not persisted. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for detailed behavior and fallback rules.
 
 ---
 

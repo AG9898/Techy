@@ -84,6 +84,9 @@ Note detail page.
 
 **Errors:** `404` if slug not found
 
+**Page behaviour:**
+- The note detail page may expose a `Read note` / `Stop` control in the header action area; see [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for read-aloud behavior.
+
 ---
 
 ### `GET /notes/[slug]/edit`
@@ -217,6 +220,9 @@ Primary assistant surface for conversation and note authoring.
 - Persisted chat history stores the app-owned transcript, not provider-managed hidden conversation state.
 - Resuming a conversation reconstructs the `messages` payload from saved chat history before calling the assistant again.
 - The response payload also includes `routing`, which exposes the resolved mode, matched note, target note, and override source so the chat UI can show the selected branch without inferring it client-side.
+- The chat composer may expose a voice input toggle. Voice input transcribes speech into composer text and then uses this same endpoint when the user sends, so no assistant request contract changes are required.
+- Assistant messages may expose a read-aloud control that speaks the assistant message content only. Proposal editors, confirmation controls, and citation disclosures are not included in readback by default.
+- Voice controls are capability-detected. Unsupported browser speech features should disable the relevant control with clear user-facing feedback instead of failing silently.
 
 ---
 
@@ -471,6 +477,41 @@ Target direction: the assistant resolves intent server-side from the conversatio
 - `404` — provided `conversationId` was not found for the authenticated user
 - `429` — provider rate limit exceeded
 - `500` — assistant orchestration or provider failure
+
+---
+
+### `POST /api/speech/transcribe` *(optional fallback endpoint)*
+Authenticated fallback endpoint for speech-to-text when browser speech recognition is unavailable or unreliable.
+
+This endpoint is optional for v1. If no server transcription provider is configured, the route may return `503` and the UI should rely on browser speech recognition only. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for the broader speech feature plan.
+
+**Request:** `multipart/form-data`
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `audio` | yes | Short microphone recording from the current user interaction |
+| `mimeType` | no | Browser-reported MIME type when available |
+| `language` | no | Optional BCP 47 language hint, defaulting to English-oriented provider behavior |
+
+**Response:**
+```ts
+{
+  transcript: string
+}
+```
+
+**Behaviour:**
+- Requires the same authenticated session boundary as the rest of the app.
+- Processes one short uploaded clip and returns plain transcript text.
+- Does not persist raw audio, generated transcript metadata, provider request ids, or timing data.
+- Provider selection stays server-side via environment configuration so the client contract does not change if the fallback provider changes.
+
+**Errors:**
+- `400` — missing or invalid audio upload
+- `401` — unauthenticated
+- `413` — audio payload too large for the configured limit
+- `503` — no transcription provider is configured
+- `500` — transcription provider or server failure
 
 ---
 

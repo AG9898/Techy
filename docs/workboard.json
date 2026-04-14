@@ -3361,6 +3361,365 @@
         "npm run check"
       ],
       "estimate": "XS"
+    },
+    {
+      "id": "PWA-001",
+      "group_id": "PWA",
+      "title": "Configure online-first PWA install metadata",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add the PWA package, manifest, icons, and online-first service-worker setup.",
+      "description": "Wire Techy as an installable online-first PWA using the SvelteKit/Vite PWA integration. Add the dependency/configuration, app manifest metadata, required icon assets, and service-worker behavior for static app-shell/build assets only. Do not cache authenticated note data, chat transcripts, assistant responses, live-research results, or provider API calls.",
+      "acceptance_criteria": [
+        "The built app exposes a valid PWA manifest with Techy name, short name, display mode, start URL, theme/background colors, and icons",
+        "Static app-shell/build assets are service-worker cacheable while authenticated API/data requests remain network-backed",
+        "GitHub OAuth remains the only access boundary after install",
+        "npm run build and npm run check pass"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "package.json",
+        "package-lock.json",
+        "vite.config.ts",
+        "static/",
+        "docs/ARCHITECTURE.md",
+        "docs/SETUP.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/ARCHITECTURE.md",
+        "docs/SETUP.md",
+        "docs/test.md"
+      ],
+      "notes": [
+        "Use @vite-pwa/sveltekit unless implementation discovery finds a direct incompatibility.",
+        "Keep v1 online-first; do not introduce offline note/chat storage."
+      ],
+      "commands": [
+        "npm run build",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "PWA-002",
+      "group_id": "PWA",
+      "title": "Add PWA install and update handling polish",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add minimal client-side PWA registration/update UX without changing the app shell model.",
+      "description": "Add any required browser-only registration or update handling around the PWA setup so new deployments do not leave the installed app stuck on stale static assets. Keep the UI quiet and private-app appropriate; this should not become a promotional install banner or a second app shell.",
+      "acceptance_criteria": [
+        "PWA registration/update code runs only in the browser and does not introduce SSR window/document errors",
+        "A refreshed deployment can activate updated static assets through a clear low-noise flow",
+        "No install prompt or update UI appears when unsupported",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "PWA-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/+layout.svelte",
+        "src/lib/client/",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/test.md"
+      ],
+      "notes": [
+        "Prefer the PWA plugin's Svelte helpers if they fit the installed version.",
+        "Do not add broad offline state management."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "SPEECH-001",
+      "group_id": "SPEECH",
+      "title": "Add browser speech capability helpers",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Create reusable client helpers for speech synthesis, recognition detection, and safe readback text extraction.",
+      "description": "Add a small browser-only speech helper module that detects `SpeechSynthesis` and browser speech recognition support, manages play/stop state safely, and exposes pure text extraction helpers for read-aloud targets. Keep the module SSR-safe and unit-test the pure parts without requiring a real microphone or installed system voices.",
+      "acceptance_criteria": [
+        "Speech helpers do not reference browser globals during SSR/module import",
+        "Capability detection handles unsupported speech synthesis and speech recognition",
+        "Text extraction strips markup/control text and returns stable readable content",
+        "npm run test and npm run check pass"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "src/lib/client/speech.ts",
+        "src/lib/client/speech.test.ts",
+        "docs/test.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/ARCHITECTURE.md",
+        "docs/test.md"
+      ],
+      "notes": [
+        "Mock browser APIs in tests.",
+        "Keep raw audio and generated speech out of persistence."
+      ],
+      "commands": [
+        "npm run test",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-002",
+      "group_id": "SPEECH",
+      "title": "Add note detail read-aloud control",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add a compact Read note / Stop button to note detail pages.",
+      "description": "Add note read-aloud to `src/routes/(app)/notes/[slug]/+page.svelte` using the shared speech helpers. The control should read only the rendered note body text, exclude metadata/navigation/relation lists, expose clear play/stop state, and degrade gracefully when browser speech synthesis is unavailable.",
+      "acceptance_criteria": [
+        "Note detail shows a stable compact read-aloud action near existing header actions when supported",
+        "Readback speaks note body content only and stop cancels the current utterance",
+        "Unsupported speech synthesis shows a disabled or hidden unavailable state without console errors",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "SPEECH-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/notes/[slug]/+page.svelte",
+        "src/lib/client/speech.ts",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Do not read metadata chips, history/edit links, or relation sections.",
+        "Keep the note detail reading layout unchanged."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-003",
+      "group_id": "SPEECH",
+      "title": "Add assistant message readback controls",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Let individual assistant replies be spoken without reading proposal UI.",
+      "description": "Add compact play/stop controls to assistant messages in the chat transcript. Readback should use the assistant message prose only, preserve markdown readability by extracting text from the rendered assistant content, and avoid speaking proposal editors, confirmation controls, citations, or create-offer cards by default.",
+      "acceptance_criteria": [
+        "Assistant messages expose compact readback controls when speech synthesis is supported",
+        "Only one assistant message readback is active at a time",
+        "Stopping readback cancels speech and restores stable button state",
+        "Proposal panels and citations are not included in spoken text by default",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "SPEECH-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/lib/client/speech.ts",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Keep controls lightweight so the transcript does not become toolbar-heavy.",
+        "Do not auto-play assistant responses."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-004",
+      "group_id": "SPEECH",
+      "title": "Add browser dictation to chat composer",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add a microphone toggle that transcribes speech into the existing chat composer.",
+      "description": "Add a compact voice input control to the chat composer that starts/stops browser speech recognition when supported and writes finalized transcript text into the existing textarea. Dictated text must follow the normal send path through `/api/assistant/respond`, preserving provider/model selection, routing, proposals, citations, and saved chat history.",
+      "acceptance_criteria": [
+        "The microphone control starts and stops browser dictation without auto-sending",
+        "Final transcripts are inserted into the existing composer text and can be edited before send",
+        "Unsupported or denied microphone/speech-recognition states produce clear feedback without breaking text chat",
+        "Existing Auto/Create/Update, provider/model, update target, and send behavior remain unchanged",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "SPEECH-001",
+        "UI-029"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/lib/client/speech.ts",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Treat speech as composer input, not as a new assistant mode.",
+        "Keep the control compatible with the assistant settings dialog work."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-005",
+      "group_id": "SPEECH",
+      "title": "Add optional speech transcription endpoint shell",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Create the authenticated server boundary for fallback speech-to-text.",
+      "description": "Add `POST /api/speech/transcribe` as an authenticated multipart endpoint with upload validation, size limits, provider configuration detection, and a stable `{ transcript }` response shape. In this task, return a clear `503` when no provider is configured rather than wiring a specific paid/free transcription vendor.",
+      "acceptance_criteria": [
+        "Unauthenticated requests are rejected",
+        "Missing, oversized, or invalid audio uploads return documented errors",
+        "No-provider configuration returns 503 with a clear error",
+        "The endpoint never persists raw audio or transcript metadata",
+        "npm run check passes"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "src/routes/api/speech/transcribe/+server.ts",
+        "src/lib/server/speech/",
+        "docs/API.md",
+        "docs/SETUP.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/SETUP.md"
+      ],
+      "notes": [
+        "Keep provider choice behind env configuration.",
+        "This task establishes the API boundary without choosing a vendor."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-006",
+      "group_id": "SPEECH",
+      "title": "Wire one server transcription provider adapter",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Implement one configured provider behind the optional speech transcription endpoint.",
+      "description": "Implement the first real server speech-to-text adapter behind `POST /api/speech/transcribe` after a provider/key is selected. The adapter must keep the client response shape unchanged, avoid persisted audio, normalize provider errors, and remain optional so browser-only dictation still works without a server key.",
+      "acceptance_criteria": [
+        "Configured provider audio uploads return transcript text through the existing endpoint shape",
+        "Provider errors map to clear 4xx/5xx responses without leaking secrets",
+        "No configured provider still degrades to the existing 503 behavior",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "SPEECH-005"
+      ],
+      "blocked_by": [
+        "Choose the first server speech-to-text provider and provision its API key"
+      ],
+      "files": [
+        "src/lib/server/speech/",
+        "src/routes/api/speech/transcribe/+server.ts",
+        "docs/SETUP.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/SETUP.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Candidate providers with free credits or low personal-use cost should be rechecked before implementation.",
+        "Prefer keeping the adapter swappable rather than embedding provider-specific fields in the client contract."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "SPEECH-007",
+      "group_id": "SPEECH",
+      "title": "Connect chat dictation to optional server fallback",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Use the server transcription endpoint only when browser dictation is unavailable or explicitly falls back.",
+      "description": "Extend chat voice input so browser speech recognition remains the first path, while the optional server transcription endpoint can be used when browser recognition is unavailable and a provider is configured. Keep the fallback transparent: successful transcripts enter the normal composer, while unavailable provider states leave text chat fully usable.",
+      "acceptance_criteria": [
+        "Browser speech recognition remains the preferred dictation path",
+        "Server fallback sends a short audio clip only when the fallback path is available",
+        "Successful fallback transcripts populate the existing composer for review before send",
+        "503/no-provider and permission-denied states show clear feedback and do not break manual text input",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "SPEECH-004",
+        "SPEECH-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/routes/(app)/chat/+page.svelte",
+        "src/lib/client/speech.ts",
+        "docs/API.md"
+      ],
+      "docs": [
+        "docs/PWA-SPEECH.md",
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md"
+      ],
+      "notes": [
+        "This task can land before SPEECH-006 by treating 503 as a normal unavailable state.",
+        "Do not auto-send fallback transcripts."
+      ],
+      "commands": [
+        "npm run check"
+      ],
+      "estimate": "S"
     }
   ]
 }

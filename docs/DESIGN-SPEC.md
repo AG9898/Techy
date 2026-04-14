@@ -164,6 +164,17 @@ Rules:
 - Featured cards include: category badge, tag pills (first 2), relative `updatedAt` timestamp, title (1.2rem bold), body excerpt (3-line clamp), status badge
 - The compact rows list is wrapped in a grouped panel with a soft surface background and internal padding
 
+### Note Detail
+
+Note detail remains a reading surface first. The header action row may include a compact `Read note` / `Stop` control alongside `History` and `Edit`.
+
+Rules:
+- The read-aloud control uses the same button density and token treatment as the existing secondary actions.
+- The control reads only the rendered note body text, not metadata, navigation, edit/history controls, or relation lists.
+- Play/stop state must be visible and stable without shifting the header layout.
+- Unsupported browser speech synthesis should hide or disable the control with a concise unavailable state.
+- Broader speech scope and fallback behavior lives in [`docs/PWA-SPEECH.md`](PWA-SPEECH.md).
+
 ### Chat
 
 Chat is now both the conversation surface and the primary authoring surface.
@@ -184,6 +195,8 @@ The assistant must be able to:
 - propose an update to an existing note
 - request confirmation for deletion
 - reopen a saved conversation transcript
+- accept optional dictated input through the existing composer
+- read assistant replies aloud on demand
 
 Chat layout rules:
 - The initial chat state defaults to inference-first `Auto`.
@@ -207,6 +220,10 @@ Chat layout rules:
 - The current `/chat` composer uses the 21st.dev EaseMize prompt-box static layout as its structural reference: prompt text area above, compact action row below, visible `Auto` / `Create` / `Update` mode pills, secondary provider and model controls, subtle action dividers, conditional update-note picker, and a far-right circular send control.
 - The composer mode pills are a Melt `RadioGroup` styled as compact chips, so `Auto`, `Create`, and `Update` remain one keyboard-accessible single-choice control with visible token-based focus treatment.
 - The composer provider, model, and update-note pickers use Melt `Select` primitives styled through Techy tokens rather than browser-native select menus in the prompt box chrome.
+- Voice input is a compact secondary composer control that starts/stops dictation and writes transcript text into the same textarea. It should not add a separate voice-only chat mode.
+- Dictation state should be clear through label, `aria-pressed`, and focused/recording styling; if speech recognition is unavailable, the control should be disabled with direct feedback.
+- Assistant readback controls belong near individual assistant messages, use a compact play/stop treatment, and read the assistant prose only. They should not read proposal forms, buttons, or citation disclosures by default.
+- The full speech feature contract lives in [`docs/PWA-SPEECH.md`](PWA-SPEECH.md).
 
 ### Conversational Create Offer
 
@@ -299,7 +316,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - Compact mode selector: Auto | Create | Update
 - The persistent composer should follow the 21st.dev EaseMize AI Prompt Box reference closely in static layout and density: rounded prompt surface, textarea above, compact action row below, icon buttons/chips that expand into labeled active pills, subtle dividers between action clusters, and a circular send control at the far right
 - Techy's implementation must port the reference interaction model into Svelte rather than importing its React/shadcn implementation; do not add `framer-motion`, `lucide-react`, or Radix React dependencies
-- Limit the 21st.dev-inspired composer treatment to current Techy controls: Auto | Create | Update, provider, model, selected update note, and send. Do not add upload, voice, canvas, image preview, or stop-generation controls until the corresponding product/API contracts exist
+- Limit the 21st.dev-inspired composer treatment to supported Techy controls: Auto | Create | Update, provider/model settings, optional voice input, selected update note, and send. Do not add upload, canvas, image preview, or stop-generation controls until the corresponding product/API contracts exist
 - A Notebook Index overlay allows the user to resume an older chat without leaving the chat surface
 - Notebook Index implementation: `.chat-topbar` row at the top of the conversation column holds a `.notebook-toggle-btn` (pill button, `aria-expanded`); clicking opens/closes `.notebook-overlay` (position absolute within `.chat-shell`, slides via `transform: translateX`); `Escape` and backdrop click also close it; the overlay is desktop-only (hidden at ≤ 960px via `display: none`); mobile uses the existing `history-mobile` `<details>` drawer
 - The desktop `.chat-shell` is now a single flex column (`position: relative`; no grid rail column); the `conversation-stream` and `composer-shell` remain centered with `margin: 0 auto`
@@ -311,6 +328,7 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - The settings dialog should use Techy overlay/surface tokens with comfortable width and wrapping so long model labels remain readable
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
+- Render assistant readback controls inline with assistant messages without turning every message into a heavy toolbar
 - Successful create-note commits collapse the draft panel into a smaller success card linked to the saved note
 - Use Melt for the exclusive mode control, provider/model selectors, tooltips, confirmation affordances, and disclosure-style interaction where it improves accessibility
 - Selecting a saved conversation restores its transcript; resuming it should not depend on provider-side hidden memory

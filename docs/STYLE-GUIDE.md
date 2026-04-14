@@ -216,8 +216,11 @@ Rules:
 - show provider/model controls without turning the composer into a cockpit; prefer one compact assistant settings dialog near the prompt controls
 - prefer headless token-aware dropdowns for composer controls when native browser menus break readability or theme contrast
 - preserve accessible single-choice semantics, keyboard navigation, and visible focus states for the `Auto` / `Create` / `Update` mode selector even when it is styled as compact chips
-- keep current controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider, model, selected note for Update, and send
-- do not surface unsupported reference actions such as upload, voice, canvas, image preview, or stop generation until the product and API contracts support them
+- keep supported controls only in the 21st.dev-inspired prompt box: Auto/Create/Update, provider/model settings, optional voice input, selected note for Update, and send
+- do not surface unsupported reference actions such as upload, canvas, image preview, or stop generation until the product and API contracts support them
+- treat voice input as dictation into the normal composer, not as a separate assistant mode
+- place assistant readback controls close to assistant messages and keep them compact enough that the transcript stays readable
+- keep speech behavior aligned with [`docs/PWA-SPEECH.md`](PWA-SPEECH.md)
 - let users resume prior conversations without making chat history the dominant visual element
 - present saved conversations through a quiet Notebook Index overlay and keep the main app rail as the only primary sidebar
 - while already on `/chat` routes, activating the main `Chat` nav should toggle the Notebook Index overlay in-place
@@ -255,6 +258,9 @@ Rules:
 - note detail prioritizes comfortable reading width and hierarchy
 - metadata stays integrated near the title
 - internal links should feel elegant and connected to the graph model
+- note read-aloud should feel like a reading aid in the header action row, not a media player or secondary page mode
+- read-aloud controls should speak note body content only and expose an obvious stop state
+- keep note speech behavior aligned with [`docs/PWA-SPEECH.md`](PWA-SPEECH.md)
 - the transition from assistant-created draft to saved note should feel coherent with the browsing surface
 
 ---

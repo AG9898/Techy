@@ -17,6 +17,8 @@ The primary value is building and maintaining a persistent, interconnected menta
 5. Keep the app private (single-user, GitHub OAuth gate)
 6. Ask for a summary of an existing topic and get note-grounded suggestions for what to add next
 7. Use live web research during assistant-driven note creation and note comparison so saved notes reflect current information
+8. Install Techy on a phone as a private, authenticated, online-first PWA
+9. Use voice as an optional input/output layer for chat and note reading without replacing the existing text workflows
 
 ---
 
@@ -24,9 +26,11 @@ The primary value is building and maintaining a persistent, interconnected menta
 
 - Multi-user / collaboration
 - Public sharing or publishing
-- Offline-first or PWA capabilities
+- Native app-store distribution or a native mobile wrapper in the first PWA phase
+- Offline-first behavior, offline note editing, or offline chat queueing
 - Real-time sync
 - Separate citation storage schema for web sources in the next assistant-first phase
+- Persisting raw microphone audio or generated speech audio
 
 ---
 
@@ -101,6 +105,28 @@ Implementation note: chat history is presented as a Notebook Index overlay on th
 
 Implementation note: the runtime should achieve this through one shared assistant identity with internal conversation, create, update, and explicit-delete skills layered by routing context rather than by exposing separate primary assistant personas.
 
+### Private Mobile PWA
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-42 | Techy can be installed from a mobile browser as a private PWA while keeping GitHub OAuth as the access gate | High |
+| F-43 | The first PWA phase is online-first: app shell assets may be cached, but notes, chat, auth, and AI/provider calls still require network access | High |
+| F-44 | PWA metadata, icons, theme color, and display mode should make the installed app feel native enough for personal phone use without native packaging | Medium |
+
+Implementation note: the PWA is not an offline data product in this phase. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for the cross-cutting feature plan.
+
+### Voice Interaction
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-45 | `/chat` exposes an optional voice input control that transcribes speech into the existing composer text before sending | High |
+| F-46 | Voice-composed chat turns preserve all existing assistant capabilities: conversation, create offers, create/update/delete proposals, citations, provider/model selection, and saved chat history | High |
+| F-47 | Chat replies can be read aloud on demand, with clear play/stop state and without automatically reading editable proposal forms | Medium |
+| F-48 | Note detail pages expose a read-aloud control that reads the note body content only, excluding navigation, metadata, history/edit controls, and relation lists | High |
+| F-49 | Speech features degrade gracefully when a browser lacks speech recognition or speech synthesis support | High |
+
+Implementation note: speech is browser-first, with optional server transcription fallback. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for scope, privacy, cost, and compatibility rules.
+
 ### UI Direction
 
 | ID | Feature | Priority |
@@ -151,3 +177,5 @@ See [`docs/NOTES.md`](NOTES.md) for the full note schema, canonical category tax
 - **Deployment:** Serverless-compatible (Vercel / Cloudflare Pages)
 - **Cost:** $0/month target (all free-tier services where practical)
 - **Chat history storage:** Persist only lean transcript data in DB; avoid storing provider-side context state or full raw research payloads
+- **PWA:** Online-first installability is allowed; offline-first data behavior is out of scope
+- **Speech:** Browser-native speech should be preferred for cost control; any server transcription fallback must be optional and must not persist raw audio

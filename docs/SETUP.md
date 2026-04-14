@@ -85,6 +85,11 @@ DATABASE_URL=postgresql://...?sslmode=require
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 OPENROUTER_API_KEY=
+
+# Optional speech-to-text fallback provider for voice input
+# Leave unset to use browser speech recognition only
+SPEECH_TRANSCRIPTION_PROVIDER=
+SPEECH_TRANSCRIPTION_API_KEY=
 ```
 
 ---
@@ -151,6 +156,19 @@ The command is a dry run unless `--apply` is provided. It rewrites only safe leg
 
 ---
 
+## PWA Setup Notes
+
+The planned mobile install path is an online-first PWA. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for the full feature plan. Once the PWA implementation task lands, the repo should include:
+
+- `@vite-pwa/sveltekit` wired through `vite.config.ts`
+- a manifest with Techy name, short name, display mode, start URL, theme/background colors, and icon references
+- generated icon assets under `static/`
+- a service worker that caches static app-shell/build assets, not authenticated note or chat data
+
+The first PWA phase intentionally keeps notes, auth, chat, live research, and AI-provider requests online-only.
+
+---
+
 ## Deployment (Vercel)
 
 1. Push the repo to GitHub
@@ -170,6 +188,8 @@ The command is a dry run unless `--apply` is provided. It rewrites only safe leg
    | `ANTHROPIC_API_KEY` | Required for Anthropic models on `/chat` |
    | `OPENAI_API_KEY` | Required for OpenAI models on `/chat` |
    | `OPENROUTER_API_KEY` | Required for OpenRouter models on `/chat` |
+   | `SPEECH_TRANSCRIPTION_PROVIDER` | Optional. Enables server speech-to-text fallback when implemented |
+   | `SPEECH_TRANSCRIPTION_API_KEY` | Optional. Provider key for server speech-to-text fallback |
    | `AUTH_TRUST_HOST` | Set to `true` — required on Vercel so Auth.js trusts the host header |
 
 4. Create a second GitHub OAuth App (or update the existing one) with:
