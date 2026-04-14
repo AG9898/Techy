@@ -154,7 +154,16 @@
 		railMode = 'pinned';
 	}
 
-	function handleNavLinkClick() {
+	function isChatRoute(): boolean {
+		return page.url.pathname === '/chat' || page.url.pathname.startsWith('/chat/');
+	}
+
+	function handleNavLinkClick(event: MouseEvent, href: string) {
+		if (href === '/chat' && isChatRoute()) {
+			event.preventDefault();
+			window.dispatchEvent(new CustomEvent('techy:toggle-notebook'));
+		}
+
 		if (railMode !== 'temporary') return;
 
 		collapseRail();
@@ -402,7 +411,7 @@
 							use:bindNavItem={link.href}
 							title={visuallyCollapsed ? link.label : undefined}
 							aria-current={isActive(link.href) ? 'page' : undefined}
-							onclick={handleNavLinkClick}
+							onclick={(event) => handleNavLinkClick(event, link.href)}
 						>
 							{#if link.label === 'Graph'}
 								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

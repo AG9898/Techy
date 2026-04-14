@@ -3223,7 +3223,7 @@
       "id": "UI-028",
       "group_id": "UI",
       "title": "Toggle Notebook overlay from Chat nav on chat routes",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire main `Chat` nav click to toggle Notebook overlay in-place when already in chat.",

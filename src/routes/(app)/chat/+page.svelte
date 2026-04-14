@@ -266,11 +266,16 @@
 		function handleKeydown(event: KeyboardEvent) {
 			if (event.key === 'Escape') isNotebookOpen = false;
 		}
+		function handleToggleNotebook() {
+			isNotebookOpen = !isNotebookOpen;
+		}
 		window.addEventListener('keydown', handleKeydown);
+		window.addEventListener('techy:toggle-notebook', handleToggleNotebook);
 
 		return () => {
 			cleanupComposerModeAnimation?.();
 			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('techy:toggle-notebook', handleToggleNotebook);
 		};
 	});
 
