@@ -1693,17 +1693,17 @@
 				<p class="settings-section__label">Provider</p>
 				<div class="select-wrap">
 					<button type="button" class="settings-select-trigger" {...providerSelect.trigger}>
-						<span>{currentProviderLabel()}</span>
+						<span class="settings-select-trigger__label">{currentProviderLabel()}</span>
 						<span class="composer-select-chevron" aria-hidden="true">⌄</span>
 					</button>
-					<div class="composer-select-menu" {...providerSelect.content}>
+					<div class="composer-select-menu composer-select-menu--settings" {...providerSelect.content}>
 						{#each data.providers as provider}
 							<div
-								class="composer-select-option"
+								class="composer-select-option composer-select-option--settings"
 								class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
 								{...providerSelect.getOption(provider.id, provider.label)}
 							>
-								<span>{provider.label}</span>
+								<span class="composer-select-option__label">{provider.label}</span>
 								{#if providerSelect.isSelected(provider.id)}
 									<span class="composer-select-check" aria-hidden="true">•</span>
 								{/if}
@@ -1717,17 +1717,17 @@
 				<p class="settings-section__label">Model</p>
 				<div class="select-wrap">
 					<button type="button" class="settings-select-trigger" {...modelSelect.trigger}>
-						<span>{currentModelLabel()}</span>
+						<span class="settings-select-trigger__label">{currentModelLabel()}</span>
 						<span class="composer-select-chevron" aria-hidden="true">⌄</span>
 					</button>
-					<div class="composer-select-menu" {...modelSelect.content}>
+					<div class="composer-select-menu composer-select-menu--settings" {...modelSelect.content}>
 						{#each currentProviderModels as model}
 							<div
-								class="composer-select-option"
+								class="composer-select-option composer-select-option--settings"
 								class:composer-select-option--selected={modelSelect.isSelected(model.id)}
 								{...modelSelect.getOption(model.id, model.label)}
 							>
-								<span>{model.label}</span>
+								<span class="composer-select-option__label">{model.label}</span>
 								{#if modelSelect.isSelected(model.id)}
 									<span class="composer-select-check" aria-hidden="true">•</span>
 								{/if}
@@ -3212,7 +3212,8 @@
 
 	/* Settings dialog */
 	.settings-dialog {
-		width: min(28rem, calc(100vw - 2rem));
+		width: min(32rem, calc(100vw - 2rem));
+		max-height: min(32rem, calc(100vh - 2rem));
 		padding: 0;
 		border: 1px solid var(--border-soft);
 		border-radius: 1.1rem;
@@ -3220,7 +3221,7 @@
 		color: var(--text-primary);
 		box-shadow: 0 20px 50px rgb(0 0 0 / 0.28);
 		backdrop-filter: blur(14px);
-		overflow: visible;
+		overflow: hidden;
 	}
 
 	.settings-dialog::backdrop {
@@ -3231,6 +3232,7 @@
 	.settings-dialog__inner {
 		display: grid;
 		grid-template-rows: auto 1fr;
+		min-height: 0;
 	}
 
 	.settings-dialog__head {
@@ -3279,7 +3281,8 @@
 		display: grid;
 		gap: 1.15rem;
 		padding: 1rem;
-		overflow: visible;
+		min-height: 0;
+		overflow: auto;
 	}
 
 	.settings-section {
@@ -3300,6 +3303,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 0.5rem;
 		width: 100%;
 		padding: 0.65rem 0.75rem;
 		border: 1px solid var(--border-soft);
@@ -3315,6 +3319,15 @@
 			box-shadow 150ms ease;
 	}
 
+	.settings-select-trigger__label {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow-wrap: anywhere;
+		white-space: normal;
+		text-align: left;
+		line-height: 1.35;
+	}
+
 	.settings-select-trigger:focus-visible {
 		outline: none;
 		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
@@ -3324,6 +3337,27 @@
 	.settings-select-trigger[aria-expanded='true'] {
 		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+	}
+
+	.composer-select-menu--settings {
+		width: 100%;
+		min-width: 100%;
+		max-width: 100%;
+		max-height: min(18rem, 48vh);
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	.composer-select-option--settings {
+		align-items: flex-start;
+	}
+
+	.composer-select-option__label {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow-wrap: anywhere;
+		white-space: normal;
+		line-height: 1.4;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

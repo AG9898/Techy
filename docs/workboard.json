@@ -3296,11 +3296,11 @@
       "id": "UI-030",
       "group_id": "UI",
       "title": "Assistant settings dialog overflow and wrapping polish",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Fix long-label readability and remove awkward scrolling/clipping in settings UI.",
-      "description": "Polish dialog sizing and option rendering in `src/routes/(app)/chat/+page.svelte` so long provider/model labels wrap cleanly, controls do not clip outside bounds, and internal scroll behavior is used only when truly necessary. Keep token-based styling and visible focus states.",
+      "description": "Polish dialog sizing and option rendering in `src/routes/(app)/chat/+page.svelte` so long provider/model labels wrap cleanly, controls do not clip outside bounds, and internal scroll behavior is used only when truly necessary. Keep token-based styling and visible focus states. Prefer Melt UI primitives for consistent dialog/input behavior; optional subtle GSAP motion polish can be added when it remains non-blocking and accessibility-safe.",
       "acceptance_criteria": [
         "Long model/provider labels remain readable without clipping",
         "Dialog content no longer exhibits tiny popover-like overflow behavior",
