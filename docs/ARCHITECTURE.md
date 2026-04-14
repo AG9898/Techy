@@ -235,7 +235,18 @@ Current direction:
 
 ## PWA Runtime
 
-Techy's mobile app direction is an online-first PWA served by the same SvelteKit app. The architecture boundary is installability plus static app-shell caching only; authenticated data, notes, chat, live research, and provider responses remain network-backed. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for implementation scope and cache policy.
+Techy's mobile app direction is an online-first PWA served by the same SvelteKit app. `@vite-pwa/sveltekit` is wired into `vite.config.ts` and runs at build time.
+
+Implementation specifics:
+
+- The service worker (`generateSW` strategy via Workbox) precaches only `client/**` static build assets
+- Navigation fallback is denied for `/api/`, `/auth/`, `/debug/`, and `/signin` — those always hit the network
+- No runtime caching is configured; every authenticated data request (notes, chat, AI providers) bypasses the cache
+- The manifest is generated at `manifest.webmanifest` with `display: standalone`, `start_url: /`, and the app's dark theme colors
+- Icon assets in `static/` were generated from `static/pwa-icon-source.svg` using `@vite-pwa/assets-generator`
+- GitHub OAuth remains the only access boundary after install; the PWA does not add or bypass any auth surface
+
+See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for implementation scope and cache policy.
 
 ## Speech Runtime
 

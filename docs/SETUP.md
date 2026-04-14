@@ -158,14 +158,27 @@ The command is a dry run unless `--apply` is provided. It rewrites only safe leg
 
 ## PWA Setup Notes
 
-The planned mobile install path is an online-first PWA. See [`docs/PWA-SPEECH.md`](PWA-SPEECH.md) for the full feature plan. Once the PWA implementation task lands, the repo should include:
+The app is wired as an installable online-first PWA via `@vite-pwa/sveltekit`. The PWA layer is active in production builds (`npm run build`) and not active in dev.
 
-- `@vite-pwa/sveltekit` wired through `vite.config.ts`
-- a manifest with Techy name, short name, display mode, start URL, theme/background colors, and icon references
-- generated icon assets under `static/`
-- a service worker that caches static app-shell/build assets, not authenticated note or chat data
+What is included:
 
-The first PWA phase intentionally keeps notes, auth, chat, live research, and AI-provider requests online-only.
+- `@vite-pwa/sveltekit` configured in `vite.config.ts` — generates the service worker and manifest at build time
+- `@vite-pwa/assets-generator` used to generate icons from `static/pwa-icon-source.svg`
+- Generated icon assets in `static/`: `pwa-64x64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-icon-512x512.png`, `apple-touch-icon-180x180.png`, `favicon.ico`
+- `manifest.webmanifest` output with name "Techy", `display: standalone`, `start_url: /`, `theme_color: #09090b`, `background_color: #09090b`
+
+Service-worker scope:
+
+- Static app-shell and build assets (`client/**`) are precached
+- Authenticated routes (`/api/`, `/auth/`, `/debug/`, `/signin`) are excluded from navigation fallback
+- No runtime caching — all authenticated data requests (notes, chat, AI) go to the network
+- The auth flow and session boundary are unchanged after install
+
+Icons can be regenerated at any time from the source SVG:
+
+```bash
+npx @vite-pwa/assets-generator --preset minimal-2023 static/pwa-icon-source.svg
+```
 
 ---
 

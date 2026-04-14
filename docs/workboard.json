@@ -3366,7 +3366,7 @@
       "id": "PWA-001",
       "group_id": "PWA",
       "title": "Configure online-first PWA install metadata",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add the PWA package, manifest, icons, and online-first service-worker setup.",
