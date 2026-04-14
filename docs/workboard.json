@@ -2972,7 +2972,7 @@
       "id": "ASSIST-014a",
       "group_id": "ASSIST",
       "title": "Mount chat UI for /chat/[conversationId] route",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add route view wiring so saved conversation routes render the active chat interface instead of blank output.",

@@ -118,7 +118,9 @@ src/
     │   └── chat/
     │       ├── +page.server.ts
     │       ├── +page.svelte
-    │       └── [conversationId]/+page.server.ts
+    │       └── [conversationId]/
+    │           ├── +page.server.ts
+    │           └── +page.svelte
     ├── api/
     │   ├── assistant/
     │   │   ├── respond/+server.ts
