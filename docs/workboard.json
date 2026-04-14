@@ -3115,7 +3115,7 @@
       "id": "UI-027",
       "group_id": "UI",
       "title": "Add assistant settings dialog scaffold",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Introduce a single settings dialog entrypoint in composer chrome without migrating selector internals yet.",

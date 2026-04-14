@@ -180,6 +180,8 @@
 	let didMount = false;
 	let lastAnimatedComposerMode: ComposerModeValue = 'auto';
 	let cleanupComposerModeAnimation: (() => void) | null = null;
+	let isSettingsOpen = $state(false);
+	let settingsDialogEl: HTMLDialogElement | null = null;
 
 	const assistantPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
 	const proposalPanelRefs: ElementRefMap<HTMLDivElement> = new Map();
@@ -309,6 +311,17 @@
 			cleanupComposerModeAnimation?.();
 			cleanupComposerModeAnimation = null;
 		};
+	});
+
+	$effect(() => {
+		const el = settingsDialogEl;
+		const open = isSettingsOpen;
+		if (!el) return;
+		if (open) {
+			if (!el.open) el.showModal();
+		} else {
+			if (el.open) el.close();
+		}
 	});
 
 	function bindElementToMap<T extends HTMLElement>(
@@ -1010,6 +1023,14 @@
 	async function triggerCreateOffer(createOffer: CreateOffer) {
 		await submitMessage(createOffer.prompt, { override: 'create' });
 	}
+
+	function openSettings() {
+		isSettingsOpen = true;
+	}
+
+	function closeSettings() {
+		isSettingsOpen = false;
+	}
 </script>
 
 <svelte:head>
@@ -1574,55 +1595,17 @@
 
 							<div class="composer-divider" aria-hidden="true"></div>
 
-							<div class="select-wrap">
-								<div class="select-chip select-chip--secondary">
-									<span>Provider</span>
-									<button type="button" class="composer-select-trigger" {...providerSelect.trigger}>
-										<span class="composer-select-value">{currentProviderLabel()}</span>
-										<span class="composer-select-chevron" aria-hidden="true">⌄</span>
-									</button>
-								</div>
-								<div class="composer-select-menu" {...providerSelect.content}>
-									{#each data.providers as provider}
-										<div
-											class="composer-select-option"
-											class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
-											{...providerSelect.getOption(provider.id, provider.label)}
-										>
-											<span>{provider.label}</span>
-											{#if providerSelect.isSelected(provider.id)}
-												<span class="composer-select-check" aria-hidden="true">•</span>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							</div>
-
-							<div class="composer-divider" aria-hidden="true"></div>
-
-							<div class="select-wrap">
-								<div class="select-chip select-chip--primary">
-									<span>Model</span>
-									<button type="button" class="composer-select-trigger" {...modelSelect.trigger}>
-										<span class="composer-select-value">{currentModelLabel()}</span>
-										<span class="composer-select-chevron" aria-hidden="true">⌄</span>
-									</button>
-								</div>
-								<div class="composer-select-menu" {...modelSelect.content}>
-									{#each currentProviderModels as model}
-										<div
-											class="composer-select-option"
-											class:composer-select-option--selected={modelSelect.isSelected(model.id)}
-											{...modelSelect.getOption(model.id, model.label)}
-										>
-											<span>{model.label}</span>
-											{#if modelSelect.isSelected(model.id)}
-												<span class="composer-select-check" aria-hidden="true">•</span>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							</div>
+							<button
+								type="button"
+								class="settings-trigger-btn"
+								aria-label="Open assistant settings"
+								aria-expanded={isSettingsOpen}
+								aria-controls="settings-dialog"
+								onclick={openSettings}
+							>
+								<span class="settings-trigger-btn__icon" aria-hidden="true">⚙</span>
+								<span class="settings-trigger-btn__label">{currentModelLabel()}</span>
+							</button>
 						</div>
 
 						<button
@@ -1686,6 +1669,76 @@
 		</section>
 	</div>
 </div>
+
+<dialog
+	id="settings-dialog"
+	class="settings-dialog"
+	bind:this={settingsDialogEl}
+	onclose={closeSettings}
+	onclick={(e) => { if (e.currentTarget === e.target) closeSettings(); }}
+>
+	<div class="settings-dialog__inner">
+		<div class="settings-dialog__head">
+			<h2>Assistant settings</h2>
+			<button
+				type="button"
+				class="settings-close-btn"
+				onclick={closeSettings}
+				aria-label="Close settings"
+			>✕</button>
+		</div>
+
+		<div class="settings-dialog__body">
+			<div class="settings-section">
+				<p class="settings-section__label">Provider</p>
+				<div class="select-wrap">
+					<button type="button" class="settings-select-trigger" {...providerSelect.trigger}>
+						<span>{currentProviderLabel()}</span>
+						<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+					</button>
+					<div class="composer-select-menu" {...providerSelect.content}>
+						{#each data.providers as provider}
+							<div
+								class="composer-select-option"
+								class:composer-select-option--selected={providerSelect.isSelected(provider.id)}
+								{...providerSelect.getOption(provider.id, provider.label)}
+							>
+								<span>{provider.label}</span>
+								{#if providerSelect.isSelected(provider.id)}
+									<span class="composer-select-check" aria-hidden="true">•</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
+
+			<div class="settings-section">
+				<p class="settings-section__label">Model</p>
+				<div class="select-wrap">
+					<button type="button" class="settings-select-trigger" {...modelSelect.trigger}>
+						<span>{currentModelLabel()}</span>
+						<span class="composer-select-chevron" aria-hidden="true">⌄</span>
+					</button>
+					<div class="composer-select-menu" {...modelSelect.content}>
+						{#each currentProviderModels as model}
+							<div
+								class="composer-select-option"
+								class:composer-select-option--selected={modelSelect.isSelected(model.id)}
+								{...modelSelect.getOption(model.id, model.label)}
+							>
+								<span>{model.label}</span>
+								{#if modelSelect.isSelected(model.id)}
+									<span class="composer-select-check" aria-hidden="true">•</span>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</dialog>
 
 <style>
 	.sr-only {
@@ -3109,6 +3162,170 @@
 		}
 	}
 
+	/* Settings trigger */
+	.settings-trigger-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+		padding: 0.38rem 0.62rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text-muted);
+		font: inherit;
+		font-size: 0.72rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.settings-trigger-btn:hover,
+	.settings-trigger-btn[aria-expanded='true'] {
+		border-color: color-mix(in srgb, var(--accent-strong) 40%, var(--border-soft));
+		background: color-mix(in srgb, var(--accent-soft) 16%, var(--bg-raised));
+		color: var(--accent-primary);
+	}
+
+	.settings-trigger-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--accent-strong) 70%, transparent);
+		outline-offset: 0.18rem;
+		border-radius: 999px;
+	}
+
+	.settings-trigger-btn__icon {
+		flex: 0 0 auto;
+		font-size: 0.8rem;
+		line-height: 1;
+	}
+
+	.settings-trigger-btn__label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 8.5rem;
+	}
+
+	/* Settings dialog */
+	.settings-dialog {
+		width: min(28rem, calc(100vw - 2rem));
+		padding: 0;
+		border: 1px solid var(--border-soft);
+		border-radius: 1.1rem;
+		background: var(--bg-overlay);
+		color: var(--text-primary);
+		box-shadow: 0 20px 50px rgb(0 0 0 / 0.28);
+		backdrop-filter: blur(14px);
+		overflow: visible;
+	}
+
+	.settings-dialog::backdrop {
+		background: color-mix(in srgb, var(--bg-base) 44%, transparent);
+		backdrop-filter: blur(2px);
+	}
+
+	.settings-dialog__inner {
+		display: grid;
+		grid-template-rows: auto 1fr;
+	}
+
+	.settings-dialog__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.88rem 1rem 0.78rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--border-soft) 72%, transparent);
+	}
+
+	.settings-dialog__head h2 {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.settings-close-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		border: 1px solid var(--border-soft);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text-muted);
+		font: inherit;
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			background 150ms ease,
+			color 150ms ease;
+	}
+
+	.settings-close-btn:hover {
+		border-color: var(--border-strong);
+		background: color-mix(in srgb, var(--bg-raised) 60%, transparent);
+		color: var(--text-primary);
+	}
+
+	.settings-dialog__body {
+		display: grid;
+		gap: 1.15rem;
+		padding: 1rem;
+		overflow: visible;
+	}
+
+	.settings-section {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.settings-section__label {
+		margin: 0;
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.settings-select-trigger {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 0.65rem 0.75rem;
+		border: 1px solid var(--border-soft);
+		border-radius: 0.85rem;
+		background: var(--bg-surface);
+		color: var(--text-primary);
+		font: inherit;
+		font-size: 0.88rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			border-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.settings-select-trigger:focus-visible {
+		outline: none;
+		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+	}
+
+	.settings-select-trigger[aria-expanded='true'] {
+		border-color: color-mix(in srgb, var(--accent-strong) 70%, var(--border-soft));
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.citation-disclosure summary::before,
 		.citation-chip,
@@ -3129,6 +3346,9 @@
 		.notebook-overlay,
 		.notebook-toggle-btn,
 		.notebook-close-btn,
+		.settings-trigger-btn,
+		.settings-close-btn,
+		.settings-select-trigger,
 		.loading-dots span {
 			transition: none;
 		}

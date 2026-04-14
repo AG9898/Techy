@@ -322,10 +322,11 @@ The top nav has been replaced with a collapsible left rail (`<nav class="rail">`
 - The desktop `.chat-shell` is now a single flex column (`position: relative`; no grid rail column); the `conversation-stream` and `composer-shell` remain centered with `margin: 0 auto`
 - In Update mode, a full-width note picker appears below the composer chrome for choosing the note to review
 - Send is disabled in Update mode until a note is selected
-- Add one assistant settings control that contains provider and model selection
+- One assistant settings control consolidates provider and model selection: a `.settings-trigger-btn` in the composer action row shows the active model name; clicking it opens a native `<dialog id="settings-dialog">` via `showModal()` (Escape and backdrop click close it)
+- The dialog uses `--bg-overlay` / `--border-soft` / `--bg-surface` tokens with comfortable fixed width (`min(28rem, calc(100vw - 2rem))`) so long model labels remain readable
 - Composer chrome is constrained to a centered narrow width on desktop rather than spanning the full conversation column
-- Model remains the primary visible choice; provider stays visible but quieter within the same settings surface
-- The settings dialog should use Techy overlay/surface tokens with comfortable width and wrapping so long model labels remain readable
+- Model remains the primary visible choice in the trigger label; provider is a quieter secondary section inside the dialog
+- Provider and model Melt `Select` instances live exclusively inside the settings dialog; the composer action row shows only the trigger pill
 - The composer helper copy is minimized; in `Auto` mode the composer does not need an always-visible explanatory sentence
 - Render assistant citations and proposal panels inline
 - Render assistant readback controls inline with assistant messages without turning every message into a heavy toolbar
