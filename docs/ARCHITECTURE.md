@@ -136,6 +136,14 @@ src/
     └── signin/...
 ```
 
+Practice additions extend this structure with:
+- `src/lib/server/practice/leetcode.ts` for the risky LeetCode daily challenge fetch boundary
+- `src/lib/server/practice/import.ts` for manual JSON validation and normalized upsert
+- `src/lib/server/practice/tutor.ts` for the transient OpenRouter tutoring prompt
+- `src/routes/(app)/practice/+page.server.ts` and `+page.svelte` for the practice index
+- `src/routes/(app)/practice/[problemId]/+page.server.ts` and `+page.svelte` for the focused workspace
+- `src/routes/api/practice/daily-fetch/+server.ts`, `import/+server.ts`, `progress/+server.ts`, and `tutor/+server.ts` for authenticated practice endpoints
+
 ---
 
 ## Auth Flow
@@ -230,6 +238,23 @@ Current direction:
 - approved combinations live in `src/lib/server/ai/models.ts`
 - provider adapters may differ internally, but the external request contract stays unified
 - OpenRouter currently routes through a dedicated adapter with OpenAI-compatible Chat Completions transport
+
+---
+
+## Practice Architecture
+
+The practice subsystem is a dedicated coding-interview workflow, not part of the note-authoring chat surface. `/practice` owns the daily problem workspace, problem history, and progress state.
+
+Server-side modules own the risky external integration boundary:
+- `src/lib/server/practice/leetcode.ts` fetches the current LeetCode daily challenge and normalizes it into Techy's practice problem shape
+- `src/lib/server/practice/import.ts` validates manually supplied JSON and sends it through the same normalized write path
+- `src/lib/server/practice/tutor.ts` builds a narrow OpenRouter tutoring prompt for hints, pattern discussion, complexity review, and code feedback
+
+The automated LeetCode fetch runs only on the server behind authenticated endpoints. The first pass must not store LeetCode credentials, automate authenticated LeetCode browser sessions, or submit code. Because the fetch path depends on unofficial LeetCode access, it must fail closed with clear UI feedback and leave manual JSON import available.
+
+Practice persistence is intentionally lean. The database stores normalized problem records and per-user progress/completion state. Tutor exchanges for a daily problem are runtime-only and are not persisted as `conversations`, `conversation_messages`, or a separate practice transcript table.
+
+The OpenRouter tutor can reuse the existing provider adapter style, but its prompt contract is separate from assistant note authoring. Practice responses should bias toward stepwise help and should not create or mutate notes unless a future explicit handoff is designed.
 
 ---
 

@@ -276,6 +276,68 @@ Resume a previously saved assistant conversation.
 
 ---
 
+### `GET /practice`
+Daily coding-practice workspace.
+
+**Server load returns:**
+```ts
+{
+  dailyProblem: PracticeProblem | null,
+  recentProblems: {
+    id: string,
+    title: string,
+    source: string,
+    sourceUrl: string,
+    difficulty: string | null,
+    dailyDate: string | null,
+    status: 'not_started' | 'in_progress' | 'completed' | 'skipped',
+    completedAt: string | null
+  }[],
+  stats: {
+    completed: number,
+    inProgress: number,
+    streakDays: number
+  }
+}
+```
+
+**Page behaviour:**
+- Shows the current locally stored daily problem when available.
+- Provides an authenticated control to fetch today's LeetCode daily challenge.
+- Provides a manual JSON import fallback when automated fetch is unavailable or disabled.
+- Links out to the source problem for final solving/submission.
+- Does not load or persist tutor conversation history.
+
+---
+
+### `GET /practice/[problemId]`
+Focused practice workspace for one stored problem.
+
+**Path param:** `problemId` - UUID of the stored practice problem
+
+**Server load returns:**
+```ts
+{
+  problem: PracticeProblem,
+  progress: {
+    status: 'not_started' | 'in_progress' | 'completed' | 'skipped',
+    attempts: number,
+    notes: string,
+    codeSnapshot: string | null,
+    completedAt: string | null,
+    updatedAt: string
+  }
+}
+```
+
+**Page behaviour:**
+- Renders problem statement, examples, constraints, topic tags, and source link from local storage.
+- Lets the user update progress, attempts, notes, and an optional code snapshot.
+- Sends current problem context and the latest user question/code to the transient tutor endpoint.
+- Keeps tutoring turns in client state only; refreshes may clear them.
+
+---
+
 ## Form Actions
 
 ### `POST /notes?/import`
@@ -341,6 +403,137 @@ Legacy assistant endpoint. Superseded by `/api/assistant/respond` (now live). Ca
 ```
 
 `matchedNote` is `null` when no note closely matches the query. `possibleGaps` and `newTopicIdeas` are assistant-generated suggestions for expanding the graph.
+
+---
+
+### `POST /api/practice/daily-fetch`
+Authenticated endpoint that fetches the current LeetCode daily challenge, normalizes it, and upserts it into `practice_problems`.
+
+**Request body:**
+```json
+{}
+```
+
+**Response (200):**
+```ts
+{
+  problem: PracticeProblem,
+  source: 'leetcode',
+  fetchedAt: string,
+  created: boolean
+}
+```
+
+**Behaviour:**
+- Runs only server-side for the authenticated user.
+- Uses no LeetCode credentials or browser automation in the first pass.
+- Fails closed if the unofficial LeetCode fetch path changes, times out, or is disabled.
+- Does not persist raw fetch payloads unless a future debugging mode explicitly adds bounded diagnostics.
+
+**Errors:** `401` unauthenticated, `502` upstream fetch/parse failure, `503` fetch disabled or unavailable
+
+---
+
+### `POST /api/practice/import`
+Authenticated manual JSON import fallback for a practice problem.
+
+**Request body:**
+```ts
+{
+  source: string,
+  sourceSlug?: string,
+  sourceUrl: string,
+  title: string,
+  difficulty?: string,
+  dailyDate?: string,
+  promptMarkdown: string,
+  examples?: unknown,
+  constraints?: unknown,
+  topicTags?: string[]
+}
+```
+
+**Response (200):**
+```ts
+{ problem: PracticeProblem, created: boolean }
+```
+
+**Behaviour:**
+- Validates required source, URL, title, and prompt fields.
+- Sends imported data through the same normalized upsert path as daily fetch.
+- Allows personal-use JSON produced outside Techy without making the deployed app depend on the automated fetch path.
+
+**Errors:** `400` invalid JSON or missing fields, `401` unauthenticated
+
+---
+
+### `POST /api/practice/progress`
+Authenticated endpoint for updating per-user practice progress.
+
+**Request body:**
+```ts
+{
+  problemId: string,
+  status: 'not_started' | 'in_progress' | 'completed' | 'skipped',
+  attempts?: number,
+  notes?: string,
+  codeSnapshot?: string | null
+}
+```
+
+**Response (200):**
+```ts
+{
+  progress: {
+    problemId: string,
+    status: 'not_started' | 'in_progress' | 'completed' | 'skipped',
+    attempts: number,
+    notes: string,
+    codeSnapshot: string | null,
+    completedAt: string | null,
+    updatedAt: string
+  }
+}
+```
+
+**Behaviour:**
+- Upserts one progress row for the authenticated user and problem.
+- Sets `completedAt` when status first becomes `completed`; clears it only if the user explicitly moves out of completed status.
+- Does not store tutor messages.
+
+**Errors:** `400` invalid status or payload, `401` unauthenticated, `404` problem not found
+
+---
+
+### `POST /api/practice/tutor`
+Authenticated transient OpenRouter tutoring endpoint for a stored problem.
+
+**Request body:**
+```ts
+{
+  problemId: string,
+  message: string,
+  code?: string,
+  hintLevel?: 'nudge' | 'pattern' | 'approach' | 'review',
+  model?: string
+}
+```
+
+**Response (200):**
+```ts
+{
+  reply: string,
+  model: string
+}
+```
+
+**Behaviour:**
+- Loads problem context from local storage and sends only the current user turn/code to OpenRouter.
+- Uses a practice-specific prompt that prefers stepwise guidance over full solutions.
+- Does not create a `conversation`, append `conversation_messages`, or persist any practice tutor transcript.
+- Requires `OPENROUTER_API_KEY`.
+
+**Errors:** `400` invalid payload, `401` unauthenticated, `404` problem not found, `503` OpenRouter unavailable or unconfigured
 
 ---
 

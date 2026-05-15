@@ -104,6 +104,7 @@ Rules:
 - The graph page should default to the least intrusive rail presentation so the graph remains immersive
 - `/chat` remains the primary authoring entry point
 - `/notes` is the browsing and search surface
+- `/practice` is a focused coding-practice workspace, not a second assistant chat surface
 
 ### Home (Graph)
 
@@ -224,6 +225,26 @@ Chat layout rules:
 - Dictation state should be clear through label, `aria-pressed`, and focused/recording styling; if speech recognition is unavailable, the control should be disabled with direct feedback.
 - Assistant readback controls belong near individual assistant messages, use a compact play/stop treatment, and read the assistant prose only. They should not read proposal forms, buttons, or citation disclosures by default.
 - The full speech feature contract lives in [`docs/PWA-SPEECH.md`](PWA-SPEECH.md).
+
+### Practice
+
+Practice is a focused daily coding workspace for stored LeetCode-style problems and local progress tracking.
+
+```
+[ problem header: daily/date/difficulty/source link .......... ][ progress controls ]
+[ problem statement / examples / constraints .................. ][ notes/code panel  ]
+[ transient OpenRouter tutor thread ........................... ][ hint controls     ]
+```
+
+Rules:
+- The current daily problem should be visible in the first viewport when available.
+- The source link should remain obvious so solving/submission can happen on LeetCode.
+- Automated fetch failure should produce a compact disabled/error state with a manual JSON import path, not a dead page.
+- Problem statement, examples, constraints, notes, and code snapshot need stable readable dimensions so tutor replies do not reflow the workspace unexpectedly.
+- Tutor turns are transient UI state only; the page should not present a saved practice-chat history.
+- Tutor controls should be scoped to hint level and model choice where needed, without recreating the full `/chat` composer.
+- Progress controls should be direct and compact: status, attempts, completion, notes, and code snapshot.
+- Avoid a dashboard of stats cards; keep stats secondary to the daily work area.
 
 ### Conversational Create Offer
 

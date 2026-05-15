@@ -157,6 +157,55 @@ Persistence rules:
 - store app-owned canonical transcript data only
 - do not persist provider-managed conversation IDs or ephemeral live-research payloads
 
+#### `practice_problems`
+
+Normalized coding-practice problem records fetched or imported for local use.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | Primary key, defaults to `gen_random_uuid()` |
+| `source` | `text` | Required, for example `leetcode` or `manual` |
+| `source_slug` | `text` | Optional source-specific slug |
+| `source_url` | `text` | Required source problem URL |
+| `title` | `text` | Required |
+| `difficulty` | `text` | Optional |
+| `daily_date` | `date` | Optional date when this was the daily challenge |
+| `prompt_markdown` | `text` | Required normalized problem statement |
+| `examples` | `jsonb` | Optional structured examples |
+| `constraints` | `jsonb` | Optional structured constraints |
+| `topic_tags` | `text[]` | Required, defaults to empty array |
+| `fetched_at` | `timestamp` | Optional timestamp for automated fetches |
+| `imported_at` | `timestamp` | Optional timestamp for manual imports |
+| `created_at` | `timestamp` | Required, defaults to `now()` |
+| `updated_at` | `timestamp` | Required, defaults to `now()` |
+
+Important constraints:
+- `source` plus `source_slug` should be unique when `source_slug` is present
+- `source` plus `daily_date` should be unique for daily challenge rows when `daily_date` is present
+- raw LeetCode fetch payloads are not persisted by default
+
+#### `practice_progress`
+
+Per-user completion and working state for stored practice problems.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | Primary key, defaults to `gen_random_uuid()` |
+| `user_id` | `text` | Required, references `users.id`, `ON DELETE CASCADE` |
+| `problem_id` | `uuid` | Required, references `practice_problems.id`, `ON DELETE CASCADE` |
+| `status` | `text` | Required enum: `not_started` \| `in_progress` \| `completed` \| `skipped`; defaults to `not_started` |
+| `attempts` | `integer` | Required, defaults to `0` |
+| `notes` | `text` | Required, defaults to empty string |
+| `code_snapshot` | `text` | Optional latest local code snapshot |
+| `completed_at` | `timestamp` | Optional completion timestamp |
+| `created_at` | `timestamp` | Required, defaults to `now()` |
+| `updated_at` | `timestamp` | Required, defaults to `now()` |
+
+Important constraints:
+- `(user_id, problem_id)` is unique
+- deleting a problem deletes its progress rows through cascade
+- practice tutor conversations are intentionally not persisted in this phase
+
 ---
 
 ## Ownership Boundaries

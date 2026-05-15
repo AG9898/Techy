@@ -105,6 +105,20 @@ Implementation note: chat history is presented as a Notebook Index overlay on th
 
 Implementation note: the runtime should achieve this through one shared assistant identity with internal conversation, create, update, and explicit-delete skills layered by routing context rather than by exposing separate primary assistant personas.
 
+### Coding Practice
+
+| ID | Feature | Priority |
+|----|---------|----------|
+| F-50 | `/practice` provides a dedicated daily coding-practice workspace separate from `/chat` note authoring | High |
+| F-51 | Techy can fetch the current LeetCode daily challenge server-side, normalize its metadata and prompt content, and upsert it into local storage | Medium |
+| F-52 | Manual JSON import remains available as a fallback when automated LeetCode fetching fails, is disabled, or changes upstream | High |
+| F-53 | OpenRouter powers a step-by-step practice tutor that gives hints, pattern guidance, complexity discussion, and code review without persisting tutor transcripts | Medium |
+| F-54 | Practice progress tracks only problem completion state, attempts, notes, code snapshot, source URL, and completion timestamps | High |
+
+Implementation note: the LeetCode fetch path is intentionally documented as an unofficial, risky integration. It may depend on unstable LeetCode internals, may break without notice, and may conflict with LeetCode content-access restrictions. The feature is scoped for this private single-user app, should be easy to disable, and must keep the manual JSON import path working.
+
+Implementation note: Techy does not submit code to LeetCode, automate browser interaction with LeetCode, store LeetCode credentials, or persist practice tutor conversations in the first pass. The user solves and submits on LeetCode; Techy stores local problem/progress state and links back to the source problem.
+
 ### Private Mobile PWA
 
 | ID | Feature | Priority |
@@ -177,5 +191,7 @@ See [`docs/NOTES.md`](NOTES.md) for the full note schema, canonical category tax
 - **Deployment:** Serverless-compatible (Vercel / Cloudflare Pages)
 - **Cost:** $0/month target (all free-tier services where practical)
 - **Chat history storage:** Persist only lean transcript data in DB; avoid storing provider-side context state or full raw research payloads
+- **Practice storage:** Persist normalized practice problems and progress only; do not persist daily-practice tutor transcripts
+- **LeetCode integration:** Daily challenge fetching is unofficial and risky; keep a manual JSON import fallback and an easy disable path
 - **PWA:** Online-first installability is allowed; offline-first data behavior is out of scope
 - **Speech:** Browser-native speech should be preferred for cost control; any server transcription fallback must be optional and must not persist raw audio

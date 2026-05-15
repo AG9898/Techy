@@ -3720,6 +3720,260 @@
         "npm run check"
       ],
       "estimate": "S"
+    },
+    {
+      "id": "PRACTICE-001",
+      "group_id": "PRACTICE",
+      "title": "Add practice problem and progress schema",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Create Drizzle tables for normalized practice problems and per-user progress.",
+      "description": "Add `practice_problems` and `practice_progress` to the Drizzle schema, generate the migration, and expose inferred TypeScript types. The schema should store normalized problem content and per-user progress only; it must not add a practice tutor transcript table or reuse assistant conversation tables for daily-practice tutoring.",
+      "acceptance_criteria": [
+        "Drizzle schema defines `practice_problems` with source metadata, prompt content, examples/constraints JSON, topic tags, and fetch/import timestamps",
+        "Drizzle schema defines `practice_progress` with one row per user/problem, status, attempts, notes, optional code snapshot, and completion timestamp",
+        "Appropriate uniqueness and cascade constraints are represented in schema and migration SQL",
+        "No table is added for persisted practice tutor conversations",
+        "npm run db:generate and npm run check pass"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/db/schema.ts",
+        "drizzle/",
+        "docs/schema.md"
+      ],
+      "docs": [
+        "docs/schema.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Keep JSON fields typed narrowly at the application boundary even if the database column is jsonb.",
+        "Use the documented status enum values: not_started, in_progress, completed, skipped."
+      ],
+      "commands": [
+        "npm run db:generate",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "PRACTICE-002",
+      "group_id": "PRACTICE",
+      "title": "Implement practice ingestion endpoints",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add the unofficial LeetCode daily fetch and manual JSON import paths behind authenticated APIs.",
+      "description": "Create the server-side practice ingestion layer and endpoints for `POST /api/practice/daily-fetch` and `POST /api/practice/import`. Both paths should normalize into the same validated problem shape and upsert into `practice_problems`. The LeetCode daily fetch must be guarded by `LEETCODE_DAILY_FETCH_ENABLED`, use no LeetCode credentials or browser automation, and return clear degraded errors when disabled or when upstream parsing fails.",
+      "acceptance_criteria": [
+        "Manual JSON import validates required fields and upserts a normalized practice problem",
+        "Daily fetch is authenticated, disabled unless explicitly enabled, and never runs client-side",
+        "Fetch/import share a normalized write path so stored rows have the same shape",
+        "Failures return documented 4xx/5xx responses without leaking upstream details",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "PRACTICE-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/practice/leetcode.ts",
+        "src/lib/server/practice/import.ts",
+        "src/routes/api/practice/daily-fetch/+server.ts",
+        "src/routes/api/practice/import/+server.ts",
+        "docs/API.md",
+        "docs/SETUP.md"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md",
+        "docs/SETUP.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "This task intentionally accepts the risky unofficial LeetCode path documented in ADR-025.",
+        "Do not add LeetCode credentials, session cookies, or browser automation."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "PRACTICE-003",
+      "group_id": "PRACTICE",
+      "title": "Add practice progress API",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Persist completion state, attempts, notes, and code snapshots for stored practice problems.",
+      "description": "Implement `POST /api/practice/progress` plus server helpers for loading and upserting the authenticated user's progress for a practice problem. The endpoint should set completion timestamps consistently, validate status values, and avoid storing any tutor messages or provider-specific state.",
+      "acceptance_criteria": [
+        "Progress endpoint upserts one row per authenticated user/problem",
+        "Status, attempts, notes, code snapshot, and completedAt follow the documented contract",
+        "Invalid status values and unknown problem IDs return documented errors",
+        "Tutor messages are not persisted by this endpoint or helper layer",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "PRACTICE-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/practice/progress.ts",
+        "src/routes/api/practice/progress/+server.ts",
+        "docs/API.md"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/schema.md"
+      ],
+      "notes": [
+        "Keep completion logic deterministic so moving into completed sets completedAt and moving out clears or preserves it according to the API doc decision made during implementation."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "PRACTICE-004",
+      "group_id": "PRACTICE",
+      "title": "Implement transient OpenRouter practice tutor",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add a practice-specific tutor endpoint that helps step by step without storing transcripts.",
+      "description": "Implement `POST /api/practice/tutor` and `src/lib/server/practice/tutor.ts` so the server loads the stored problem, combines it with the current user message and optional code, and calls OpenRouter with a practice-specific tutoring prompt. The endpoint must return one reply only, avoid creating assistant conversations, and avoid persisting tutor turns.",
+      "acceptance_criteria": [
+        "Tutor endpoint loads problem context from the database and validates ownership/session",
+        "OpenRouter call uses `OPENROUTER_API_KEY` and an allowlisted model/default",
+        "Prompt prefers nudge/pattern/approach/review guidance over full solutions by default",
+        "No conversation or message rows are created for practice tutoring",
+        "npm run check passes"
+      ],
+      "depends_on": [
+        "PRACTICE-001"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/server/practice/tutor.ts",
+        "src/routes/api/practice/tutor/+server.ts",
+        "src/lib/server/ai/openrouter.ts",
+        "docs/API.md"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Prefer reusing existing OpenRouter adapter patterns without coupling practice tutoring to the note-authoring assistant prompt."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "PRACTICE-005",
+      "group_id": "PRACTICE",
+      "title": "Build practice workspace UI",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "summary": "Add `/practice` and `/practice/[problemId]` with daily fetch, import fallback, progress editing, and transient tutor UI.",
+      "description": "Create the practice route surfaces and add a Practice item to the left rail. The index should show today's stored problem, recent history, stats, daily fetch control, and manual JSON import fallback. The focused workspace should render the problem statement, examples, constraints, source link, progress controls, notes/code snapshot, and transient tutor turns that clear on refresh rather than loading saved chat history.",
+      "acceptance_criteria": [
+        "Left rail includes Practice and active-state behavior works with existing rail rules",
+        "`/practice` loads daily/recent practice data and exposes fetch/import controls with degraded states",
+        "`/practice/[problemId]` renders a stable problem-solving workspace with progress, notes, code snapshot, and tutor controls",
+        "Tutor turns remain client-local and are not presented as saved history",
+        "npm run prepare and npm run check pass"
+      ],
+      "depends_on": [
+        "PRACTICE-002",
+        "PRACTICE-003",
+        "PRACTICE-004"
+      ],
+      "blocked_by": [],
+      "files": [
+        "src/lib/components/Nav.svelte",
+        "src/routes/(app)/practice/+page.server.ts",
+        "src/routes/(app)/practice/+page.svelte",
+        "src/routes/(app)/practice/[problemId]/+page.server.ts",
+        "src/routes/(app)/practice/[problemId]/+page.svelte",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "docs": [
+        "docs/API.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md"
+      ],
+      "notes": [
+        "Keep the first pass utilitarian; avoid dashboard card sprawl and saved tutor transcript UI.",
+        "Run browser verification after implementation because this is a new frontend route."
+      ],
+      "commands": [
+        "npm run prepare",
+        "npm run check"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "PRACTICE-006",
+      "group_id": "PRACTICE",
+      "title": "Practice documentation and verification pass",
+      "status": "todo",
+      "priority": "low",
+      "type": "implementation",
+      "summary": "Reconcile practice docs, setup notes, and tests after the feature lands.",
+      "description": "After the practice schema, APIs, tutor, and UI land, audit the documentation and verification coverage so product docs match the implemented behavior. Add focused tests around import validation, progress updates, disabled daily fetch behavior, and tutor non-persistence where practical.",
+      "acceptance_criteria": [
+        "PRD, architecture, API, schema, setup, design, and style docs match the final implementation",
+        "Tests cover manual import validation and progress update behavior",
+        "Disabled LeetCode fetch returns the documented unavailable state",
+        "Verification confirms practice tutoring does not persist transcript rows",
+        "npm run test and npm run check pass"
+      ],
+      "depends_on": [
+        "PRACTICE-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "docs/PRD.md",
+        "docs/ARCHITECTURE.md",
+        "docs/API.md",
+        "docs/schema.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/SETUP.md",
+        "src/lib/server/practice/",
+        "src/routes/api/practice/"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/ARCHITECTURE.md",
+        "docs/API.md",
+        "docs/schema.md",
+        "docs/DESIGN-SPEC.md",
+        "docs/STYLE-GUIDE.md",
+        "docs/SETUP.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "This is a cleanup task; do not use it to change the accepted risky-integration product direction without a new planning pass."
+      ],
+      "commands": [
+        "npm run test",
+        "npm run check"
+      ],
+      "estimate": "S"
     }
   ]
 }

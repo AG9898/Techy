@@ -127,3 +127,4 @@ jq '
 - Never read the full workboard into context.
 - Never bulk-rewrite `docs/workboard.json`.
 - If you hit a blocker mid-task and cannot resolve it safely, revert that task's status back to `todo`, explain the blocker clearly, and stop cleanly.
+- Never add Claude or any AI model as a co-author or contributor in commit messages (no `Co-Authored-By: Claude` or similar trailers).

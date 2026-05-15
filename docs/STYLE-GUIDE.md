@@ -166,6 +166,28 @@ Recommended mobile arrangement:
 - chat history collapses into a compact drawer or sheet rather than permanently consuming vertical space
 - proposal panel collapses under the triggering assistant message
 
+### 4. Practice
+
+Practice is a coding workspace first and an assistant surface second.
+
+Desired feel:
+- focused
+- utilitarian
+- readable under long problem-solving sessions
+- connected to Techy without looking like generic contest software
+
+Rules:
+- keep `/practice` visually distinct from `/chat`; the tutor is a helper inside the workspace, not the main product surface
+- prioritize the problem statement, examples, constraints, notes, and code snapshot over decorative metrics
+- keep progress state quiet and scannable rather than turning completion into a dashboard
+- show source/date/difficulty metadata close to the problem title
+- keep the LeetCode source link prominent enough that actual solving and submission naturally happen there
+- treat automated fetch failures as normal degraded states with manual JSON import available
+- do not present saved tutor history, conversation lists, or notebook-like transcript management for practice
+- make tutor controls compact and stepwise: nudge, pattern, approach, review
+- avoid full-solution reveals by default; tutor replies should guide unless the user explicitly asks for a direct answer
+- keep notes and code snapshot controls stable so text input does not resize the overall workspace unexpectedly
+
 ---
 
 ## Theming Direction

@@ -550,3 +550,26 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 - Browser STT availability and quality vary across devices
 - Server fallback requires upload limits, provider configuration, and graceful disabled states when no key is configured
 - Generated browser voices vary by OS and may not sound identical across phone and desktop
+
+---
+
+## ADR-025: Unofficial LeetCode daily fetch with manual JSON fallback
+
+**Date:** 2026-05-15
+**Status:** Accepted
+
+**Context:** Techy should add a daily coding-practice workflow where the current LeetCode daily challenge can be loaded into a local workspace and an OpenRouter tutor can guide the user step by step. LeetCode does not provide a stable public API for this use case, and its terms restrict scraping/crawling and protect problem content. The user explicitly accepts the risky version for a private single-user app, with a manual JSON fallback.
+
+**Decision:** Implement `/practice` around normalized local practice problem records and per-user progress. The primary path may attempt a server-side LeetCode daily fetch through an unofficial integration, guarded by an enable flag and authenticated endpoint. A manual JSON import path must use the same normalized write path and remain available whenever automated fetch fails or is disabled. Techy will not store LeetCode credentials, automate browser submissions, submit code to LeetCode, or persist practice tutor conversations in this phase.
+
+**Reasons:**
+- The daily-problem workflow is useful only if the problem can appear directly in the practice workspace
+- A server-side boundary keeps the risky integration out of client code and centralizes failure handling
+- The manual import fallback prevents the whole feature from depending on an unstable upstream shape
+- Persisting only problem/progress data keeps storage lean and avoids turning practice tutoring into another chat-history system
+
+**Trade-offs:**
+- The LeetCode fetch path may break without notice
+- Storing copied problem content locally carries content-rights and terms-of-service risk
+- The implementation needs an explicit disable path and clear degraded UI states
+- Manual JSON import adds a second ingestion path that must stay schema-compatible with automated fetch
