@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Plan"
+  short_description: "Plan Techy changes with doc routing and task breakdowns"
+  default_prompt: "Use $project-plan to assess this Techy change, ask at least one clarification question, draft the documentation proposal, and then break the accepted direction into workboard-ready tasks."

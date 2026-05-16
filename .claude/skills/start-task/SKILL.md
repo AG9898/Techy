@@ -8,7 +8,7 @@ version: 1.0.0
 
 Use this skill to execute exactly one Techy workboard task from start to finish.
 
-This is a Codex skill, not a Claude CLI prompt. Follow Codex repo rules, tool constraints, and user-update requirements while you work.
+Follow this repo's agent rules, available tool constraints, and user-update requirements while you work.
 
 ## Workflow
 
