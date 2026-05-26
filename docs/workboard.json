@@ -3725,7 +3725,7 @@
       "id": "PRACTICE-001",
       "group_id": "PRACTICE",
       "title": "Add practice problem and progress schema",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create Drizzle tables for normalized practice problems and per-user progress.",

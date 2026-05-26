@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, primaryKey, integer } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, primaryKey, integer, jsonb, date, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 // ── Auth.js required tables ──────────────────────────────────────────────────
@@ -151,6 +151,73 @@ export const conversationMessages = pgTable('conversation_messages', {
 		.default(sql`now()`)
 });
 
+// ── Practice tables ───────────────────────────────────────────────────────────
+
+export const practiceProblems = pgTable(
+	'practice_problems',
+	{
+		id: uuid('id')
+			.primaryKey()
+			.default(sql`gen_random_uuid()`),
+		source: text('source').notNull(),
+		sourceSlug: text('source_slug'),
+		sourceUrl: text('source_url').notNull(),
+		title: text('title').notNull(),
+		difficulty: text('difficulty'),
+		dailyDate: date('daily_date'),
+		promptMarkdown: text('prompt_markdown').notNull(),
+		examples: jsonb('examples'),
+		constraints: jsonb('constraints'),
+		topicTags: text('topic_tags')
+			.array()
+			.notNull()
+			.default(sql`'{}'::text[]`),
+		fetchedAt: timestamp('fetched_at', { mode: 'date' }),
+		importedAt: timestamp('imported_at', { mode: 'date' }),
+		createdAt: timestamp('created_at', { mode: 'date' })
+			.notNull()
+			.default(sql`now()`),
+		updatedAt: timestamp('updated_at', { mode: 'date' })
+			.notNull()
+			.default(sql`now()`)
+	},
+	(t) => [
+		unique('practice_problems_source_slug_unique').on(t.source, t.sourceSlug),
+		unique('practice_problems_source_daily_date_unique').on(t.source, t.dailyDate)
+	]
+);
+
+export const practiceProgress = pgTable(
+	'practice_progress',
+	{
+		id: uuid('id')
+			.primaryKey()
+			.default(sql`gen_random_uuid()`),
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		problemId: uuid('problem_id')
+			.notNull()
+			.references(() => practiceProblems.id, { onDelete: 'cascade' }),
+		status: text('status', {
+			enum: ['not_started', 'in_progress', 'completed', 'skipped']
+		})
+			.notNull()
+			.default('not_started'),
+		attempts: integer('attempts').notNull().default(0),
+		notes: text('notes').notNull().default(''),
+		codeSnapshot: text('code_snapshot'),
+		completedAt: timestamp('completed_at', { mode: 'date' }),
+		createdAt: timestamp('created_at', { mode: 'date' })
+			.notNull()
+			.default(sql`now()`),
+		updatedAt: timestamp('updated_at', { mode: 'date' })
+			.notNull()
+			.default(sql`now()`)
+	},
+	(t) => [unique('practice_progress_user_problem_unique').on(t.userId, t.problemId)]
+);
+
 // ── Inferred TypeScript types ─────────────────────────────────────────────────
 
 export type Note = typeof notes.$inferSelect;
@@ -161,3 +228,7 @@ export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type ConversationMessage = typeof conversationMessages.$inferSelect;
 export type NewConversationMessage = typeof conversationMessages.$inferInsert;
+export type PracticeProblem = typeof practiceProblems.$inferSelect;
+export type NewPracticeProblem = typeof practiceProblems.$inferInsert;
+export type PracticeProgress = typeof practiceProgress.$inferSelect;
+export type NewPracticeProgress = typeof practiceProgress.$inferInsert;
