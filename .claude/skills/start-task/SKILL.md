@@ -147,6 +147,7 @@ jq '
 ## Guardrails
 
 - One task per run.
+- One commit per task cycle. Create exactly one commit after verification passes. Do not split the task across multiple commits.
 - Do not bypass dependency checks.
 - Never read the full workboard into context.
 - Never bulk-rewrite `docs/workboard.json`.
