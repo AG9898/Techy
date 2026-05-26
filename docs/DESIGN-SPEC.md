@@ -93,6 +93,7 @@ Rules:
 │ [Graph]      │  route-aware layout region                  │
 │ [Notes]      │  notes, graph, chat, note detail            │
 │ [Chat]       │                                             │
+│ [Practice]   │                                             │
 │ [theme]      │                                             │
 │ [account]    │                                             │
 └──────────────┴─────────────────────────────────────────────┘

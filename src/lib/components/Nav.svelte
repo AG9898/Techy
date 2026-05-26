@@ -115,7 +115,8 @@
 	const navLinks = [
 		{ href: '/', label: 'Graph' },
 		{ href: '/notes', label: 'Notes' },
-		{ href: '/chat', label: 'Chat' }
+		{ href: '/chat', label: 'Chat' },
+		{ href: '/practice', label: 'Practice' }
 	];
 
 	function isActive(href: string): boolean {
@@ -431,6 +432,11 @@
 							{:else if link.label === 'Chat'}
 								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 									<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+								</svg>
+							{:else if link.label === 'Practice'}
+								<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									<polyline points="16 18 22 12 16 6"/>
+									<polyline points="8 6 2 12 8 18"/>
 								</svg>
 							{/if}
 							<span class="nav-label">{link.label}</span>

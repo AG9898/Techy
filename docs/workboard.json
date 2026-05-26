@@ -3883,7 +3883,7 @@
       "id": "PRACTICE-005",
       "group_id": "PRACTICE",
       "title": "Build practice workspace UI",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Add `/practice` and `/practice/[problemId]` with daily fetch, import fallback, progress editing, and transient tutor UI.",
