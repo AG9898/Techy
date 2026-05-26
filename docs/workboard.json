@@ -3806,7 +3806,7 @@
       "id": "PRACTICE-003",
       "group_id": "PRACTICE",
       "title": "Add practice progress API",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Persist completion state, attempts, notes, and code snapshots for stored practice problems.",
