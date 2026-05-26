@@ -3844,7 +3844,7 @@
       "id": "PRACTICE-004",
       "group_id": "PRACTICE",
       "title": "Implement transient OpenRouter practice tutor",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add a practice-specific tutor endpoint that helps step by step without storing transcripts.",
