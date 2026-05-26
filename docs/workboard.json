@@ -3762,7 +3762,7 @@
       "id": "PRACTICE-002",
       "group_id": "PRACTICE",
       "title": "Implement practice ingestion endpoints",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Add the unofficial LeetCode daily fetch and manual JSON import paths behind authenticated APIs.",
