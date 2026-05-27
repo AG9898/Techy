@@ -430,7 +430,7 @@ Authenticated endpoint that fetches the current LeetCode daily challenge, normal
 - Fails closed if the unofficial LeetCode fetch path changes, times out, or is disabled.
 - Does not persist raw fetch payloads unless a future debugging mode explicitly adds bounded diagnostics.
 
-**Errors:** `401` unauthenticated, `502` upstream fetch/parse failure, `503` fetch disabled or unavailable
+**Errors:** `401` unauthenticated, `502` upstream fetch/parse failure, `503` fetch disabled, unavailable, or practice storage migration pending
 
 ---
 
@@ -463,7 +463,7 @@ Authenticated manual JSON import fallback for a practice problem.
 - Sends imported data through the same normalized upsert path as daily fetch.
 - Allows personal-use JSON produced outside Techy without making the deployed app depend on the automated fetch path.
 
-**Errors:** `400` invalid JSON or missing fields, `401` unauthenticated
+**Errors:** `400` invalid JSON or missing fields, `401` unauthenticated, `503` practice storage migration pending
 
 ---
 

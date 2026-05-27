@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db/index.js';
 import { practiceProblems, practiceProgress } from '$lib/server/db/schema.js';
+import { isPracticeSchemaUnavailableError } from '$lib/server/practice/schema-availability.js';
 import { desc, eq } from 'drizzle-orm';
 import type { PageServerLoad } from './$types.js';
 
@@ -8,19 +9,39 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const userId = session!.user!.id!;
 
 	// Load recent problems ordered by most recent daily date or created date
-	const recentRows = await db
-		.select({
-			id: practiceProblems.id,
-			title: practiceProblems.title,
-			source: practiceProblems.source,
-			sourceUrl: practiceProblems.sourceUrl,
-			difficulty: practiceProblems.difficulty,
-			dailyDate: practiceProblems.dailyDate,
-			createdAt: practiceProblems.createdAt
-		})
-		.from(practiceProblems)
-		.orderBy(desc(practiceProblems.createdAt))
-		.limit(20);
+	let recentRows: {
+		id: string;
+		title: string;
+		source: string;
+		sourceUrl: string;
+		difficulty: string | null;
+		dailyDate: string | null;
+		createdAt: Date;
+	}[];
+
+	try {
+		recentRows = await db
+			.select({
+				id: practiceProblems.id,
+				title: practiceProblems.title,
+				source: practiceProblems.source,
+				sourceUrl: practiceProblems.sourceUrl,
+				difficulty: practiceProblems.difficulty,
+				dailyDate: practiceProblems.dailyDate,
+				createdAt: practiceProblems.createdAt
+			})
+			.from(practiceProblems)
+			.orderBy(desc(practiceProblems.createdAt))
+			.limit(20);
+	} catch (err) {
+		if (!isPracticeSchemaUnavailableError(err)) throw err;
+		console.error('[practice] Practice database tables are missing. Run migrations.');
+		return {
+			dailyProblem: null,
+			recentProblems: [],
+			stats: { completed: 0, inProgress: 0, streakDays: 0 }
+		};
+	}
 
 	if (recentRows.length === 0) {
 		return {

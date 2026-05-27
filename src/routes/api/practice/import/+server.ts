@@ -1,6 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { validateManualImport, upsertPracticeProblem } from '$lib/server/practice/import.js';
+import {
+	isPracticeSchemaUnavailableError,
+	practiceSchemaUnavailableMessage
+} from '$lib/server/practice/schema-availability.js';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	const session = await locals.auth();
@@ -30,6 +34,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		result = await upsertPracticeProblem(validation.problem, 'import');
 	} catch (err) {
+		if (isPracticeSchemaUnavailableError(err)) {
+			return json({ error: practiceSchemaUnavailableMessage() }, { status: 503 });
+		}
 		console.error('[practice/import] DB upsert error:', err);
 		return json({ error: 'Failed to save the practice problem.' }, { status: 500 });
 	}

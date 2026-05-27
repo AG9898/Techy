@@ -6,6 +6,10 @@ import {
 	LeetCodeFetchUpstreamError
 } from '$lib/server/practice/leetcode.js';
 import { upsertPracticeProblem } from '$lib/server/practice/import.js';
+import {
+	isPracticeSchemaUnavailableError,
+	practiceSchemaUnavailableMessage
+} from '$lib/server/practice/schema-availability.js';
 
 export const POST: RequestHandler = async ({ locals }) => {
 	const session = await locals.auth();
@@ -41,6 +45,9 @@ export const POST: RequestHandler = async ({ locals }) => {
 	try {
 		result = await upsertPracticeProblem(normalized, 'fetch');
 	} catch (err) {
+		if (isPracticeSchemaUnavailableError(err)) {
+			return json({ error: practiceSchemaUnavailableMessage() }, { status: 503 });
+		}
 		console.error('[practice/daily-fetch] DB upsert error:', err);
 		return json({ error: 'Failed to save the daily challenge.' }, { status: 500 });
 	}
