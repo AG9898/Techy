@@ -19,9 +19,9 @@ export const OPENAI_DEFAULT_MODEL = 'gpt-5-mini';
 // Update this list (one place) when models are deprecated or better free options emerge.
 // Max 3 items — OpenRouter's models fallback array limit.
 export const OPENROUTER_FREE_MODELS: readonly string[] = [
-	'meta-llama/llama-3.3-70b-instruct:free',
-	'meta-llama/llama-3.1-8b-instruct:free',
-	'google/gemma-3-27b-it:free'
+	'deepseek/deepseek-r1:free',
+	'deepseek/deepseek-chat:free',
+	'qwen/qwen3-8b:free'
 ] as const;
 
 // Sentinel used by the UI provider/model selector — the actual model is chosen at runtime.
