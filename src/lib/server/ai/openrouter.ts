@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { env } from '$env/dynamic/private';
 import { buildRespondSystemPrompt } from './prompts.js';
+import { OPENROUTER_FREE_MODELS } from './models.js';
 import type { ResearchContext } from '$lib/server/assistant/research.js';
 import type {
 	ConversationMessage,
@@ -15,14 +16,14 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
  * Unified conversation endpoint for OpenRouter — returns a conversational reply and an optional note proposal.
  * @param messages - Full conversation transcript
  * @param mode - "chat" | "create" | "update"
- * @param model - A server-approved OpenRouter model ID
+ * @param _model - Ignored; model selection uses OPENROUTER_FREE_MODELS fallback list
  * @param currentNoteTitle - Selected note title for update mode grounding
  * @param currentNoteBody - Saved note body for update mode comparison
  */
 export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create' | 'update',
-	model: string,
+	_model: string,
 	researchContext?: ResearchContext,
 	canonicalCategories?: readonly string[],
 	existingTags?: string[],
@@ -53,14 +54,15 @@ export async function respondConversation(
 		deleteTarget
 	});
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const completion = await client.chat.completions.create({
-		model,
+		models: OPENROUTER_FREE_MODELS,
 		messages: [
 			{ role: 'system', content: systemPrompt },
 			...messages.map((message) => ({ role: message.role, content: message.content }))
 		],
 		max_tokens: mode === 'chat' ? 1400 : 4096
-	});
+	} as any);
 
 	const content = completion.choices[0]?.message?.content;
 	const text = typeof content === 'string' ? content.trim() : '';

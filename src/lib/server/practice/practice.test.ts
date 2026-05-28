@@ -31,7 +31,10 @@ vi.mock('$lib/server/db/index.js', () => ({
 
 // Mock the models module used by tutor.ts
 vi.mock('$lib/server/ai/models.js', () => ({
-	OPENROUTER_DEFAULT_MODEL: 'nvidia/nemotron-3-super-120b-a12b:free'
+	OPENROUTER_FREE_MODELS: [
+		'meta-llama/llama-3.3-70b-instruct:free',
+		'meta-llama/llama-3.1-8b-instruct:free'
+	]
 }));
 
 // Now import the modules under test
@@ -369,7 +372,6 @@ describe('validateTutorInput', () => {
 		expect(result.input.problemId).toBe('550e8400-e29b-41d4-a716-446655440000');
 		expect(result.input.message).toBe('Give me a nudge on this problem');
 		expect(result.input.hintLevel).toBeUndefined();
-		expect(result.input.model).toBeUndefined();
 	});
 
 	it('accepts a full tutor request with code and hint level', () => {
@@ -377,8 +379,7 @@ describe('validateTutorInput', () => {
 			problemId: '550e8400-e29b-41d4-a716-446655440000',
 			message: 'Is my approach correct?',
 			code: 'def twoSum(nums, target):\n    pass',
-			hintLevel: 'review',
-			model: 'nvidia/nemotron-3-super-120b-a12b:free'
+			hintLevel: 'review'
 		});
 		expect(result.ok).toBe(true);
 		if (!result.ok) throw new Error(JSON.stringify(result.errors));
@@ -424,18 +425,6 @@ describe('validateTutorInput', () => {
 		if (result.ok) throw new Error('expected failure');
 		const fields = result.errors.map((e) => e.field);
 		expect(fields).toContain('hintLevel');
-	});
-
-	it('rejects a disallowed model identifier', () => {
-		const result = validateTutorInput({
-			problemId: '550e8400-e29b-41d4-a716-446655440000',
-			message: 'Help',
-			model: 'gpt-5'
-		});
-		expect(result.ok).toBe(false);
-		if (result.ok) throw new Error('expected failure');
-		const fields = result.errors.map((e) => e.field);
-		expect(fields).toContain('model');
 	});
 
 	it('accepts all documented hint levels', () => {

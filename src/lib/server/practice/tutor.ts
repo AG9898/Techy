@@ -8,25 +8,13 @@
 
 import OpenAI from 'openai';
 import { env } from '$env/dynamic/private';
-import { OPENROUTER_DEFAULT_MODEL } from '$lib/server/ai/models.js';
+import { OPENROUTER_FREE_MODELS } from '$lib/server/ai/models.js';
 import { db } from '$lib/server/db/index.js';
 import { practiceProblems } from '$lib/server/db/schema.js';
 import type { PracticeProblem } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-
-// ── Allowed tutor models ──────────────────────────────────────────────────────
-
-/**
- * Allowlisted OpenRouter model IDs for the practice tutor.
- * Defaults to the shared OpenRouter default when the caller omits `model`.
- */
-const TUTOR_ALLOWED_MODELS: readonly string[] = [OPENROUTER_DEFAULT_MODEL] as const;
-
-export function isAllowedTutorModel(model: string): boolean {
-	return TUTOR_ALLOWED_MODELS.includes(model);
-}
 
 // ── Hint level ────────────────────────────────────────────────────────────────
 
@@ -44,7 +32,6 @@ export interface TutorInput {
 	message: string;
 	code?: string;
 	hintLevel?: HintLevel;
-	model?: string;
 }
 
 export interface TutorResult {
@@ -91,17 +78,6 @@ export function validateTutorInput(
 		});
 	}
 
-	if (obj.model !== undefined) {
-		if (typeof obj.model !== 'string' || !obj.model.trim()) {
-			errors.push({ field: 'model', message: 'model must be a non-empty string when provided' });
-		} else if (!isAllowedTutorModel(obj.model.trim())) {
-			errors.push({
-				field: 'model',
-				message: `model must be one of the allowlisted tutor models`
-			});
-		}
-	}
-
 	if (errors.length > 0) return { ok: false, errors };
 
 	return {
@@ -110,8 +86,7 @@ export function validateTutorInput(
 			problemId: (obj.problemId as string).trim(),
 			message: (obj.message as string).trim(),
 			code: obj.code !== undefined ? (obj.code as string) : undefined,
-			hintLevel: obj.hintLevel !== undefined ? (obj.hintLevel as HintLevel) : undefined,
-			model: obj.model !== undefined ? (obj.model as string).trim() : undefined
+			hintLevel: obj.hintLevel !== undefined ? (obj.hintLevel as HintLevel) : undefined
 		}
 	};
 }
@@ -189,7 +164,6 @@ export async function callTutor(
 		throw new Error('OPENROUTER_API_KEY is not configured');
 	}
 
-	const model = input.model ?? OPENROUTER_DEFAULT_MODEL;
 	const hintLevel: HintLevel = input.hintLevel ?? 'nudge';
 
 	const client = new OpenAI({
@@ -199,14 +173,15 @@ export async function callTutor(
 
 	const userContent = buildUserContent(input.message, input.code);
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const completion = await client.chat.completions.create({
-		model,
+		models: OPENROUTER_FREE_MODELS,
 		messages: [
 			{ role: 'system', content: buildTutorSystemPrompt(problem, hintLevel) },
 			{ role: 'user', content: userContent }
 		],
 		max_tokens: 800
-	});
+	} as any);
 
 	const content = completion.choices[0]?.message?.content;
 	const reply = typeof content === 'string' ? content.trim() : '';
@@ -215,7 +190,7 @@ export async function callTutor(
 		throw new Error('Unexpected empty response from OpenRouter tutor');
 	}
 
-	return { reply, model };
+	return { reply, model: completion.model ?? OPENROUTER_FREE_MODELS[0] };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

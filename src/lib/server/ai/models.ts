@@ -14,7 +14,18 @@ export interface ProviderOption {
 
 export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 export const OPENAI_DEFAULT_MODEL = 'gpt-5-mini';
-export const OPENROUTER_DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
+
+// Ordered fallback list: OpenRouter tries each in sequence, skipping unavailable ones.
+// Update this list (one place) when models are deprecated or better free options emerge.
+export const OPENROUTER_FREE_MODELS: readonly string[] = [
+	'meta-llama/llama-3.3-70b-instruct:free',
+	'meta-llama/llama-3.1-8b-instruct:free',
+	'google/gemma-3-27b-it:free',
+	'mistralai/mistral-7b-instruct:free'
+] as const;
+
+// Sentinel used by the UI provider/model selector — the actual model is chosen at runtime.
+export const OPENROUTER_DEFAULT_MODEL = 'auto';
 
 export const PROVIDERS: ProviderOption[] = [
 	{
@@ -42,12 +53,7 @@ export const PROVIDERS: ProviderOption[] = [
 		id: 'openrouter',
 		label: 'OpenRouter',
 		defaultModel: OPENROUTER_DEFAULT_MODEL,
-		models: [
-			{
-				id: 'nvidia/nemotron-3-super-120b-a12b:free',
-				label: 'NVIDIA Nemotron-3 Super 120B A12B (Free)'
-			}
-		]
+		models: [{ id: 'auto', label: 'Free Models (Auto-routed)' }]
 	}
 ];
 
