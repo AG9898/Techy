@@ -47,9 +47,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 
-		// Surface configuration errors as 503
 		if (message.includes('OPENROUTER_API_KEY')) {
 			return json({ error: 'OpenRouter is unavailable or unconfigured.' }, { status: 503 });
+		}
+
+		if (message.includes('429') || message.includes('rate') || message.includes('Rate')) {
+			return json({ error: 'All free models are currently rate-limited. Try again in a moment.' }, { status: 429 });
 		}
 
 		console.error('[practice/tutor] OpenRouter error:', err);

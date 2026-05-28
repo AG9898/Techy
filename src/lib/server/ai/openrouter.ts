@@ -54,15 +54,25 @@ export async function respondConversation(
 		deleteTarget
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const completion = await client.chat.completions.create({
-		models: OPENROUTER_FREE_MODELS,
-		messages: [
-			{ role: 'system', content: systemPrompt },
-			...messages.map((message) => ({ role: message.role, content: message.content }))
-		],
-		max_tokens: mode === 'chat' ? 1400 : 4096
-	} as any);
+	const apiMessages = [
+		{ role: 'system' as const, content: systemPrompt },
+		...messages.map((message) => ({ role: message.role, content: message.content }))
+	];
+
+	// Sequential fallback: OpenRouter's `models` array doesn't retry on upstream 429s.
+	let completion;
+	let lastError: unknown;
+	for (const model of OPENROUTER_FREE_MODELS) {
+		try {
+			completion = await client.chat.completions.create({ model, messages: apiMessages, max_tokens: mode === 'chat' ? 1400 : 4096 });
+			break;
+		} catch (err) {
+			lastError = err;
+			if (err instanceof OpenAI.RateLimitError) continue;
+			throw err;
+		}
+	}
+	if (!completion) throw lastError;
 
 	const content = completion.choices[0]?.message?.content;
 	const text = typeof content === 'string' ? content.trim() : '';

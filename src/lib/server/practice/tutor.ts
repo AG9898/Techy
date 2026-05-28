@@ -190,16 +190,26 @@ export async function callTutor(
 	});
 
 	const userContent = buildUserContent(input.message, input.code);
+	const messages = [
+		{ role: 'system' as const, content: buildTutorSystemPrompt(problem, hintLevel) },
+		{ role: 'user' as const, content: userContent }
+	];
+	const maxTokens = hintLevel === 'solve' ? 2400 : 800;
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const completion = await client.chat.completions.create({
-		models: OPENROUTER_FREE_MODELS,
-		messages: [
-			{ role: 'system', content: buildTutorSystemPrompt(problem, hintLevel) },
-			{ role: 'user', content: userContent }
-		],
-		max_tokens: hintLevel === 'solve' ? 2400 : 800
-	} as any);
+	// Sequential fallback: OpenRouter's `models` array doesn't retry on upstream 429s.
+	let completion;
+	let lastError: unknown;
+	for (const model of OPENROUTER_FREE_MODELS) {
+		try {
+			completion = await client.chat.completions.create({ model, messages, max_tokens: maxTokens });
+			break;
+		} catch (err) {
+			lastError = err;
+			if (err instanceof OpenAI.RateLimitError) continue;
+			throw err;
+		}
+	}
+	if (!completion) throw lastError;
 
 	const content = completion.choices[0]?.message?.content;
 	const reply = typeof content === 'string' ? content.trim() : '';
