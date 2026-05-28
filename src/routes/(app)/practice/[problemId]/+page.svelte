@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
 	import { marked } from 'marked';
-	import type { PracticeProblem } from '$lib/server/db/schema.js';
+	import CodeEditor from '$lib/components/CodeEditor.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	type ProgressStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
 	type HintLevel = 'nudge' | 'pattern' | 'approach' | 'review';
 	type TutorTurn = { role: 'user' | 'tutor'; content: string };
+	type SupportedLanguage = 'python' | 'javascript' | 'typescript' | 'java' | 'cpp';
 
 	const statusOptions: { value: ProgressStatus; label: string }[] = [
 		{ value: 'not_started', label: 'Not started' },
@@ -21,6 +22,14 @@
 		{ value: 'pattern', label: 'Pattern', desc: 'Identify the algorithmic pattern' },
 		{ value: 'approach', label: 'Approach', desc: 'Walk through the approach' },
 		{ value: 'review', label: 'Review', desc: 'Review my code' }
+	];
+
+	const languageOptions: { value: SupportedLanguage; label: string }[] = [
+		{ value: 'python', label: 'Python' },
+		{ value: 'javascript', label: 'JS' },
+		{ value: 'typescript', label: 'TS' },
+		{ value: 'java', label: 'Java' },
+		{ value: 'cpp', label: 'C++' }
 	];
 
 	const difficultyClass: Record<string, string> = {
@@ -40,15 +49,22 @@
 	let progressSaved = $state(false);
 	let progressError = $state('');
 
+	// Editor state — client-local only
+	let activeLanguage = $state<SupportedLanguage>('python');
+
 	// Tutor state — client-local only
 	let tutorTurns = $state<TutorTurn[]>([]);
 	let tutorMessage = $state('');
 	let hintLevel = $state<HintLevel>('nudge');
 	let tutorLoading = $state(false);
 	let tutorError = $state('');
+	let tutorCollapsed = $state(false);
 
 	// Rendered markdown (derived)
 	const problemHtml = $derived(marked.parse(data.problem.promptMarkdown ?? '') as string);
+
+	// Code context label — shown when codeSnapshot is non-empty
+	const hasCodeContext = $derived(codeSnapshot.trim().length > 0);
 
 	function formatDate(dateStr: string | null | undefined): string {
 		if (!dateStr) return '';
@@ -183,89 +199,42 @@
 		{/if}
 	</header>
 
-	<!-- ── Two-column workspace ──────────────────────────────────────────── -->
+	<!-- ── 3-column workspace ───────────────────────────────────────────── -->
 	<div class="ws-body">
-		<!-- Left: problem content -->
+		<!-- Left: problem statement -->
 		<div class="problem-col">
-			<!-- Problem statement -->
 			<section class="ws-section">
 				<h2 class="section-label">Problem</h2>
 				<div class="problem-md prose">
 					{@html problemHtml}
 				</div>
 			</section>
-
-			<!-- Tutor -->
-			<section class="ws-section tutor-section">
-				<div class="tutor-header">
-					<h2 class="section-label">Tutor</h2>
-					<span class="tutor-note">Session only · not saved</span>
-					{#if tutorTurns.length > 0}
-						<button class="clear-btn" type="button" onclick={clearTutor}>Clear</button>
-					{/if}
-				</div>
-
-				<!-- Hint level selector -->
-				<div class="hint-row">
-					{#each hintLevelOptions as opt}
-						<button
-							class="hint-btn"
-							class:active={hintLevel === opt.value}
-							type="button"
-							title={opt.desc}
-							onclick={() => (hintLevel = opt.value)}
-						>
-							{opt.label}
-						</button>
-					{/each}
-				</div>
-
-				<!-- Transcript -->
-				{#if tutorTurns.length > 0}
-					<div class="tutor-transcript" aria-live="polite">
-						{#each tutorTurns as turn}
-							<div class="tutor-turn turn-{turn.role}">
-								<span class="turn-role">{turn.role === 'user' ? 'You' : 'Tutor'}</span>
-								<p class="turn-content">{turn.content}</p>
-							</div>
-						{/each}
-						{#if tutorLoading}
-							<div class="tutor-turn turn-tutor loading">
-								<span class="turn-role">Tutor</span>
-								<span class="thinking-dots">···</span>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
-				{#if tutorError}
-					<p class="tutor-error">{tutorError}</p>
-				{/if}
-
-				<!-- Tutor input -->
-				<div class="tutor-input-row">
-					<textarea
-						class="tutor-input"
-						rows={3}
-						placeholder="Ask a question… (Ctrl+Enter to send)"
-						bind:value={tutorMessage}
-						onkeydown={handleTutorKeydown}
-						disabled={tutorLoading}
-					></textarea>
-					<button
-						class="send-btn"
-						type="button"
-						onclick={askTutor}
-						disabled={tutorLoading || !tutorMessage.trim()}
-					>
-						Ask
-					</button>
-				</div>
-			</section>
 		</div>
 
-		<!-- Right: progress + notes + code -->
-		<div class="progress-col">
+		<!-- Center: code editor + language toolbar -->
+		<div class="editor-col">
+			<!-- Language selector toolbar -->
+			<div class="lang-toolbar">
+				{#each languageOptions as opt}
+					<button
+						class="lang-btn"
+						class:active={activeLanguage === opt.value}
+						type="button"
+						onclick={() => (activeLanguage = opt.value)}
+					>
+						{opt.label}
+					</button>
+				{/each}
+			</div>
+
+			<!-- CodeMirror editor — fills remaining column height -->
+			<div class="editor-wrapper">
+				<CodeEditor bind:value={codeSnapshot} language={activeLanguage} />
+			</div>
+		</div>
+
+		<!-- Right: progress + notes + tutor sidebar -->
+		<div class="sidebar-col">
 			<!-- Progress controls -->
 			<section class="ws-section">
 				<h2 class="section-label">Progress</h2>
@@ -322,18 +291,87 @@
 				></textarea>
 			</section>
 
-			<!-- Code snapshot -->
-			<section class="ws-section">
-				<h2 class="section-label">Code snapshot</h2>
-				<textarea
-					class="code-area"
-					rows={10}
-					placeholder="Paste your current solution attempt here…"
-					bind:value={codeSnapshot}
-				></textarea>
-				<p class="code-note">
-					Code is saved with progress. Paste here for tutor context, then submit on {data.problem.source}.
-				</p>
+			<!-- Tutor (collapsible) -->
+			<section class="ws-section tutor-section">
+				<div class="tutor-header">
+					<h2 class="section-label">Tutor</h2>
+					<span class="tutor-note">Session only · not saved</span>
+					{#if tutorTurns.length > 0}
+						<button class="clear-btn" type="button" onclick={clearTutor}>Clear</button>
+					{/if}
+					<button
+						class="collapse-btn"
+						type="button"
+						aria-expanded={!tutorCollapsed}
+						onclick={() => (tutorCollapsed = !tutorCollapsed)}
+					>
+						{tutorCollapsed ? '▸' : '▾'}
+					</button>
+				</div>
+
+				{#if !tutorCollapsed}
+					<!-- Hint level selector -->
+					<div class="hint-row">
+						{#each hintLevelOptions as opt}
+							<button
+								class="hint-btn"
+								class:active={hintLevel === opt.value}
+								type="button"
+								title={opt.desc}
+								onclick={() => (hintLevel = opt.value)}
+							>
+								{opt.label}
+							</button>
+						{/each}
+					</div>
+
+					<!-- Transcript -->
+					{#if tutorTurns.length > 0}
+						<div class="tutor-transcript" aria-live="polite">
+							{#each tutorTurns as turn}
+								<div class="tutor-turn turn-{turn.role}">
+									<span class="turn-role">{turn.role === 'user' ? 'You' : 'Tutor'}</span>
+									<p class="turn-content">{turn.content}</p>
+								</div>
+							{/each}
+							{#if tutorLoading}
+								<div class="tutor-turn turn-tutor loading">
+									<span class="turn-role">Tutor</span>
+									<span class="thinking-dots">···</span>
+								</div>
+							{/if}
+						</div>
+					{/if}
+
+					{#if tutorError}
+						<p class="tutor-error">{tutorError}</p>
+					{/if}
+
+					<!-- Tutor input -->
+					<div class="tutor-input-row">
+						<textarea
+							class="tutor-input"
+							rows={3}
+							placeholder="Ask a question… (Ctrl+Enter to send)"
+							bind:value={tutorMessage}
+							onkeydown={handleTutorKeydown}
+							disabled={tutorLoading}
+						></textarea>
+						<div class="send-col">
+							<button
+								class="send-btn"
+								type="button"
+								onclick={askTutor}
+								disabled={tutorLoading || !tutorMessage.trim()}
+							>
+								Ask
+							</button>
+							{#if hasCodeContext}
+								<span class="code-ctx-label">+ code</span>
+							{/if}
+						</div>
+					</div>
+				{/if}
 			</section>
 		</div>
 	</div>
@@ -461,10 +499,10 @@
 		padding: 0.08rem 0.4rem;
 	}
 
-	/* ── Body layout ────────────────────────────────────────────────────── */
+	/* ── Body layout — 3-column grid ────────────────────────────────────── */
 	.ws-body {
 		display: grid;
-		grid-template-columns: 1fr 320px;
+		grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr) minmax(280px, 320px);
 		gap: 0;
 		flex: 1;
 		overflow: hidden;
@@ -472,16 +510,68 @@
 
 	.problem-col {
 		overflow-y: auto;
-		padding: 1.5rem 2rem;
+		padding: 1.5rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
 		border-right: 1px solid var(--border-soft);
 	}
 
-	.progress-col {
+	/* Center editor column — sticky full-height, no overflow-y scroll */
+	.editor-col {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		border-right: 1px solid var(--border-soft);
+		min-height: 0;
+	}
+
+	/* Language toolbar */
+	.lang-toolbar {
+		display: flex;
+		gap: 0.35rem;
+		padding: 0.6rem 1rem 0.5rem;
+		flex-shrink: 0;
+		border-bottom: 1px solid var(--border-soft);
+		background: var(--bg-surface);
+	}
+
+	.lang-btn {
+		font-size: 0.72rem;
+		font-family: inherit;
+		padding: 0.25rem 0.65rem;
+		border-radius: 6px;
+		border: 1px solid var(--border-soft);
+		background: var(--bg-raised);
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+	}
+
+	.lang-btn:hover {
+		border-color: var(--border-strong);
+		color: var(--text-primary);
+	}
+
+	.lang-btn.active {
+		border-color: var(--accent-primary);
+		background: var(--accent-soft);
+		color: var(--accent-primary);
+	}
+
+	/* Editor fills all remaining column height */
+	.editor-wrapper {
+		flex: 1;
+		min-height: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Sidebar (right) — scrollable independently */
+	.sidebar-col {
 		overflow-y: auto;
-		padding: 1.5rem 1.5rem;
+		padding: 1.5rem 1.25rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
@@ -568,7 +658,7 @@
 	.tutor-header {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
 
 	.tutor-note {
@@ -590,6 +680,27 @@
 
 	.clear-btn:hover {
 		color: var(--accent-red);
+	}
+
+	.collapse-btn {
+		font-size: 0.72rem;
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0.1rem 0.3rem;
+		font-family: inherit;
+		line-height: 1;
+		transition: color 0.15s ease;
+	}
+
+	/* When there is no clear-btn, push collapse to the right */
+	.tutor-header:not(:has(.clear-btn)) .collapse-btn {
+		margin-left: auto;
+	}
+
+	.collapse-btn:hover {
+		color: var(--text-primary);
 	}
 
 	.hint-row {
@@ -629,7 +740,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		max-height: 320px;
+		max-height: 280px;
 		overflow-y: auto;
 	}
 
@@ -699,6 +810,14 @@
 		border-color: var(--accent-primary);
 	}
 
+	.send-col {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.3rem;
+		flex-shrink: 0;
+	}
+
 	.send-btn {
 		padding: 0.5rem 1rem;
 		background: var(--accent-soft);
@@ -710,7 +829,6 @@
 		cursor: pointer;
 		white-space: nowrap;
 		transition: opacity 0.15s ease, background 0.15s ease;
-		flex-shrink: 0;
 	}
 
 	.send-btn:hover:not(:disabled) {
@@ -720,6 +838,13 @@
 	.send-btn:disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
+	}
+
+	.code-ctx-label {
+		font-size: 0.65rem;
+		color: var(--accent-primary);
+		opacity: 0.75;
+		white-space: nowrap;
 	}
 
 	/* ── Progress form ──────────────────────────────────────────────────── */
@@ -812,9 +937,8 @@
 		color: var(--accent-red);
 	}
 
-	/* ── Notes / code areas ─────────────────────────────────────────────── */
-	.notes-area,
-	.code-area {
+	/* ── Notes area ─────────────────────────────────────────────────────── */
+	.notes-area {
 		width: 100%;
 		padding: 0.6rem 0.75rem;
 		background: var(--bg-raised);
@@ -829,16 +953,9 @@
 		transition: border-color 0.15s ease;
 	}
 
-	.notes-area:focus,
-	.code-area:focus {
+	.notes-area:focus {
 		outline: none;
 		border-color: var(--accent-primary);
-	}
-
-	.code-note {
-		font-size: 0.7rem;
-		color: var(--text-subtle);
-		margin: 0;
 	}
 
 	/* ── Responsive ─────────────────────────────────────────────────────── */
@@ -854,7 +971,13 @@
 			overflow-y: visible;
 		}
 
-		.progress-col {
+		.editor-col {
+			height: 400px;
+			border-right: none;
+			border-bottom: 1px solid var(--border-soft);
+		}
+
+		.sidebar-col {
 			overflow-y: visible;
 		}
 	}

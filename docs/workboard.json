@@ -2478,7 +2478,7 @@
       "id": "PRACTICE-008",
       "group_id": "PRACTICE",
       "title": "Refactor workspace to 3-panel layout with CodeEditor and language selector",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Replace the 2-column practice workspace with a 3-panel layout and wire CodeEditor into the center column with a language selector toolbar.",
