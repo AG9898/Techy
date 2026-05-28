@@ -8,7 +8,7 @@
  *   - Tutor non-persistence contract (validateTutorInput, module-level documentation check)
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // ── Mock $env/dynamic/private before importing env-dependent modules ──────────
 
