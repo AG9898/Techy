@@ -6,7 +6,7 @@
 	let { data }: { data: PageData } = $props();
 
 	type ProgressStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
-	type HintLevel = 'nudge' | 'pattern' | 'approach' | 'review';
+	type HintLevel = 'nudge' | 'pattern' | 'approach' | 'review' | 'solve';
 	type TutorTurn = { role: 'user' | 'tutor'; content: string };
 	type SupportedLanguage = 'python' | 'javascript' | 'typescript' | 'java' | 'cpp';
 
@@ -21,7 +21,8 @@
 		{ value: 'nudge', label: 'Nudge', desc: 'A small nudge to get unstuck' },
 		{ value: 'pattern', label: 'Pattern', desc: 'Identify the algorithmic pattern' },
 		{ value: 'approach', label: 'Approach', desc: 'Walk through the approach' },
-		{ value: 'review', label: 'Review', desc: 'Review my code' }
+		{ value: 'review', label: 'Review', desc: 'Review my code' },
+		{ value: 'solve', label: 'Solve', desc: 'Full solution with step-by-step explanation' }
 	];
 
 	const languageOptions: { value: SupportedLanguage; label: string }[] = [

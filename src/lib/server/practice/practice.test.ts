@@ -468,12 +468,11 @@ describe('practice tutor non-persistence contract', () => {
 	 * The API route at `src/routes/api/practice/tutor/+server.ts` confirms this
 	 * by having no mutation DB calls in its handler.
 	 */
-	it('VALID_HINT_LEVELS does not include any solution-revealing level', () => {
-		// Hint levels are designed to guide rather than reveal full solutions.
-		// 'solution' is intentionally not a valid level — review is the deepest.
+	it('VALID_HINT_LEVELS contains expected levels including solve', () => {
 		expect(VALID_HINT_LEVELS).not.toContain('solution');
-		expect(VALID_HINT_LEVELS).toContain('review');
 		expect(VALID_HINT_LEVELS).toContain('nudge');
+		expect(VALID_HINT_LEVELS).toContain('review');
+		expect(VALID_HINT_LEVELS).toContain('solve');
 	});
 
 	it('tutor module exports no conversation creation or message append functions', async () => {

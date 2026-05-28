@@ -18,7 +18,7 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // ── Hint level ────────────────────────────────────────────────────────────────
 
-export const VALID_HINT_LEVELS = ['nudge', 'pattern', 'approach', 'review'] as const;
+export const VALID_HINT_LEVELS = ['nudge', 'pattern', 'approach', 'review', 'solve'] as const;
 export type HintLevel = (typeof VALID_HINT_LEVELS)[number];
 
 export function isValidHintLevel(value: unknown): value is HintLevel {
@@ -108,23 +108,45 @@ export async function loadProblem(problemId: string): Promise<PracticeProblem | 
 // ── System prompt builder ─────────────────────────────────────────────────────
 
 function buildTutorSystemPrompt(problem: PracticeProblem, hintLevel: HintLevel): string {
-	const hintInstructions: Record<HintLevel, string> = {
-		nudge:
-			'Give the learner a single small nudge — point out what to think about next without revealing the approach or any code.',
-		pattern:
-			'Identify the core algorithmic pattern (e.g. two-pointer, sliding window, BFS, dynamic programming) and briefly explain why it fits this problem. Do not write solution code.',
-		approach:
-			'Walk through the high-level approach step by step. Explain the logic and trade-offs clearly. Write pseudocode only if it meaningfully aids understanding. Do not write complete solution code.',
-		review:
-			'Review the learner\'s submitted code for correctness, edge-case handling, and time/space complexity. Point out any bugs or improvements. You may show small corrected snippets for specific issues, but do not rewrite the full solution.'
-	};
-
 	const topicContext =
 		problem.topicTags && problem.topicTags.length > 0
 			? `\nRelevant topic tags: ${problem.topicTags.join(', ')}.`
 			: '';
 
 	const difficultyContext = problem.difficulty ? `\nDifficulty: ${problem.difficulty}.` : '';
+
+	const problemBlock = [
+		'--- PROBLEM ---',
+		`Title: ${problem.title}`,
+		`Source: ${problem.source}${difficultyContext}${topicContext}`,
+		'',
+		problem.promptMarkdown
+	].join('\n');
+
+	if (hintLevel === 'solve') {
+		return [
+			'You are an expert software engineer providing a complete, well-explained solution to a coding problem.',
+			'',
+			'Your response must:',
+			'1. State the core insight or key observation that unlocks the solution.',
+			'2. Explain the chosen algorithm and data structures, and why they fit.',
+			'3. Write the full working solution in clean, idiomatic code.',
+			'4. Walk through the code step by step — explain what each meaningful block does and why.',
+			'5. State the time and space complexity with a brief justification.',
+			'6. Call out any important edge cases and how the solution handles them.',
+			'',
+			'Format: use clear headings and fenced code blocks. Be thorough but not verbose.',
+			'',
+			problemBlock
+		].join('\n');
+	}
+
+	const hintInstructions: Record<Exclude<HintLevel, 'solve'>, string> = {
+		nudge: 'Give the learner a single small nudge — point out what to think about next without revealing the approach or any code.',
+		pattern: 'Identify the core algorithmic pattern (e.g. two-pointer, sliding window, BFS, dynamic programming) and briefly explain why it fits this problem. Do not write solution code.',
+		approach: 'Walk through the high-level approach step by step. Explain the logic and trade-offs clearly. Write pseudocode only if it meaningfully aids understanding. Do not write complete solution code.',
+		review: "Review the learner's submitted code for correctness, edge-case handling, and time/space complexity. Point out any bugs or improvements. You may show small corrected snippets for specific issues, but do not rewrite the full solution."
+	};
 
 	return [
 		'You are a concise, Socratic coding tutor helping a developer practise algorithmic problem-solving.',
@@ -133,17 +155,13 @@ function buildTutorSystemPrompt(problem: PracticeProblem, hintLevel: HintLevel):
 		`Current task: ${hintInstructions[hintLevel]}`,
 		'',
 		'Rules:',
-		'- Never reveal a complete working solution unless the hint level is "review" and the learner has already submitted code.',
+		'- Never reveal a complete working solution.',
 		'- Keep responses short and focused (under 300 words unless "review" demands more).',
 		'- Prefer questions that prompt the learner to think before giving direct answers.',
 		'- Use plain language. Avoid jargon unless you immediately explain it.',
 		'- Do not invent constraints or examples not present in the problem.',
 		'',
-		'--- PROBLEM ---',
-		`Title: ${problem.title}`,
-		`Source: ${problem.source}${difficultyContext}${topicContext}`,
-		'',
-		problem.promptMarkdown
+		problemBlock
 	].join('\n');
 }
 
@@ -180,7 +198,7 @@ export async function callTutor(
 			{ role: 'system', content: buildTutorSystemPrompt(problem, hintLevel) },
 			{ role: 'user', content: userContent }
 		],
-		max_tokens: 800
+		max_tokens: hintLevel === 'solve' ? 2400 : 800
 	} as any);
 
 	const content = completion.choices[0]?.message?.content;
