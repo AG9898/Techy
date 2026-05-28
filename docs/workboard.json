@@ -41,7 +41,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Wire up researchTopic() in chatgpt.ts using the OpenAI SDK.",
-      "description": "Implement researchTopic() and generateNote() in src/lib/server/ai/chatgpt.ts using the openai SDK. Read OPENAI_API_KEY via $env/dynamic/private (NOT $env/static/private) — same pattern as claude.ts. Add a provider param to /api/ai/research and /api/ai/generate-note so callers can choose Claude vs GPT. Move openai from devDependencies to dependencies.",
+      "description": "Implement researchTopic() and generateNote() in src/lib/server/ai/chatgpt.ts using the openai SDK. Read OPENAI_API_KEY via $env/dynamic/private (NOT $env/static/private) \u2014 same pattern as claude.ts. Add a provider param to /api/ai/research and /api/ai/generate-note so callers can choose Claude vs GPT. Move openai from devDependencies to dependencies.",
       "acceptance_criteria": [
         "POST /api/ai/research {topic: 'SvelteKit', provider: 'chatgpt'} returns a Markdown string",
         "Provider defaults to 'claude' when not specified"
@@ -95,7 +95,7 @@
         "docs/STYLE-GUIDE.md"
       ],
       "notes": [
-        "Requires client-side fetch — break out of pure form-action pattern for this feature."
+        "Requires client-side fetch \u2014 break out of pure form-action pattern for this feature."
       ],
       "commands": [],
       "estimate": "M"
@@ -725,12 +725,12 @@
     {
       "id": "ASSIST-013b",
       "group_id": "ASSIST",
-      "title": "Conversation server module — CRUD queries",
+      "title": "Conversation server module \u2014 CRUD queries",
       "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create src/lib/server/assistant/conversations.ts with typed query functions for creating conversations, appending messages, loading a thread, and listing recent conversations.",
-      "description": "Create the file src/lib/server/assistant/conversations.ts and export four functions: createConversation(userId, title?) → Conversation, appendMessages(conversationId, messages: {role, content}[]) → void, getConversation(conversationId, userId) → {conversation, messages} | null, listRecentConversations(userId, limit=20) → Conversation[]. All queries use the Drizzle db client from src/lib/server/db/index.ts. No route or page files change in this task.",
+      "description": "Create the file src/lib/server/assistant/conversations.ts and export four functions: createConversation(userId, title?) \u2192 Conversation, appendMessages(conversationId, messages: {role, content}[]) \u2192 void, getConversation(conversationId, userId) \u2192 {conversation, messages} | null, listRecentConversations(userId, limit=20) \u2192 Conversation[]. All queries use the Drizzle db client from src/lib/server/db/index.ts. No route or page files change in this task.",
       "acceptance_criteria": [
         "createConversation inserts a row into conversations and returns the new record",
         "appendMessages inserts one row per message into conversationMessages",
@@ -748,7 +748,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "This is a pure server-side data module — no SvelteKit route concerns here.",
+        "This is a pure server-side data module \u2014 no SvelteKit route concerns here.",
         "Use eq, desc, and asc from drizzle-orm for query predicates."
       ],
       "commands": [
@@ -764,7 +764,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Update the /api/assistant/respond endpoint to create or continue a conversation in the DB and persist user + assistant messages on each exchange.",
-      "description": "Modify src/routes/api/assistant/respond/+server.ts so that on each POST: (1) if no conversationId is provided in the request body, create a new conversation for the authenticated user; (2) append the incoming user message to the conversation; (3) after the assistant reply is generated, append the assistant message; (4) return conversationId in the JSON response alongside the existing reply fields. The request/response shape must remain backward-compatible — conversationId is an optional addition, not a replacement.",
+      "description": "Modify src/routes/api/assistant/respond/+server.ts so that on each POST: (1) if no conversationId is provided in the request body, create a new conversation for the authenticated user; (2) append the incoming user message to the conversation; (3) after the assistant reply is generated, append the assistant message; (4) return conversationId in the JSON response alongside the existing reply fields. The request/response shape must remain backward-compatible \u2014 conversationId is an optional addition, not a replacement.",
       "acceptance_criteria": [
         "A new conversation row is created when conversationId is absent from the request",
         "User message is persisted before the assistant call",
@@ -785,7 +785,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "The endpoint already has session auth — use the session userId for conversation ownership.",
+        "The endpoint already has session auth \u2014 use the session userId for conversation ownership.",
         "Keep streaming or non-streaming behavior unchanged; persistence is a side-effect."
       ],
       "commands": [
@@ -826,7 +826,7 @@
       ],
       "notes": [
         "Run npm run prepare after creating the new [conversationId] route.",
-        "The page already manages a local messages array — initialise it from data.messages when present."
+        "The page already manages a local messages array \u2014 initialise it from data.messages when present."
       ],
       "commands": [
         "npm run prepare",
@@ -1263,7 +1263,7 @@
         "docs/STYLE-GUIDE.md"
       ],
       "notes": [
-        "Done. Delete form must not be nested inside update form — separate <form> elements used."
+        "Done. Delete form must not be nested inside update form \u2014 separate <form> elements used."
       ],
       "commands": [
         "npm run check"
@@ -1278,7 +1278,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "GET /search with query params for title/category (ilike) and tags (arrayOverlaps).",
-      "description": "Search page uses SvelteKit GET form actions — no JS required. Drizzle ilike() on title and category fields, arrayOverlaps() on tags array. Results rendered as NoteCard grid.",
+      "description": "Search page uses SvelteKit GET form actions \u2014 no JS required. Drizzle ilike() on title and category fields, arrayOverlaps() on tags array. Results rendered as NoteCard grid.",
       "acceptance_criteria": [
         "Search by title fragment returns matching notes",
         "Search by tag(s) returns notes with overlapping tags",
@@ -1314,7 +1314,7 @@
       "priority": "low",
       "type": "scaffolding",
       "summary": "Stub files for Claude and ChatGPT API integration. Routes return 501.",
-      "description": "src/lib/ai/claude.ts, chatgpt.ts, prompts.ts — stub functions throwing 'Not implemented'. API routes POST /api/ai/research and POST /api/ai/generate-note return {error: '...', status: 501}. Anthropic and OpenAI SDKs installed as devDependencies.",
+      "description": "src/lib/ai/claude.ts, chatgpt.ts, prompts.ts \u2014 stub functions throwing 'Not implemented'. API routes POST /api/ai/research and POST /api/ai/generate-note return {error: '...', status: 501}. Anthropic and OpenAI SDKs installed as devDependencies.",
       "acceptance_criteria": [
         "POST /api/ai/research returns 501",
         "POST /api/ai/generate-note returns 501",
@@ -1714,7 +1714,7 @@
         "docs/STYLE-GUIDE.md"
       ],
       "notes": [
-        "HTML <datalist> is the simplest approach — no custom component needed."
+        "HTML <datalist> is the simplest approach \u2014 no custom component needed."
       ],
       "commands": [],
       "estimate": "S"
@@ -1729,7 +1729,7 @@
       "summary": "When a note title is renamed, update [[wikilinks]] in all other notes' bodies that reference the old title.",
       "description": "Currently, renaming a note title does not update [[wikilinks]] referencing that title in other notes. On the update action in /notes/[slug]/edit/+page.server.ts, if the title has changed: find all notes whose body contains [[old title]], replace with [[new title]], update those notes and re-sync their note_links.",
       "acceptance_criteria": [
-        "Renaming a note title updates all [[oldtitle]] → [[newtitle]] in other notes",
+        "Renaming a note title updates all [[oldtitle]] \u2192 [[newtitle]] in other notes",
         "note_links table remains consistent after rename",
         "No orphaned links after rename"
       ],
@@ -1947,7 +1947,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Add update mode to the respond endpoint with a materiality-gated system prompt.",
-      "description": "Add RESPOND_SYSTEM_PROMPT_UPDATE to prompts.ts that instructs the LLM to compare the saved note body against live research and only return an update_note proposal when the note is materially wrong, outdated, or substantially incomplete — not for minor or cosmetic differences. Extend /api/assistant/respond to accept mode:\"update\" with a noteId param; look up the saved note body from the DB and inject it into the prompt context. Extend respondConversation in claude.ts and chatgpt.ts to accept and forward the current note body. Update docs/API.md with the new mode and noteId param.",
+      "description": "Add RESPOND_SYSTEM_PROMPT_UPDATE to prompts.ts that instructs the LLM to compare the saved note body against live research and only return an update_note proposal when the note is materially wrong, outdated, or substantially incomplete \u2014 not for minor or cosmetic differences. Extend /api/assistant/respond to accept mode:\"update\" with a noteId param; look up the saved note body from the DB and inject it into the prompt context. Extend respondConversation in claude.ts and chatgpt.ts to accept and forward the current note body. Update docs/API.md with the new mode and noteId param.",
       "acceptance_criteria": [
         "Minor or cosmetic differences do not trigger an update_note proposal",
         "Materially wrong, outdated, or substantially incomplete notes trigger an editable update_note proposal",
@@ -1972,7 +1972,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "commitUpdate in src/lib/server/assistant/commit.ts already snapshots revisions and re-syncs links — no changes needed there.",
+        "commitUpdate in src/lib/server/assistant/commit.ts already snapshots revisions and re-syncs links \u2014 no changes needed there.",
         "The materiality gate is purely a prompt instruction; do not add application-level diff logic."
       ],
       "commands": [
@@ -2009,7 +2009,7 @@
         "docs/STYLE-GUIDE.md"
       ],
       "notes": [
-        "Follow the existing create_note proposal panel pattern — do not invent new UI primitives.",
+        "Follow the existing create_note proposal panel pattern \u2014 do not invent new UI primitives.",
         "The note-picker does not need to be fancy; a simple <select> is acceptable at this stage."
       ],
       "commands": [
@@ -2437,11 +2437,11 @@
       "id": "PRACTICE-007",
       "group_id": "PRACTICE",
       "title": "Add CodeMirror 6 code editor component",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "feature",
       "summary": "Install CodeMirror 6 packages and build a CodeEditor.svelte component with syntax highlighting, Tab indentation, and a Techy-palette theme.",
-      "description": "Install the CodeMirror 6 core packages and language extensions for Python, JavaScript, TypeScript, Java, and C++. Create src/lib/components/CodeEditor.svelte as a thin EditorView wrapper that two-way binds a string value prop, accepts a language prop (default: python), and applies a custom CodeMirror theme mapped to Techy CSS design tokens (--bg-raised, --bg-surface, --accent-primary, --accent-soft, --text-primary, --text-secondary, --border-soft). Enable line numbers, Tab-key indentation (2 spaces via indentWithTab + indentUnit), auto-close brackets, and bracket matching. Do not integrate into the practice page in this task — that is PRACTICE-008.",
+      "description": "Install the CodeMirror 6 core packages and language extensions for Python, JavaScript, TypeScript, Java, and C++. Create src/lib/components/CodeEditor.svelte as a thin EditorView wrapper that two-way binds a string value prop, accepts a language prop (default: python), and applies a custom CodeMirror theme mapped to Techy CSS design tokens (--bg-raised, --bg-surface, --accent-primary, --accent-soft, --text-primary, --text-secondary, --border-soft). Enable line numbers, Tab-key indentation (2 spaces via indentWithTab + indentUnit), auto-close brackets, and bracket matching. Do not integrate into the practice page in this task \u2014 that is PRACTICE-008.",
       "acceptance_criteria": [
         "npm packages installed: codemirror, @codemirror/lang-python, @codemirror/lang-javascript, @codemirror/lang-java, @codemirror/lang-cpp, @codemirror/view, @codemirror/state, @codemirror/commands, @codemirror/language, @codemirror/autocomplete",
         "src/lib/components/CodeEditor.svelte exists and renders a CodeMirror EditorView",
@@ -2506,7 +2506,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "Keep the responsive @media (max-width: 900px) breakpoint — stack columns vertically on narrow screens.",
+        "Keep the responsive @media (max-width: 900px) breakpoint \u2014 stack columns vertically on narrow screens.",
         "The right sidebar column scrolls independently; editor column is sticky full-height."
       ],
       "commands": [
@@ -2523,7 +2523,7 @@
       "priority": "medium",
       "type": "feature",
       "summary": "Add a collapse/expand toggle to the tutor section header in the right sidebar so it can be hidden when not in use.",
-      "description": "In the right sidebar of the practice workspace, add a chevron toggle button to the tutor section header that collapses/expands the tutor body (hint row, transcript, input row). Collapsed state is local component state only — not persisted to DB or localStorage. Default state is expanded. When collapsed, only the section label and the toggle button are visible. Apply a smooth CSS max-height transition for the collapse animation.",
+      "description": "In the right sidebar of the practice workspace, add a chevron toggle button to the tutor section header that collapses/expands the tutor body (hint row, transcript, input row). Collapsed state is local component state only \u2014 not persisted to DB or localStorage. Default state is expanded. When collapsed, only the section label and the toggle button are visible. Apply a smooth CSS max-height transition for the collapse animation.",
       "acceptance_criteria": [
         "Tutor section header shows a chevron toggle button (expanded down-arrow, collapsed right-arrow)",
         "Clicking the toggle hides/shows the tutor body with a smooth height transition",

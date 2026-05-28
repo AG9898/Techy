@@ -64,6 +64,7 @@ Most pages scroll inside `.page-content` and never need to reference `--rail-w`.
 | Language | TypeScript (strict) | 5.9 |
 | Build tool | Vite | 7 |
 | Graph visualisation | D3.js | 7 |
+| Code editor | CodeMirror | 6 |
 | Markdown rendering | marked | 17 |
 | ORM | Drizzle ORM | 0.45 |
 | DB driver | @neondatabase/serverless (HTTP) | 1.0 |
@@ -85,6 +86,7 @@ src/
 ├── hooks.server.ts
 ├── lib/
 │   ├── components/
+│   │   ├── CodeEditor.svelte
 │   │   ├── ForceGraph.svelte
 │   │   ├── Nav.svelte
 │   │   └── NoteCard.svelte
