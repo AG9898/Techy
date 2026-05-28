@@ -2387,7 +2387,7 @@
       "id": "PRACTICE-006",
       "group_id": "PRACTICE",
       "title": "Practice documentation and verification pass",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Reconcile practice docs, setup notes, and tests after the feature lands.",

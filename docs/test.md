@@ -37,6 +37,16 @@ The current unit tests focus on fast, deterministic modules that do not require 
   - verifies `extractMarkdownText` strips headings, bold/italic, links, images, wikilinks, code blocks, and list markers
   - verifies `speak` and `stopSpeaking` manage utterance lifecycle, cancel before starting new speech, trigger `onEnd` on end/error events, and no-op when the API is absent
   - browser speech APIs are mocked via `vi.stubGlobal`; no real microphone or system voices required
+- `src/lib/server/practice/practice.test.ts`
+  - verifies `validateManualImport` accepts valid complete and minimal payloads, rejects missing or whitespace-only required fields, trims whitespace, and filters empty tag strings
+  - verifies `isValidStatus` accepts all four documented status values and rejects invalid strings, null, and numeric values
+  - verifies `validateProgressInput` accepts valid minimal and full payloads; rejects missing fields, invalid status, negative or fractional attempts, non-string notes, and non-string non-null codeSnapshot; accepts null codeSnapshot
+  - verifies `LeetCodeFetchDisabledError` and `LeetCodeFetchUpstreamError` carry their documented error codes and names
+  - verifies `fetchLeetCodeDaily` throws `LeetCodeFetchDisabledError` when `LEETCODE_DAILY_FETCH_ENABLED` is absent or not `"true"`, confirming the disabled state documented in `docs/API.md`
+  - verifies `validateTutorInput` accepts valid minimal and full payloads; rejects missing fields, invalid hint levels, non-string code, and disallowed model identifiers; accepts all documented hint levels
+  - verifies `isValidHintLevel` accepts the four documented levels and rejects out-of-vocabulary strings
+  - verifies the tutor module's non-persistence contract: `tutor.ts` exports no conversation creation or message append functions, confirming that tutor turns are never written to `conversations` or `conversation_messages`
+  - `$env/dynamic/private` and the DB module are mocked via `vi.mock` so tests run without live secrets or a database connection
 
 Remaining planned additions for the PWA and voice phase:
 - route tests for optional speech transcription error states where practical
