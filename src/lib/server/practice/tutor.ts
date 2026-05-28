@@ -205,7 +205,7 @@ export async function callTutor(
 			break;
 		} catch (err) {
 			lastError = err;
-			if (err instanceof OpenAI.RateLimitError) continue;
+			if (err instanceof OpenAI.RateLimitError || err instanceof OpenAI.NotFoundError) continue;
 			throw err;
 		}
 	}
