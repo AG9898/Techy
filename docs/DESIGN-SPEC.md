@@ -232,10 +232,36 @@ Chat layout rules:
 Practice is a focused daily coding workspace for stored LeetCode-style problems and local progress tracking.
 
 ```
-[ problem header: daily/date/difficulty/source link .......... ][ progress controls ]
-[ problem statement / examples / constraints .................. ][ notes/code panel  ]
-[ transient OpenRouter tutor thread ........................... ][ hint controls     ]
+[ problem header: daily / date / difficulty / source link ................ ]
+┌──────────────────────┬───────────────────────────────┬──────────────────┐
+│  Problem             │  Code Editor                  │  Sidebar         │
+│  statement           │  (CodeMirror 6, full-height)  │  Progress        │
+│  examples            │                               │  Notes           │
+│  constraints         │  language selector toolbar    │  ─────────────── │
+│                      │  line numbers + syntax colour │  Tutor           │
+│                      │  Tab indentation              │  [collapsible]   │
+└──────────────────────┴───────────────────────────────┴──────────────────┘
 ```
+
+Layout: 3-column grid — `minmax(300px, 1fr)` · `minmax(0, 2fr)` · `minmax(280px, 320px)`
+
+#### CodeEditor component (`src/lib/components/CodeEditor.svelte`)
+
+A thin Svelte wrapper around a CodeMirror 6 `EditorView`. Exposes:
+- `value: string` — two-way bound to the parent's `codeSnapshot` state
+- `language: string` — controls the active language extension; supported values: `python` (default), `javascript`, `typescript`, `java`, `cpp`
+- `readonly?: boolean` — renders the editor in read-only mode when true
+
+Editor capabilities:
+- Syntax highlighting via the CodeMirror 6 language package for the active language
+- A CodeMirror theme built from Techy's CSS design tokens (background → `--bg-raised`, cursor → `--accent-primary`, selection → `--accent-soft`, gutter → `--bg-surface`)
+- Line numbers gutter
+- Tab key inserts 2-space indentation (using `indentWithTab` key binding + `indentUnit` extension)
+- Auto-close brackets and matching highlight
+
+#### Language selector toolbar
+
+A compact row above the editor showing the available languages as pill buttons (same visual style as the existing hint-level buttons). The active language has `border-color: var(--accent-primary)`.
 
 Rules:
 - The current daily problem should be visible in the first viewport when available.
@@ -245,6 +271,7 @@ Rules:
 - Tutor turns are transient UI state only; the page should not present a saved practice-chat history.
 - Tutor controls should be scoped to hint level and model choice where needed, without recreating the full `/chat` composer.
 - Progress controls should be direct and compact: status, attempts, completion, notes, and code snapshot.
+- The tutor section in the right sidebar is collapsible; its collapsed state should persist in local component state only (not DB).
 - Avoid a dashboard of stats cards; keep stats secondary to the daily work area.
 
 ### Conversational Create Offer

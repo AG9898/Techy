@@ -109,7 +109,7 @@ Implementation note: the runtime should achieve this through one shared assistan
 
 | ID | Feature | Priority |
 |----|---------|----------|
-| F-50 | `/practice` provides a dedicated daily coding-practice workspace separate from `/chat` note authoring | High |
+| F-50 | `/practice` provides a dedicated daily coding-practice workspace with a 3-panel layout (problem · CodeMirror 6 code editor · sidebar), separate from `/chat` note authoring | High |
 | F-51 | Techy can fetch the current LeetCode daily challenge server-side, normalize its metadata and prompt content, and upsert it into local storage | Medium |
 | F-52 | Manual JSON import remains available as a fallback when automated LeetCode fetching fails, is disabled, or changes upstream | High |
 | F-53 | OpenRouter powers a step-by-step practice tutor that gives hints, pattern guidance, complexity discussion, and code review without persisting tutor transcripts | Medium |

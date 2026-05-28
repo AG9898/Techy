@@ -573,3 +573,24 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 - Storing copied problem content locally carries content-rights and terms-of-service risk
 - The implementation needs an explicit disable path and clear degraded UI states
 - Manual JSON import adds a second ingestion path that must stay schema-compatible with automated fetch
+
+---
+
+## ADR-026: CodeMirror 6 for the practice code editor
+
+**Date:** 2026-05-28
+**Status:** Accepted
+
+**Context:** The practice workspace used a plain `<textarea>` for the code snapshot field. This provides no syntax highlighting, indentation support, or line numbers, making it uncomfortable for writing real code attempts. A proper embedded editor was needed.
+
+**Decision:** Replace the code snapshot textarea with a CodeMirror 6 editor component (`src/lib/components/CodeEditor.svelte`). The component supports syntax highlighting for Python, JavaScript, TypeScript, Java, and C++; Tab-key indentation with configurable indent size; line numbers; and a dark colour theme matched to Techy's palette via CodeMirror's theming API.
+
+**Reasons:**
+- CodeMirror 6 is ~400KB vs Monaco's ~2MB; the smaller bundle is consistent with Techy's lightweight-client preference (see note-editor ADR avoiding TipTap/Lexical)
+- CodeMirror 6 integrates cleanly with Vite/SvelteKit without web-worker configuration overhead that Monaco requires
+- The multi-language support (Python, JS/TS, Java, C++) covers the common LeetCode submission languages without pulling in a full LSP stack
+- The existing `codeSnapshot` DB field and live code injection to the tutor require no schema or API changes
+
+**Trade-offs:**
+- CodeMirror 6 is less feature-complete than Monaco (no inline IntelliSense, no multi-cursor by default)
+- Theme tokens must be manually mapped to Techy's CSS design tokens; Monaco can target VS Code themes directly

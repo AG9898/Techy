@@ -245,6 +245,8 @@ Current direction:
 
 The practice subsystem is a dedicated coding-interview workflow, not part of the note-authoring chat surface. `/practice` owns the daily problem workspace, problem history, and progress state.
 
+The workspace UI uses a 3-column layout (problem · code editor · sidebar). The center column is a CodeMirror 6 editor rendered by `src/lib/components/CodeEditor.svelte` — a thin wrapper that two-way binds `codeSnapshot` state and supports Python, JavaScript, TypeScript, Java, and C++ via their respective CodeMirror language packages. The right sidebar holds progress controls, notes, and a collapsible tutor section. The editor's live content is passed to the tutor on every ask; no additional API changes are required for code context injection.
+
 Server-side modules own the risky external integration boundary:
 - `src/lib/server/practice/leetcode.ts` fetches the current LeetCode daily challenge and normalizes it into Techy's practice problem shape
 - `src/lib/server/practice/import.ts` validates manually supplied JSON and sends it through the same normalized write path
