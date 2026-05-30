@@ -15,17 +15,18 @@ export interface ProviderOption {
 export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 export const OPENAI_DEFAULT_MODEL = 'gpt-5-mini';
 
-// Ordered fallback list: OpenRouter tries each in sequence, skipping unavailable ones.
-// Update this list (one place) when models are deprecated or better free options emerge.
-// Max 3 items — OpenRouter's models fallback array limit.
-export const OPENROUTER_FREE_MODELS: readonly string[] = [
-	'deepseek/deepseek-r1:free',
-	'deepseek/deepseek-chat:free',
-	'qwen/qwen3-8b:free'
-] as const;
+// Curated free OpenRouter models — one per vendor, chosen for quality/reliability.
+export const OPENROUTER_MODEL_KIMI = 'moonshotai/kimi-k2.6:free';
+export const OPENROUTER_MODEL_DEEPSEEK = 'deepseek/deepseek-v4-flash:free';
+export const OPENROUTER_MODEL_QWEN = 'qwen/qwen3-coder:free';
+export const OPENROUTER_MODEL_GEMMA = 'google/gemma-4-31b-it:free';
 
-// Sentinel used by the UI provider/model selector — the actual model is chosen at runtime.
-export const OPENROUTER_DEFAULT_MODEL = 'auto';
+// Default for the chat UI (strong general-purpose coder).
+export const OPENROUTER_DEFAULT_MODEL = OPENROUTER_MODEL_KIMI;
+
+// Default for the LeetCode practice tutor — Qwen3 Coder is purpose-built for
+// algorithmic coding tasks, code review, and long-context repository reasoning.
+export const OPENROUTER_LEETCODE_MODEL = OPENROUTER_MODEL_QWEN;
 
 export const PROVIDERS: ProviderOption[] = [
 	{
@@ -51,9 +52,14 @@ export const PROVIDERS: ProviderOption[] = [
 	},
 	{
 		id: 'openrouter',
-		label: 'OpenRouter',
+		label: 'OpenRouter (Free)',
 		defaultModel: OPENROUTER_DEFAULT_MODEL,
-		models: [{ id: 'auto', label: 'Free Models (Auto-routed)' }]
+		models: [
+			{ id: OPENROUTER_MODEL_KIMI, label: 'Kimi K2.6' },
+			{ id: OPENROUTER_MODEL_DEEPSEEK, label: 'DeepSeek V4 Flash' },
+			{ id: OPENROUTER_MODEL_QWEN, label: 'Qwen3 Coder' },
+			{ id: OPENROUTER_MODEL_GEMMA, label: 'Gemma 4 31B' }
+		]
 	}
 ];
 

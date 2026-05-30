@@ -8,7 +8,7 @@
 
 import OpenAI from 'openai';
 import { env } from '$env/dynamic/private';
-import { OPENROUTER_FREE_MODELS } from '$lib/server/ai/models.js';
+import { OPENROUTER_LEETCODE_MODEL } from '$lib/server/ai/models.js';
 import { db } from '$lib/server/db/index.js';
 import { practiceProblems } from '$lib/server/db/schema.js';
 import type { PracticeProblem } from '$lib/server/db/schema.js';
@@ -196,20 +196,11 @@ export async function callTutor(
 	];
 	const maxTokens = hintLevel === 'solve' ? 2400 : 800;
 
-	// Sequential fallback: OpenRouter's `models` array doesn't retry on upstream 429s.
-	let completion;
-	let lastError: unknown;
-	for (const model of OPENROUTER_FREE_MODELS) {
-		try {
-			completion = await client.chat.completions.create({ model, messages, max_tokens: maxTokens });
-			break;
-		} catch (err) {
-			lastError = err;
-			if (err instanceof OpenAI.RateLimitError || err instanceof OpenAI.NotFoundError) continue;
-			throw err;
-		}
-	}
-	if (!completion) throw lastError;
+	const completion = await client.chat.completions.create({
+		model: OPENROUTER_LEETCODE_MODEL,
+		messages,
+		max_tokens: maxTokens
+	});
 
 	const content = completion.choices[0]?.message?.content;
 	const reply = typeof content === 'string' ? content.trim() : '';
@@ -218,7 +209,7 @@ export async function callTutor(
 		throw new Error('Unexpected empty response from OpenRouter tutor');
 	}
 
-	return { reply, model: completion.model ?? OPENROUTER_FREE_MODELS[0] };
+	return { reply, model: completion.model ?? OPENROUTER_LEETCODE_MODEL };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

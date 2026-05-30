@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { env } from '$env/dynamic/private';
 import { buildRespondSystemPrompt } from './prompts.js';
-import { OPENROUTER_FREE_MODELS } from './models.js';
+import { OPENROUTER_DEFAULT_MODEL } from './models.js';
 import type { ResearchContext } from '$lib/server/assistant/research.js';
 import type {
 	ConversationMessage,
@@ -12,18 +12,10 @@ import type { DeleteTargetPromptContext, RelatedNotePromptContext } from './prom
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-/**
- * Unified conversation endpoint for OpenRouter — returns a conversational reply and an optional note proposal.
- * @param messages - Full conversation transcript
- * @param mode - "chat" | "create" | "update"
- * @param _model - Ignored; model selection uses OPENROUTER_FREE_MODELS fallback list
- * @param currentNoteTitle - Selected note title for update mode grounding
- * @param currentNoteBody - Saved note body for update mode comparison
- */
 export async function respondConversation(
 	messages: ConversationMessage[],
 	mode: 'chat' | 'create' | 'update',
-	_model: string,
+	model: string,
 	researchContext?: ResearchContext,
 	canonicalCategories?: readonly string[],
 	existingTags?: string[],
@@ -59,20 +51,12 @@ export async function respondConversation(
 		...messages.map((message) => ({ role: message.role, content: message.content }))
 	];
 
-	// Sequential fallback: OpenRouter's `models` array doesn't retry on upstream 429s.
-	let completion;
-	let lastError: unknown;
-	for (const model of OPENROUTER_FREE_MODELS) {
-		try {
-			completion = await client.chat.completions.create({ model, messages: apiMessages, max_tokens: mode === 'chat' ? 1400 : 4096 });
-			break;
-		} catch (err) {
-			lastError = err;
-			if (err instanceof OpenAI.RateLimitError || err instanceof OpenAI.NotFoundError) continue;
-			throw err;
-		}
-	}
-	if (!completion) throw lastError;
+	const resolvedModel = model || OPENROUTER_DEFAULT_MODEL;
+	const completion = await client.chat.completions.create({
+		model: resolvedModel,
+		messages: apiMessages,
+		max_tokens: mode === 'chat' ? 1400 : 4096
+	});
 
 	const content = completion.choices[0]?.message?.content;
 	const text = typeof content === 'string' ? content.trim() : '';
