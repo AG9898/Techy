@@ -378,6 +378,8 @@ See [`docs/NOTES.md`](NOTES.md) for the note template and Markdown authoring con
 
 **Implementation note (2026-04-13):** OpenRouter is now wired as a first-class provider in `src/lib/server/ai/models.ts` and `POST /api/assistant/respond`, with `nvidia/nemotron-3-super-120b-a12b:free` as the initial allowlisted model.
 
+**Implementation note (2026-05-30):** OpenRouter model selection moved from a hidden sequential fallback list to four explicit named free models exposed as UI options: Kimi K2.6, DeepSeek V4 Flash, Qwen3 Coder, and Gemma 4 31B. The LeetCode practice tutor uses Qwen3 Coder as its fixed model. See ADR-024.
+
 ---
 
 ## ADR-017: Materiality gate heuristics for assistant update proposals
@@ -594,3 +596,24 @@ Pure learning prompts about an existing topic, such as "teach me about Django", 
 **Trade-offs:**
 - CodeMirror 6 is less feature-complete than Monaco (no inline IntelliSense, no multi-cursor by default)
 - Theme tokens must be manually mapped to Techy's CSS design tokens; Monaco can target VS Code themes directly
+
+---
+
+## ADR-024: Explicit free model selection over hidden sequential fallback for OpenRouter
+
+**Date:** 2026-05-30
+**Status:** Accepted
+
+**Context:** OpenRouter was wired with a hidden three-item fallback list (`OPENROUTER_FREE_MODELS`) that tried each model in sequence until one responded. This made the actual model opaque to the user, produced inconsistent quality across turns, and the fallback list kept going stale as free model tiers became saturated.
+
+**Decision:** Replace the fallback list with four curated free models exposed as explicit UI options in the provider/model selector: Kimi K2.6 (`moonshotai/kimi-k2.6:free`), DeepSeek V4 Flash (`deepseek/deepseek-v4-flash:free`), Qwen3 Coder (`qwen/qwen3-coder:free`), and Gemma 4 31B (`google/gemma-4-31b-it:free`). The chat UI defaults to Kimi K2.6. The LeetCode practice tutor uses Qwen3 Coder as a fixed constant (`OPENROUTER_LEETCODE_MODEL`) rather than a user-selectable option.
+
+**Reasons:**
+- The user always knows which model is responding — quality is predictable and attributable
+- Qwen3 Coder is purpose-built for algorithmic coding tasks (480B MoE, 1M context) making it the strongest fit for LeetCode tutoring
+- One model per call is simpler to reason about than a multi-step fallback chain
+- Stale fallback lists were a recurring maintenance burden; a small curated set is easier to update intentionally
+
+**Trade-offs:**
+- A rate-limited model now surfaces an error rather than silently falling back — users must switch manually or retry
+- The curated list requires periodic review as model availability and quality shifts
