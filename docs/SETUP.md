@@ -253,6 +253,35 @@ npm run db:studio
 
 Opens Drizzle Studio at http://local.drizzle.studio — a GUI for browsing and editing the database.
 
+## Neon Compute Usage Troubleshooting
+
+If Neon reports unexpectedly high monthly compute usage while Techy is idle, first confirm whether the compute is repeatedly waking rather than assuming data storage is growing. The Techy database is small enough that this warning is usually about compute time, not table size.
+
+Useful checks:
+
+```bash
+neonctl projects list --output json
+neonctl branches list --project-id <project-id> --output json
+neonctl operations list --project-id <project-id> --output json
+vercel logs --project techy --environment production --no-branch --since <iso-start> --until <iso-end> --json
+```
+
+In June 2026, the `techy` Neon endpoint was found with `suspend_timeout_seconds: 0`, and Neon rejected changing it to `300` on the active account with `modifying the suspend interval is not permitted on this account`. Manual suspend worked, but the endpoint restarted again without matching local processes, TCP database connections, Vercel cron jobs, or Vercel request logs at the restart timestamp.
+
+The fix was to rotate the `neondb_owner` role password, then suspend the endpoint and wait without polling Neon. After rotation, the endpoint stayed idle, confirming that an old or unknown `DATABASE_URL` client had been waking the compute. Vercel production `DATABASE_URL` and local `.env` were then updated to the new Neon URL, followed by a production redeploy so the deployed app used the new secret.
+
+Safe recovery sequence:
+
+1. Close Neon console tabs and stop local dev servers.
+2. Suspend the endpoint, wait 3-5 minutes without polling, then check operations once.
+3. If a new `start_compute` appears without matching Vercel logs, reset the Neon role password.
+4. Suspend again and repeat the no-poll wait.
+5. If the endpoint stays idle, update `DATABASE_URL` only in the intended consumers: local `.env`, Vercel production env, and any other known deploy targets.
+6. Redeploy Vercel after updating production env vars.
+7. Remove any temporary files that held the rotated connection string.
+
+Do not print or commit the new database URL. Prefer passing it through stdin or a `0600` temp file when updating deployment env vars.
+
 ---
 
 ## Common Issues
@@ -267,6 +296,7 @@ Opens Drizzle Studio at http://local.drizzle.studio — a GUI for browsing and e
 | CSRF / bad request errors on Vercel sign-in | `AUTH_TRUST_HOST` env var not set to `true` in Vercel settings |
 | D3 graph blank in production | Check browser console — likely a CSP issue with inline SVG |
 | Wikilinks show as broken (red) | The linked note's title must match exactly — check capitalisation. See [`docs/NOTES.md`](NOTES.md). |
+| Neon compute usage spikes while app is idle | Check for repeated `start_compute` operations and compare with Vercel logs. If manual suspend does not hold, rotate the Neon role password and update only known `DATABASE_URL` consumers. |
 
 ---
 
